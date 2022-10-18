@@ -15,13 +15,21 @@ const leagueMap = new Map([
   [League.NCAAF, "NCAA FOOTBALL > GAMES"],
   [League.NFL, "NFL > GAMES"],
   [League.MLB, "MLB > MLB > MLB"],
+  [League.NHL, "NHL > NHL"],
+  [League.NBA, "NBA > NBA > GAMES"],
 ]);
 
 const periodMap = new Map([
   ["FULL GAME", Period.FULL_GAME],
   ["GAME", Period.FULL_GAME],
+  ["1+", Period.FULL_GAME],
   ["1ST HALF", Period.FIRST_HALF],
+  ["1st Half", Period.FIRST_HALF],
   ["1ST QUARTER", Period.FIRST_QUARTER],
+  ["1st Quarter", Period.FIRST_QUARTER],
+  ["2nd Quarter", Period.SECOND_QUARTER],
+  ["3rd Quarter", Period.THIRD_QUARTER],
+  ["4th Quarter", Period.FOURTH_QUARTER],
 ]);
 
 const statMap = new Map([
@@ -64,6 +72,29 @@ const statMap = new Map([
       spread: (line: any) => line.markettypename.includes("RUN LINE (DPS)"),
     },
   ],
+  [
+    League.NHL,
+    {
+      teamTotal: (line: any) => line.markettypename.includes("TEAM TOTAL"),
+      gameTotal: (line: any) =>
+        line.markettypename.includes("TOTAL GOALS") &&
+        !line.markettypename.includes("HOME") &&
+        !line.markettypename.includes("AWAY"),
+      moneyline: (line: any) =>
+        line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("PUCK LINE (DPS)"),
+    },
+  ],
+  [
+    League.NBA,
+    {
+      teamTotal: (line: any) => line.markettypename.includes("Total Points"),
+      gameTotal: (line: any) => line.markettypename.includes("TOTAL (DPS)"),
+      moneyline: (line: any) =>
+        line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS)"),
+    },
+  ],
 ]);
 
 const getAllLinesFromEvent = async (
@@ -97,8 +128,7 @@ const getAllLinesFromEvent = async (
   const teamTotals: TeamTotal[] = [];
 
   allMarkets.forEach((line: any) => {
-    // console.log(line.gameperiodname);
-    const period = periodMap.get(line.gameperiodname);
+    const period = periodMap.get(line.gameperiodname || line.gameperiod);
     if (!period) {
       return;
     }
@@ -259,6 +289,7 @@ export const getCircaLines = async (league: League): Promise<SourcedOdds> => {
   const targetMatches = allNodes.find((x) =>
     x.name.includes(leagueMap.get(league))
   );
+
   const endpoint = targetMatches.marketgroups[0].idfwmarketgroup;
 
   const gameData = await axios.get(

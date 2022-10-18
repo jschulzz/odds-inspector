@@ -10,5 +10,6 @@ export enum Book {
   UNIBET = "Unibet",
   PINNACLE = "Pinnacle",
   BORGATA = "Borgata",
+  TWINSPIRES = "Twinspires",
   CIRCA = "Circa",
 }

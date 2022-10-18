@@ -1,17 +1,21 @@
 import { Book } from "../types";
 
 const bookMaps = [
-  { names: ["Caesars", "William Hill"], book: Book.CAESARS },
-  { names: ["BetRivers", "Sugarhouse"], book: Book.BETRIVERS },
-  { names: ["FanDuel", "Fanduel"], book: Book.FANDUEL },
-  { names: ["Draftkings"], book: Book.DRAFTKINGS },
-  { names: ["PointsBet"], book: Book.POINTSBET },
-  { names: ["BetMGM", "betMGM"], book: Book.BETMGM },
-  { names: ["WynnBet", 'Wynnbet'], book: Book.WYNNBET },
+  { names: ["Caesars", "William Hill", "CAESARS"], book: Book.CAESARS },
+  {
+    names: ["BetRivers", "Sugarhouse", "SUGARHOUSE", "BETRIVERS"],
+    book: Book.BETRIVERS,
+  },
+  { names: ["FanDuel", "Fanduel", "FANDUEL"], book: Book.FANDUEL },
+  { names: ["Draftkings", "DRAFTKINGS"], book: Book.DRAFTKINGS },
+  { names: ["PointsBet", "POINTSBET"], book: Book.POINTSBET },
+  { names: ["BetMGM", "betMGM", "BETMGM"], book: Book.BETMGM },
+  { names: ["WynnBet", "Wynnbet", "WYNNBET"], book: Book.WYNNBET },
   { names: ["Bet365 NJ"], book: Book.BET365 },
-  { names: ["Unibet"], book: Book.UNIBET },
+  { names: ["Unibet", "UNIBET"], book: Book.UNIBET },
   { names: ["Pinnacle"], book: Book.PINNACLE },
   { names: ["Borgata"], book: Book.BORGATA },
+  { names: ["TWINSPIRES"], book: Book.TWINSPIRES },
 ];
 
 export const findBook = (book: string) => {

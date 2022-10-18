@@ -9,16 +9,6 @@ export enum LineChoice {
   UNDER = "under",
 }
 
-export interface Line {
-  type: Market;
-  book: Book;
-  team: string;
-  period: Period;
-  price: number;
-  otherOutcomePrice: number;
-  value: number;
-}
-
 export interface LineConstructor {
   homeTeam: string;
   awayTeam: string;

@@ -17,6 +17,13 @@ export class Odds {
       return 100 / (americanOdds + 100);
     }
   }
+  private static americanOddsToDecimal(americanOdds: number) {
+    if (americanOdds < 0) {
+      return -100 / americanOdds + 1;
+    } else {
+      return americanOdds / 100 + 1;
+    }
+  }
   static probabilityToAmericanOdds(probability: number) {
     if (probability < 0.5) {
       return Math.round((100 * (1 - probability)) / probability);
@@ -56,12 +63,24 @@ export class Odds {
   static fromDecimal(decimalOdds: number) {
     return new Odds(Odds.decimalToProbability(decimalOdds));
   }
+  static getWidth(americanOdds1: number, americanOdds2: number) {
+    if (Math.sign(americanOdds1) === Math.sign(americanOdds2)) {
+      return Math.abs(100 + americanOdds1 + (100 + americanOdds2));
+    }
+    return Math.abs(americanOdds1 + americanOdds2);
+  }
 
   toProbability() {
     return this.probability;
   }
   toAmericanOdds() {
     return Odds.probabilityToAmericanOdds(this.probability);
+  }
+  toDecimal() {
+    if (!this.americanOdds) {
+      throw new Error("No true price known");
+    }
+    return Odds.americanOddsToDecimal(this.americanOdds);
   }
   toPayoutMultiplier() {
     if (!this.americanOdds) {

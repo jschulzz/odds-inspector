@@ -2,6 +2,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { findMarket } from "../markets";
+import { findStat } from "../props";
 import { PINNACLE_KEY } from "../secrets";
 import {
   Book,
@@ -9,6 +10,7 @@ import {
   Market,
   Moneyline,
   Period,
+  Prop,
   SourcedOdds,
   Spread,
 } from "../types";
@@ -20,6 +22,7 @@ const leagueIDs = new Map([
   [League.MLB, 246],
   [League.WNBA, 578],
   [League.NHL, 1456],
+  [League.NBA, 487],
 ]);
 
 const requestLines = async (league: League) => {
@@ -54,7 +57,7 @@ const requestLines = async (league: League) => {
       "https://guest.api.arcadia.pinnacle.com/" + matchupUrl,
       {
         headers: {
-          "x-api-key": "CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R",
+          "x-api-key": PINNACLE_KEY,
         },
       }
     );
@@ -125,18 +128,28 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
     gameTotals: [],
     teamTotals: [],
   };
-  const periodMap = new Map([
-    [0, Period.FULL_GAME],
-    [1, Period.FIRST_HALF],
-    [3, Period.FIRST_QUARTER],
-  ]);
+
+  const getPeriod = (id: number) => {
+    if (id === 0) {
+      return Period.FULL_GAME;
+    }
+    if (id === 3) {
+      return Period.FIRST_QUARTER;
+    }
+    if (id === 1) {
+      if (league === League.NHL) {
+        return Period.FIRST_PERIOD;
+      }
+      return Period.FIRST_HALF;
+    }
+  };
 
   lines.forEach((line: any) => {
     const correspondingMatchup = events.get(line.matchupId);
     if (!correspondingMatchup) {
       return undefined;
     }
-    const period = periodMap.get(line.period);
+    const period = getPeriod(line.period);
     if (!period) {
       return;
     }
@@ -201,8 +214,8 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       });
       const underTotal = new TeamTotal({
         ...standard,
-        price: overPrice,
-        otherOutcomePrice: underPrice,
+        price: underPrice,
+        otherOutcomePrice: overPrice,
         value: underLine,
         choice: LineChoice.UNDER,
       });
@@ -268,56 +281,69 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   return odds;
 };
 
-// export const getPinnacleProps = async (market) => {
-//   const { lines, matchups } = await requestLines(market);
+export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
+  const { lines, matchups } = await requestLines(league);
 
-//   const props = lines
-//     .map((line) => {
-//       const correspondingMatchup = matchups.find(
-//         (matchup) => line.matchupId === matchup.id
-//       );
-//       if (!correspondingMatchup) {
-//         return undefined;
-//       }
-//       if (
-//         correspondingMatchup.type !== "special" ||
-//         correspondingMatchup.special.category !== "Player Props"
-//       ) {
-//         return undefined;
-//       }
-//       const propName = correspondingMatchup.special.description;
-//       const playerName = propName.split("(")[0].trim();
-//       const stat = correspondingMatchup.units;
-//       const value = line.prices[0].points;
+  const props: Prop[] = [];
+  lines.forEach((line: any) => {
+    const correspondingMatchup = matchups.find(
+      (matchup: any) => line.matchupId === matchup.id
+    );
+    if (!correspondingMatchup) {
+      return;
+    }
+    if (
+      correspondingMatchup.type !== "special" ||
+      correspondingMatchup.special.category !== "Player Props"
+    ) {
+      return;
+    }
+    const propName = correspondingMatchup.special.description;
+    const playerName = propName.split("(")[0].trim();
+    const stat = findStat(correspondingMatchup.units);
+    if (!stat) {
+      return;
+    }
+    const value = line.prices[0].points;
 
-//       const overId = correspondingMatchup.participants.find(
-//         (participant) => participant.name === "Over"
-//       ).id;
-//       const underId = correspondingMatchup.participants.find(
-//         (participant) => participant.name === "Under"
-//       ).id;
+    const overId = correspondingMatchup.participants.find(
+      (participant: any) => participant.name === "Over"
+    ).id;
+    const underId = correspondingMatchup.participants.find(
+      (participant: any) => participant.name === "Under"
+    ).id;
 
-//       const overPrice = line.prices.find(
-//         (price) => price.participantId === overId
-//       )?.price;
+    const overPrice = line.prices.find(
+      (price: any) => price.participantId === overId
+    )?.price;
 
-//       const underPrice = line.prices.find(
-//         (price) => price.participantId === underId
-//       )?.price;
-//       if (!overPrice || !underPrice) {
-//         return undefined;
-//       }
-//       return {
-//         playerName,
-//         stat,
-//         value,
-//         overPrice,
-//         underPrice,
-//         time: new Date(correspondingMatchup.startTime).getTime(),
-//       };
-//     })
-//     .filter((line) => line);
-//   return props;
-// };
+    const underPrice = line.prices.find(
+      (price: any) => price.participantId === underId
+    )?.price;
+    if (!overPrice || !underPrice) {
+      return undefined;
+    }
+    const overProp: Prop = {
+      player: playerName,
+      choice: LineChoice.OVER,
+      book: Book.PINNACLE,
+      team: "",
+      stat,
+      value,
+      price: overPrice,
+    };
+    const underProp: Prop = {
+      player: playerName,
+      choice: LineChoice.UNDER,
+      book: Book.PINNACLE,
+      team: "",
+      stat,
+      value,
+      price: underPrice,
+    };
+    props.push(overProp, underProp);
+  });
+  return props;
+};
 
 // requestLines(League.NFL);

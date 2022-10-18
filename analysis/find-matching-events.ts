@@ -1,9 +1,13 @@
-import { Line, Market, SourcedOdds } from "../types";
+import { Line, Market, SourcedOdds, Spread, TeamTotal } from "../types";
 import SS from "string-similarity";
 
 export const findMatchingEvents = (
   targetLine: Line,
-  lineCorpus: SourcedOdds
+  lineCorpus: SourcedOdds,
+  options: { wantSameChoice: boolean; wantOppositeValue: boolean } = {
+    wantSameChoice: false,
+    wantOppositeValue: false,
+  }
 ) => {
   const typeMap = new Map([
     [Market.MONEYLINE, lineCorpus.moneylines],
@@ -27,10 +31,17 @@ export const findMatchingEvents = (
       targetLine.homeTeam
     );
     const verySimilarTeams = homeTeamScore + awayTeamScore > 1.5;
-    const sameLine = line.value === targetLine.value;
+    const sameLine = options.wantOppositeValue
+      ? (line as Spread).value === -(targetLine as Spread).value
+      : (line as Spread).value === (targetLine as Spread).value;
     const samePeriod = line.period === targetLine.period;
-    const sameChoice = line.choice === targetLine.choice;
+    const sameChoice = options.wantSameChoice
+      ? line.choice === targetLine.choice
+      : line.choice !== targetLine.choice;
+    const sameSide =
+      (line as TeamTotal).side === (targetLine as TeamTotal).side;
+
     // TODO: verify game times. Only an issue for double-header sports
-    return verySimilarTeams && sameLine && samePeriod && sameChoice;
+    return verySimilarTeams && sameLine && samePeriod && sameChoice && sameSide;
   });
 };

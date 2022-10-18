@@ -9,3 +9,4 @@ export {
   TeamTotal,
   SourcedOdds,
 } from "./lines";
+export { Prop, PropsPlatform, PropsStat } from "./props";
