@@ -120,6 +120,9 @@ export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
             console.log("Unknown Stat", keyValues[2]);
             return;
           }
+          if (!team) {
+            return;
+          }
           const price = outcome.money;
 
           const prop: Prop = {

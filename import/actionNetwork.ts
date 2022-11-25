@@ -10,11 +10,11 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [974, Book.WYNNBET],
   [1005, Book.CAESARS],
   [939, Book.BETMGM],
-  [1548, Book.DRAFTKINGS],
+  [68, Book.DRAFTKINGS],
   [266, Book.TWINSPIRES],
 ]);
 const newYorkActionNetworkSportsbooks = [
-  972, 973, 1006, 974, 1005, 939, 1548, 266,
+  972, 973, 1006, 974, 1005, 939, 68, 266,
 ];
 
 const periodMap = new Map([

@@ -6,15 +6,16 @@ import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
 import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
 import { findMatchingEvents } from "./find-matching-events";
-import { LineChoice, Spread, TeamTotal } from "../types/lines";
+import { GameTotal, LineChoice, Spread, TeamTotal } from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
+import { calculateKelly } from "./calculate-kelly";
 
 interface Play {
   expectedValue: number;
   likelihood: number;
   line: Line;
   matchingPinnacleLine: Line;
-  width: number 
+  width: number;
 }
 
 interface DisplayPlay {
@@ -86,26 +87,26 @@ const combineLines = (sources: SourcedOdds[]): SourcedOdds => {
 
 export const findPositiveEv = async (league: League) => {
   const pinnacleLines = await getPinnacle(league);
-  const circaLines = await getCircaLines(league);
+  // const circaLines = await getCircaLines(league);
   const actionNetworkLines = await getActionNetworkLines(league);
-  const otherLines = await getOddspedia(league, true);
+  // const otherLines = await getOddspedia(league, true);
 
   console.log("Acquired Odds");
 
   const bettableLines = combineLines([
     pinnacleLines,
     actionNetworkLines,
-    otherLines,
+    // otherLines,
   ]);
   console.log(pinnacleLines.moneylines.length);
-  console.log(circaLines.moneylines.length);
+  // console.log(circaLines.moneylines.length);
   console.log(actionNetworkLines.moneylines.length);
-  console.log(otherLines.moneylines.length);
+  // console.log(otherLines.moneylines.length);
   const allLines = combineLines([
     pinnacleLines,
-    circaLines,
+    // circaLines,
     actionNetworkLines,
-    otherLines,
+    // otherLines,
   ]);
 
   const moneylines = findGoodPlays(bettableLines.moneylines, pinnacleLines);
@@ -182,40 +183,78 @@ export const formatResults = async (
     side: string
   ) => {
     if (type === Market.SPREAD) {
-      return `${choice} covers the ${value} ${period} spread`;
+      return `${choice} covers the ${colors.bold(
+        value.toString()
+      )} ${period} spread`;
     }
     if (type === Market.MONEYLINE) {
       return `${choice} wins the ${period}`;
     }
     if (type === Market.GAME_TOTAL) {
-      return `combine to go ${choice} the ${value} ${period} score`;
+      return `combine to go ${choice} the ${colors.bold(
+        value.toString()
+      )} ${period} score`;
     }
     if (type === Market.TEAM_TOTAL) {
-      return `${side} team goes ${choice} the ${value} ${period} score`;
+      return `${side} team goes ${choice} the ${colors.bold(
+        value.toString()
+      )} ${period} score`;
     }
   };
 
   const tableData = alignedWithEquivalents.map(({ play, matchingLines }) => {
     const mustBeatPrice = new Odds(play.likelihood).toAmericanOdds();
+
     const label = `${play.awayTeam} @ ${play.homeTeam} - ${typeToString(
       play.choice,
       play.value,
       play.type,
       play.period,
       play.side
-    )} (${play.line.book}, ${(play.EV * 100).toFixed(
-      2
-    )}% EV, ${mustBeatPrice.toFixed(0)}, width of ${play.width})`;
+    )} (${(play.EV * 100).toFixed(2)}% EV, ${mustBeatPrice.toFixed(
+      0
+    )}, width of ${play.width})`;
     const bookPrices = allBooks.map((book) => {
-      const prices = matchingLines
+      const prices: number[] = matchingLines
         .filter((l) => l.book === book)
         .map((l) => l.price);
+      if (!prices.length) {
+        const otherValue = allLines.find(
+          (line) =>
+            line.awayTeam === play.awayTeam &&
+            line.type === play.type &&
+            line.book === book &&
+            line.period === play.period &&
+            line.choice === play.choice &&
+            (line as TeamTotal).side === play.side
+        );
+        if (
+          !otherValue ||
+          !(otherValue as TeamTotal | GameTotal | Spread).value
+        ) {
+          return "";
+        }
+        return colors.gray(
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
+            (otherValue as TeamTotal | GameTotal | Spread).price
+          }`
+        );
+      }
 
+      const minPrice = Math.min(...prices);
+      const recommendedWager = calculateKelly(
+        play.likelihood,
+        Odds.fromFairLine(minPrice).toPayoutMultiplier()
+      );
       const priceString = prices.join(", ");
       if (prices.includes(play.line.price)) {
-        return colors.bgGreen(priceString);
-      } else if (prices.every((p) => p > mustBeatPrice)) {
-        return colors.bgYellow(priceString);
+        return `${colors.bgGreen(priceString)}\n$${recommendedWager.toFixed(
+          2
+        )}`;
+      } else if (prices.length && prices.every((p) => p > mustBeatPrice)) {
+        return `${colors.bgYellow(priceString)}\n$${recommendedWager.toFixed(
+          2
+        )}`;
       }
       return priceString;
     });
@@ -227,7 +266,7 @@ export const formatResults = async (
   };
 
   const headers = ["Line", ...allBooks];
-  const HEADER_GAP = 15;
+  const HEADER_GAP = 10;
   for (let i = 0; i + i / HEADER_GAP < tableData.length; i += HEADER_GAP) {
     tableData.splice(i + i / HEADER_GAP, 0, headers);
   }

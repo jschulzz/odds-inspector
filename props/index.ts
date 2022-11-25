@@ -47,7 +47,7 @@ const statMaps = [
     stat: PropsStat.RECEIVING_YARDS,
   },
   {
-    names: ["TouchdownReceptions", "Rec TDs", "Receiving Touchdowns"],
+    names: ["TouchdownReceptions", "Rec TDs", "Receiving Touchdowns", 'Receiving TDs'],
     stat: PropsStat.RECEIVING_TDS,
   },
   {
@@ -139,7 +139,7 @@ const statMaps = [
   { names: ["Saves", "Goalie Saves", "SAVs"], stat: PropsStat.SAVES },
   { names: ["Goals Against", "Goals Allowed"], stat: PropsStat.GOALS_AGAINST },
 
-  { names: ["Steals"], stat: PropsStat.STEALS },
+  { names: ["Steals", 'STLS'], stat: PropsStat.STEALS },
   { names: ["TurnOvers", "Turnovers"], stat: PropsStat.TURNOVERS },
   {
     names: ["StealsBlocks", "Blocks + Steals", "Blks+Stls", 'BLKS, STLS', 'Steals + Blocks'],
@@ -169,7 +169,7 @@ const statMaps = [
   },
   { names: ["Blocks", "Blocked Shots", "BLKS"], stat: PropsStat.BLOCKS },
   { names: ["Rebounds", "REBS"], stat: PropsStat.REBOUNDS },
-  { names: ["DoubleDouble"], stat: PropsStat.DOUBLE_DOUBLE },
+  { names: ["DoubleDouble", 'Double-Double'], stat: PropsStat.DOUBLE_DOUBLE },
   {
     names: ["3-Pointers Made", "ThreePointFieldGoals", "3-PT Made", 'Three Points Made'],
     stat: PropsStat.THREE_POINTERS_MADE,

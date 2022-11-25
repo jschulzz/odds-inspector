@@ -83,7 +83,7 @@ export class Odds {
     return Odds.americanOddsToDecimal(this.americanOdds);
   }
   toPayoutMultiplier() {
-    if (!this.americanOdds) {
+    if (this.americanOdds === undefined) {
       throw new Error("No true price known");
     }
     if (this.americanOdds < 0) {

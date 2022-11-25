@@ -1,7 +1,7 @@
 import axios from "axios";
 import { findBook } from "../books";
 import { findStat } from "../props";
-import { League, Prop } from "../types";
+import { Book, League, Prop } from "../types";
 import { LineChoice } from "../types/lines";
 
 export const getBetKarma = async (league: League): Promise<Prop[]> => {
@@ -40,7 +40,6 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
         }
         const playerMetadata = JSON.parse(playerMetadataString);
         if (!playerMetadata) {
-          console.log(playerMetadataString);
           return;
         }
         const team = playerMetadata.image;
@@ -49,7 +48,7 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
           if (!book) {
             return;
           }
-          let oddsSource = outcome.lastPreProjection;
+          let oddsSource = undefined;
           if (!oddsSource) {
             oddsSource = outcome.lastPregame;
           }
@@ -58,6 +57,9 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
           }
           if (!oddsSource || !oddsSource.line) {
             return;
+          }
+          if (book === Book.CAESARS) {
+            return
           }
           const prop: Prop = {
             book,

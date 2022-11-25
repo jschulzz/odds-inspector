@@ -23,6 +23,9 @@ const leagueIDs = new Map([
   [League.WNBA, 578],
   [League.NHL, 1456],
   [League.NBA, 487],
+  [League.UFC, 22],
+  [League.SOCCER, 29],
+  [League.NCAAB, 493],
 ]);
 
 const requestLines = async (league: League) => {

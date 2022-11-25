@@ -17,6 +17,7 @@ const leagueMap = new Map([
   [League.MLB, "MLB > MLB > MLB"],
   [League.NHL, "NHL > NHL"],
   [League.NBA, "NBA > NBA > GAMES"],
+  [League.SOCCER, "NBA > NBA > GAMES"],
 ]);
 
 const periodMap = new Map([
@@ -285,6 +286,8 @@ export const getCircaLines = async (league: League): Promise<SourcedOdds> => {
   };
 
   traverseNodes(data.bonavigationnodes);
+
+  // console.log(allNodes.filter(x => x.name.includes("SOCCER")).map(x => x.name))
 
   const targetMatches = allNodes.find((x) =>
     x.name.includes(leagueMap.get(league))

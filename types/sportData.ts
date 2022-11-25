@@ -1,10 +1,13 @@
 export enum League {
   NFL = "nfl",
   NCAAF = "ncaaf",
+  NCAAB = "ncaab",
   MLB = "mlb",
   NBA = "nba",
   WNBA = "wnba",
   NHL = "nhl",
+  UFC = 'ufc',
+  SOCCER = 'soccer',
 }
 
 export enum Period {

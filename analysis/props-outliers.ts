@@ -1,7 +1,7 @@
 import { table, TableUserConfig } from "table";
 import { getBetKarma } from "../import/betKarma";
 import { compareTwoStrings } from "string-similarity";
-import { Book, League, Prop, PropsPlatform } from "../types";
+import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
 import colors from "colors";
 import { Odds } from "../odds/odds";
 import { getPinnacleProps } from "../import/pinnacle";
@@ -10,9 +10,10 @@ import { LineChoice } from "../types/lines";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getThrive } from "../import/thrive";
 import { getActionLabsProps } from "../import/action-labs";
+import { calculateKelly } from "./calculate-kelly";
 
 const bookWeights = new Map([
-  [Book.PINNACLE, 2],
+  [Book.PINNACLE, 4],
   [Book.DRAFTKINGS, 1.5],
   [Book.FANDUEL, 1.5],
   [Book.TWINSPIRES, 0],
@@ -51,16 +52,16 @@ export const findOutliers = async (league: League) => {
   const actionLabsProps = await getActionLabsProps(league);
   const pinnacleProps = await getPinnacleProps(league);
   const underdogProps = await getUnderdogLines(league);
-  const prizepicksProps = await getPrizePicksLines(league);
-  const thriveProps = await getThrive(league);
+  // const prizepicksProps = await getPrizePicksLines(league);
+  // const thriveProps = await getThrive(league);
   //   console.log(underdogProps)
   const allProps = [
     ...betKarmaProps,
     ...actionLabsProps,
     ...pinnacleProps,
     ...underdogProps,
-    ...prizepicksProps,
-    ...thriveProps,
+    // ...prizepicksProps,
+    // ...thriveProps,
   ];
   let remainingProps = [...allProps];
   const propGroups: Prop[][] = [];
@@ -81,13 +82,43 @@ export const findOutliers = async (league: League) => {
 
 export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
   const goodDFSPlays: Prop[] = [];
-  const DFSPlatforms = [
+  const DFSPlatforms: (Book | PropsPlatform)[] = [
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
     PropsPlatform.THRIVE,
   ];
-  const allBooks = [...new Set(groups.flatMap((g) => g.map((p) => p.book)))];
-  const sortedGroups = groups.sort((a, b) => (a[0].stat > b[0].stat ? 1 : -1));
+  const orderedBooks: (Book | PropsPlatform)[] = [
+    Book.PINNACLE,
+    Book.FANDUEL,
+    Book.DRAFTKINGS,
+    Book.CAESARS,
+    Book.BETRIVERS,
+    Book.BETMGM,
+    Book.WYNNBET,
+    // PropsPlatform.UNDERDOG,
+    // PropsPlatform.PRIZEPICKS,
+    // PropsPlatform.THRIVE,
+  ];
+  const allBooks = [
+    ...new Set(groups.flatMap((g) => g.map((p) => p.book))),
+  ].sort((a, b) => {
+    if (orderedBooks.indexOf(a) === -1) {
+      return 1;
+    }
+    if (orderedBooks.indexOf(b) === -1) {
+      return -1;
+    }
+    if (orderedBooks.indexOf(a) > orderedBooks.indexOf(b)) {
+      return 1;
+    }
+    return -1;
+  });
+  const sortedGroups = groups.sort((a, b) => {
+    if (a[0].team === b[0].team) {
+      return a[0].stat > b[0].stat ? 1 : -1;
+    }
+    return a[0].team > b[0].team ? 1 : -1;
+  });
   const tableData = sortedGroups
     .map((group) => {
       let isInteresting = false;
@@ -100,7 +131,11 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
       }
 
       const linePopularity = new Map(
-        allValues.map((x) => [x, allValues.filter((y) => y == x).length])
+        group.map((x) => [
+          x.value,
+          new Set(group.filter((y) => y.value == x.value).map((y) => y.book))
+            .size,
+        ])
       );
       const mostPopularLine = [...linePopularity.entries()].sort((a, b) =>
         a[1] > b[1] ? -1 : 1
@@ -138,7 +173,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
       const impliedProbability = likelihood / matches;
       const isHighLikelihood = impliedProbability > 0.56;
 
-      if (isHighLikelihood || shouldHighlight) {
+      if (shouldHighlight) {
         isInteresting = true;
       }
 
@@ -154,10 +189,10 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         ? colors.bgYellow(likelihoodString)
         : likelihoodString;
       const label = `${coloredEvent} | ${coloredLikelihood}`;
-      const statsPerBook = allBooks.map((book) => {
+      const statsPerBook: string[] = allBooks.map((book) => {
         const propByBook = group.find((g) => g.book === book);
         if (!propByBook) {
-          return "N/A";
+          return "";
         }
         const isPriceWayOff =
           (propByBook.value > mostPopularLine &&
@@ -191,30 +226,68 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         const shouldHighlightPrice =
           isPriceWayOff || beatsAvgValue || isValueWayOff;
 
-        if (shouldHighlightPrice || isGoodDFSPlay) {
+        const isValidBook = !(
+          [Book.PINNACLE, Book.TWINSPIRES, Book.UNIBET] as (
+            | Book
+            | PropsPlatform
+          )[]
+        ).includes(book);
+
+        if (isValidBook && (shouldHighlightPrice || isGoodDFSPlay)) {
           isInteresting = true;
         }
 
-        const priceLabel = shouldHighlightPrice
-          ? colors.bgYellow(propByBook.price.toString())
-          : propByBook.price.toString();
+        let priceLabel = propByBook.price.toString();
+        if (shouldHighlightPrice) {
+          priceLabel = colors.bgYellow(priceLabel);
+          if (propByBook.value === mostPopularLine) {
+            const priceEV =
+              impliedProbability *
+                Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
+              (1 - impliedProbability);
 
-        let valueLabel = propByBook.value.toString();
+            const recommendedWager = calculateKelly(
+              impliedProbability,
+              Odds.fromFairLine(propByBook.price).toPayoutMultiplier()
+            );
+            priceLabel = `${priceLabel}            ${(priceEV * 100).toFixed(
+              1
+            )}% EV            $${recommendedWager.toFixed(2)}`;
+          }
+        }
+
+        let valueLabel = `@${propByBook.value.toString()}`;
         if (isGoodDFSPlay) {
           goodDFSPlays.push(propByBook);
           valueLabel = colors.bgCyan(valueLabel);
         }
 
-        if (propByBook.value === highestLine && highestLine !== lowestLine) {
-          return `${colors.green(valueLabel)}\n(${priceLabel})`;
-        } else if (
-          propByBook.value === lowestLine &&
-          highestLine !== lowestLine
-        ) {
-          return `${colors.red(valueLabel)}\n(${priceLabel})`;
+        if (highestLine === lowestLine) {
+          return `${colors.gray(valueLabel)}\n${priceLabel}`;
         }
-        return `${colors.gray(valueLabel)}\n(${priceLabel})`;
+        if (
+          (propByBook.value === highestLine &&
+            propByBook.choice === LineChoice.UNDER) ||
+          (propByBook.value === lowestLine &&
+            propByBook.choice === LineChoice.OVER)
+        ) {
+          return `${colors.green(valueLabel)}\n${priceLabel}`;
+        } else if (
+          (propByBook.value === highestLine &&
+            propByBook.choice === LineChoice.OVER) ||
+          (propByBook.value === lowestLine &&
+            propByBook.choice === LineChoice.UNDER)
+        ) {
+          return `${colors.red(valueLabel)}\n${priceLabel}`;
+        }
+        return `${colors.gray(valueLabel)}\n${priceLabel}`;
       });
+      if (
+        group[0].player.includes("Johnson") &&
+        group[0].stat === PropsStat.POINTS
+      ) {
+        console.log(group);
+      }
       if (isInteresting) {
         return [label, ...statsPerBook];
       }
