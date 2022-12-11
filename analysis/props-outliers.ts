@@ -126,7 +126,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
       const lowestLine = Math.min(...allValues);
       const highestLine = Math.max(...allValues);
       let shouldHighlight = false;
-      if (lowestLine / highestLine < 0.8 && highestLine > 4) {
+      if (lowestLine / highestLine < 0.8 && highestLine > 5) {
         shouldHighlight = true;
       }
 

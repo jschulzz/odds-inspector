@@ -17,6 +17,10 @@ const marketMap = new Map([
     { sport: "football", category: "usa", seasonId: "160664", league: "ncaa" },
   ],
   [
+    League.NCAAB,
+    { sport: "basketball", category: "usa", seasonId: "98001", league: "ncaa" },
+  ],
+  [
     League.MLB,
     { sport: "baseball", category: "usa", seasonId: "88607", league: "mlb" },
   ],
@@ -27,6 +31,10 @@ const marketMap = new Map([
   [
     League.NHL,
     { sport: "ice-hockey", category: "usa", seasonId: "94839", league: "nhl" },
+  ],
+  [
+    League.SOCCER,
+    { sport: "soccer", category: "usa", seasonId: "94839", league: "nhl" },
   ],
 ]);
 
@@ -58,9 +66,9 @@ export const getOddspedia = async (
   const startDate = `${yyyy}-${mm}-${dd}`;
   let endDate = startDate;
   let dayAdder = 0;
-  // if (league === League.NBA) {
-  //   dayAdder = ;
-  if ([League.NFL, League.NCAAF].includes(league)) {
+  if (league === League.NBA) {
+    dayAdder = 1;
+  } else if ([League.NFL, League.NCAAF].includes(league)) {
     dayAdder = 6;
   }
   today.setDate(today.getDate() + dayAdder);
@@ -78,9 +86,11 @@ export const getOddspedia = async (
   };
   if (pullNew) {
     try {
-      const { data } = await axios.get(
-        `https://oddspedia.com/api/v1/getMatchList?geoCode=US&sport=${marketParams.sport}&category=${marketParams.category}&league=${marketParams.league}&seasonId=${marketParams.seasonId}&popularLeaguesOnly=0&excludeSpecialStatus=0&status=all&sortBy=default&startDate=${startDate}T00%3A00%3A00Z&endDate=${endDate}T23%3A59%3A59Z&round=&page=1&perPage=100&perPageDefault=100&language=us`
-      );
+      let url = `https://oddspedia.com/api/v1/getMatchList?geoCode=US&sport=${marketParams.sport}&category=${marketParams.category}&league=${marketParams.league}&seasonId=${marketParams.seasonId}&popularLeaguesOnly=0&excludeSpecialStatus=0&status=all&sortBy=default&startDate=${startDate}T00%3A00%3A00Z&endDate=${endDate}T23%3A59%3A59Z&round=&page=1&perPage=100&perPageDefault=100&language=us`;
+      if (league === League.SOCCER) {
+        url = `https://oddspedia.com/api/v1/getMatchList?geoCode=US&startDate=${startDate}&endDate=${endDate}&sport=soccer&status=all&sortBy=default&popularLeaguesOnly=0&excludeSpecialStatus=0&page=1&perPage=50&perPageDefault=50&language=us`;
+      }
+      const { data } = await axios.get(url);
       matches = data.data.matchList
         .filter((match: any) => !match.inplay)
         .map((match: any) => ({
@@ -89,8 +99,8 @@ export const getOddspedia = async (
           awayTeam: match.at,
           gameTime: match.md,
         }));
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error(e.response.data);
     }
     const markets = [
       { marketID: 4, type: "total" },
@@ -109,13 +119,14 @@ export const getOddspedia = async (
         try {
           ({ data } = await axios.get(
             `https://oddspedia.com/api/v1/getMatchOdds?wettsteuer=0&geoCode=US&bookmakerGeoCode=US&geoState=&matchKey=${match.id}&language=us&oddGroupId=${marketID}`,
-            { timeout: 3000 }
+            { timeout: 5000 }
           ));
         } catch (e: any) {
           if (e.response?.status === 404) {
             console.log("404");
             continue checkMatch;
           }
+          console.log(e.code);
           console.log(
             `Could not find ${type} odds for ${gameData.awayTeam} @ ${gameData.homeTeam}`
           );
