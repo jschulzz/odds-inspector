@@ -17,6 +17,16 @@ const newYorkActionNetworkSportsbooks = [
   972, 973, 1006, 974, 1005, 939, 68, 266,
 ];
 
+const leagueMap = new Map([
+  [League.NBA, "nba?"],
+  [League.WNBA, "wnba?"],
+  [League.NCAAB, "ncaab?division=D1&"],
+  [League.NCAAF, "ncaaf?"],
+  [League.NHL, "nhl?"],
+  [League.MLB, "mlb?"],
+  [League.NFL, "nfl?"],
+]);
+
 const periodMap = new Map([
   ["game", Period.FULL_GAME],
   ["firsthalf", Period.FIRST_HALF],
@@ -29,7 +39,12 @@ const periodMap = new Map([
 export const getActionNetworkLines = async (
   league: League
 ): Promise<SourcedOdds> => {
-  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${league}?bookIds=15,30,1006,68,973,939,972,1005,974,76,75,123`;
+  const leagueKey = leagueMap.get(league);
+  if (!leagueKey) {
+    throw new Error("Unknown league");
+  }
+
+  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,68,973,939,972,1005,974,76,75,123`;
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
     moneylines: [],
@@ -47,6 +62,10 @@ export const getActionNetworkLines = async (
     const awayTeam = game.teams.find(
       (team: any) => team.id === game.away_team_id
     );
+
+    if (!game.odds) {
+      return;
+    }
 
     game.odds
       .filter((odds: any) => odds.meta)

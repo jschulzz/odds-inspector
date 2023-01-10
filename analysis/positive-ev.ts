@@ -120,7 +120,7 @@ export const findPositiveEv = async (league: League) => {
     ...gameTotals,
   ];
 
-  console.log("Found Positive EV Plays");
+  console.log(`Found Positive ${positiveEVPlays.length} EV Plays`);
 
   const sortedPlays: DisplayPlay[] = positiveEVPlays
     .sort(
