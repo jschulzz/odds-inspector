@@ -36,17 +36,17 @@ interface DisplayPlay {
   width: number;
 }
 
-const findGoodPlays = (lines: Line[], sourceLines: SourcedOdds): Play[] => {
+const findGoodPlays = (bettableLines: Line[], sourceLines: SourcedOdds): Play[] => {
   const positiveEVPlays: Play[] = [];
-  lines.forEach((line) => {
-    const [matchingPinnacleLine] = findMatchingEvents(line, sourceLines, {
+  bettableLines.forEach((bettableLine) => {
+    const [matchingPinnacleLine] = findMatchingEvents(bettableLine, sourceLines, {
       wantSameChoice: true,
       wantOppositeValue: false,
     });
-    if (!matchingPinnacleLine || !line.price) {
-      // console.log("no pinnacle line for", line);
+    if (!matchingPinnacleLine || !bettableLine.price) {
       return;
     }
+    // console.log("found pinnacle line for", bettableLine, matchingPinnacleLine);
     const pinnacleProbabilityFor = Odds.fromVigAmerican(
       matchingPinnacleLine.price,
       matchingPinnacleLine.otherOutcomePrice
@@ -58,15 +58,15 @@ const findGoodPlays = (lines: Line[], sourceLines: SourcedOdds): Play[] => {
     );
     const pinnacleProbabilityAgainst = 1 - pinnacleProbabilityFor;
 
-    const payoutMultiplier = Odds.fromFairLine(line.price).toPayoutMultiplier();
+    const payoutMultiplier = Odds.fromFairLine(bettableLine.price).toPayoutMultiplier();
     const expectedValue =
       payoutMultiplier * pinnacleProbabilityFor - pinnacleProbabilityAgainst;
 
-    if (expectedValue > 0.0001 && pinnacleProbabilityFor > 0.3) {
+    if (expectedValue > -0.0001 && pinnacleProbabilityFor > 0.3) {
       positiveEVPlays.push({
         expectedValue,
         likelihood: pinnacleProbabilityFor,
-        line,
+        line: bettableLine,
         matchingPinnacleLine,
         width,
       });
@@ -94,7 +94,7 @@ export const findPositiveEv = async (league: League) => {
   console.log("Acquired Odds");
 
   const bettableLines = combineLines([
-    pinnacleLines,
+    // pinnacleLines,
     actionNetworkLines,
     // otherLines,
   ]);

@@ -8,6 +8,7 @@ export enum League {
   NHL = "nhl",
   UFC = 'ufc',
   SOCCER = 'soccer',
+  TENNIS = 'tennis',
 }
 
 export enum Period {

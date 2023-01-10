@@ -26,6 +26,7 @@ const leagueIDs = new Map([
   [League.UFC, 22],
   [League.SOCCER, 29],
   [League.NCAAB, 493],
+  [League.TENNIS, 33],
 ]);
 
 const requestLines = async (league: League) => {
@@ -33,8 +34,10 @@ const requestLines = async (league: League) => {
   if (!leagueID) {
     throw new Error(`Unknown Pinnacle league ${league}`);
   }
-  const linesUrl = `0.1/leagues/${leagueID}/markets/straight`;
-  const matchupUrl = `0.1/leagues/${leagueID}/matchups`;
+  let directory = league === League.TENNIS ? "sports" : "leagues";
+
+  const linesUrl = `0.1/${directory}/${leagueID}/markets/straight`;
+  const matchupUrl = `0.1/${directory}/${leagueID}/matchups?withSpecials=false`;
 
   const datastorePath = path.join(__dirname, "../backups/pinnacle");
   const linesFilename = `${datastorePath}/${league}_lines.json`;
@@ -90,20 +93,31 @@ interface Event {
   teamTotals: TeamTotal[];
 }
 
-const getPinnacleEvents = (matchups: any) => {
+const getPinnacleEvents = (matchups: any, league: League) => {
   let events = new Map<number, Event>();
   matchups
     .filter((matchup: any) => matchup.type === "matchup")
-    .filter((matchup: any) => !matchup.parentId)
+    .filter((matchup: any) => {
+      if (league === League.TENNIS) {
+        // ignore tennis sets
+        return matchup.units !== "Sets";
+      }
+      return !matchup.parentId;
+    })
     .forEach((matchup: any) => {
       let storedEvent = events.get(matchup.id);
 
       if (!storedEvent) {
+        const participants = matchup.participants.map((p: any) => ({
+          ...p,
+          name: p.name.split("(Games)")[0].trim(),
+        }));
+
         storedEvent = {
-          homeTeam: matchup.participants.find(
+          homeTeam: participants.find(
             (x: any) => x.alignment === "home"
           ).name,
-          awayTeam: matchup.participants.find(
+          awayTeam: participants.find(
             (x: any) => x.alignment === "away"
           ).name,
           time: new Date(matchup.startTime),
@@ -123,7 +137,7 @@ const getPinnacleEvents = (matchups: any) => {
 export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   const { lines, matchups } = await requestLines(league);
 
-  const events = getPinnacleEvents(matchups);
+  const events = getPinnacleEvents(matchups, league);
 
   const odds: SourcedOdds = {
     moneylines: [],

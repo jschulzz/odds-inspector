@@ -25,10 +25,12 @@ const leagueMap = new Map([
   [League.NHL, "nhl?"],
   [League.MLB, "mlb?"],
   [League.NFL, "nfl?"],
+  [League.TENNIS, "atp?period=competition&"],
 ]);
 
 const periodMap = new Map([
   ["game", Period.FULL_GAME],
+  ["competition", Period.FULL_GAME],
   ["firsthalf", Period.FIRST_HALF],
   ["firstquarter", Period.FIRST_QUARTER],
   ["firstperiod", Period.FIRST_PERIOD],
@@ -55,13 +57,21 @@ export const getActionNetworkLines = async (
 
   const useFullName = ["nfl", "mlb", "wnba", "nhl"].includes(league);
 
-  data.games.forEach((game: any) => {
-    const homeTeam = game.teams.find(
-      (team: any) => team.id === game.home_team_id
+  const dataSet = data.games || data.competitions;
+
+  dataSet.forEach((game: any) => {
+    const opponents = game.competitors || game.teams;
+    const homeTeam = opponents.find(
+      (team: any) => team.id === game.home_team_id || team.side === "home"
     );
-    const awayTeam = game.teams.find(
-      (team: any) => team.id === game.away_team_id
+    const awayTeam = opponents.find(
+      (team: any) => team.id === game.away_team_id || team.side === "away"
     );
+
+    if (league === League.TENNIS) {
+      homeTeam.display_name = homeTeam.player.full_name;
+      awayTeam.display_name = awayTeam.player.full_name;
+    }
 
     if (!game.odds) {
       return;
