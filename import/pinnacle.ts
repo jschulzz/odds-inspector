@@ -108,10 +108,16 @@ const getPinnacleEvents = (matchups: any, league: League) => {
       let storedEvent = events.get(matchup.id);
 
       if (!storedEvent) {
-        const participants = matchup.participants.map((p: any) => ({
-          ...p,
-          name: p.name.split("(Games)")[0].trim(),
-        }));
+        const participants = matchup.participants.map((p: any) => {
+          let name: string = p.name.split("(Games)")[0].trim()
+          if (league === League.NBA) {
+            name = name.split(' ').slice(1).join(' ').trim()
+          }
+          return {
+            ...p,
+            name,
+          }
+        });
 
         storedEvent = {
           homeTeam: participants.find(
@@ -302,65 +308,67 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
   const { lines, matchups } = await requestLines(league);
 
   const props: Prop[] = [];
-  lines.forEach((line: any) => {
-    const correspondingMatchup = matchups.find(
-      (matchup: any) => line.matchupId === matchup.id
-    );
-    if (!correspondingMatchup) {
-      return;
-    }
-    if (
-      correspondingMatchup.type !== "special" ||
-      correspondingMatchup.special.category !== "Player Props"
-    ) {
-      return;
-    }
-    const propName = correspondingMatchup.special.description;
-    const playerName = propName.split("(")[0].trim();
-    const stat = findStat(correspondingMatchup.units);
-    if (!stat) {
-      return;
-    }
-    const value = line.prices[0].points;
+  for (const matchup of matchups) {
+    const { data: pinnacleProps } = await axios.get(`https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`, {
+      headers: {
+        "x-api-key": PINNACLE_KEY,
+      },
+    })
+    pinnacleProps.forEach((prop: any) => {
+      if (
+        prop.type !== "special" ||
+        prop.special.category !== "Player Props"
+      ) {
+        return;
+      }
+      const propName = prop.special.description;
+      const playerName = propName.split("(")[0].trim();
+      const stat = findStat(prop.units);
+      if (!stat) {
+        return;
+      }
+      const line = lines.find((l: any) => l.matchupId === prop.id)
+      const value = line.prices[0].points;
 
-    const overId = correspondingMatchup.participants.find(
-      (participant: any) => participant.name === "Over"
-    ).id;
-    const underId = correspondingMatchup.participants.find(
-      (participant: any) => participant.name === "Under"
-    ).id;
+      const overId = prop.participants.find(
+        (participant: any) => participant.name === "Over"
+      ).id;
+      const underId = prop.participants.find(
+        (participant: any) => participant.name === "Under"
+      ).id;
 
-    const overPrice = line.prices.find(
-      (price: any) => price.participantId === overId
-    )?.price;
+      const overPrice = line.prices.find(
+        (price: any) => price.participantId === overId
+      )?.price;
 
-    const underPrice = line.prices.find(
-      (price: any) => price.participantId === underId
-    )?.price;
-    if (!overPrice || !underPrice) {
-      return undefined;
-    }
-    const overProp: Prop = {
-      player: playerName,
-      choice: LineChoice.OVER,
-      book: Book.PINNACLE,
-      team: "",
-      stat,
-      value,
-      price: overPrice,
-    };
-    const underProp: Prop = {
-      player: playerName,
-      choice: LineChoice.UNDER,
-      book: Book.PINNACLE,
-      team: "",
-      stat,
-      value,
-      price: underPrice,
-    };
-    props.push(overProp, underProp);
-  });
-  return props;
+      const underPrice = line.prices.find(
+        (price: any) => price.participantId === underId
+      )?.price;
+      if (!overPrice || !underPrice) {
+        return undefined;
+      }
+      const overProp: Prop = {
+        player: playerName,
+        choice: LineChoice.OVER,
+        book: Book.PINNACLE,
+        team: "",
+        stat,
+        value,
+        price: overPrice,
+      };
+      const underProp: Prop = {
+        player: playerName,
+        choice: LineChoice.UNDER,
+        book: Book.PINNACLE,
+        team: "",
+        stat,
+        value,
+        price: underPrice,
+      };
+      props.push(overProp, underProp);
+    });
+  }
+  return props
 };
 
 // requestLines(League.NFL);

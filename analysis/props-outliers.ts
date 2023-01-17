@@ -54,7 +54,6 @@ export const findOutliers = async (league: League) => {
   const underdogProps = await getUnderdogLines(league);
   // const prizepicksProps = await getPrizePicksLines(league);
   // const thriveProps = await getThrive(league);
-  //   console.log(underdogProps)
   const allProps = [
     ...betKarmaProps,
     ...actionLabsProps,
