@@ -52,14 +52,14 @@ export const findOutliers = async (league: League) => {
   const actionLabsProps = await getActionLabsProps(league);
   const pinnacleProps = await getPinnacleProps(league);
   const underdogProps = await getUnderdogLines(league);
-  // const prizepicksProps = await getPrizePicksLines(league);
+  const prizepicksProps = await getPrizePicksLines(league);
   // const thriveProps = await getThrive(league);
   const allProps = [
     ...betKarmaProps,
     ...actionLabsProps,
     ...pinnacleProps,
     ...underdogProps,
-    // ...prizepicksProps,
+    ...prizepicksProps,
     // ...thriveProps,
   ];
   let remainingProps = [...allProps];
@@ -81,6 +81,9 @@ export const findOutliers = async (league: League) => {
 
 export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
   const goodDFSPlays: Prop[] = [];
+  const goodPlays: any[] = [];
+  const bannedProps = [PropsStat.POWER_PLAY_POINTS];
+
   const DFSPlatforms: (Book | PropsPlatform)[] = [
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
@@ -142,9 +145,9 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
 
       // console.log(linePopularity, mostPopularLine);
 
-      const matchingProps = group.filter(
-        (p) => p.value === Number(mostPopularLine)
-      );
+      const matchingProps = group
+        .filter((p) => p.value === Number(mostPopularLine))
+        .filter((p) => !DFSPlatforms.includes(p.book));
       let likelihood = 0;
       let matches = 0;
 
@@ -154,7 +157,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
           wantSameChoice: false,
           wantSameValue: true,
         });
-        if (!otherOption || DFSPlatforms.includes(prop.book as PropsPlatform)) {
+        if (!otherOption) {
           return;
         }
         // @ts-ignore - weight will be defined
@@ -181,9 +184,17 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         ? colors.bgYellow(eventString)
         : eventString;
       const fairLine = new Odds(impliedProbability).toAmericanOdds();
+      const minimum_payout_for_5_pct =
+        (5 + (1 - impliedProbability) * 100) / impliedProbability;
+      const minimum_price =
+        minimum_payout_for_5_pct >= 100
+          ? minimum_payout_for_5_pct
+          : -10000 / minimum_payout_for_5_pct;
       const likelihoodString = `${mostPopularLine} @ ${(
         100 * impliedProbability
-      ).toFixed(1)}%, ${fairLine.toFixed(0)}`;
+      ).toFixed(1)}%, ${fairLine.toFixed(0)}, need ${minimum_price.toFixed(
+        1
+      )} for 5% EV`;
       const coloredLikelihood = isHighLikelihood
         ? colors.bgYellow(likelihoodString)
         : likelihoodString;
@@ -218,9 +229,8 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
             (propByBook.value === mostPopularLine && isHighLikelihood));
 
         const beatsAvgValue =
-          !DFSPlatforms.includes(propByBook.book as PropsPlatform) &&
-          propByBook.value === mostPopularLine &&
-          propByBook.price > fairLine;
+          // !DFSPlatforms.includes(propByBook.book as PropsPlatform) &&
+          propByBook.value === mostPopularLine && propByBook.price > fairLine;
 
         const shouldHighlightPrice =
           isPriceWayOff || beatsAvgValue || isValueWayOff;
@@ -232,19 +242,22 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
           )[]
         ).includes(book);
 
-        if (isValidBook && (shouldHighlightPrice || isGoodDFSPlay)) {
+        if (
+          isValidBook &&
+          (shouldHighlightPrice || isGoodDFSPlay) &&
+          !bannedProps.includes(propByBook.stat)
+        ) {
           isInteresting = true;
         }
 
         let priceLabel = propByBook.price.toString();
         if (shouldHighlightPrice) {
           priceLabel = colors.bgYellow(priceLabel);
-          if (propByBook.value === mostPopularLine) {
-            const priceEV =
-              impliedProbability *
-                Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
-              (1 - impliedProbability);
-
+          const priceEV =
+            impliedProbability *
+              Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
+            (1 - impliedProbability);
+          if (propByBook.value === mostPopularLine && priceEV > 0.04) {
             const recommendedWager = calculateKelly(
               impliedProbability,
               Odds.fromFairLine(propByBook.price).toPayoutMultiplier()
@@ -252,6 +265,12 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
             priceLabel = `${priceLabel}            ${(priceEV * 100).toFixed(
               1
             )}% EV            $${recommendedWager.toFixed(2)}`;
+            isValidBook &&
+              goodPlays.push({
+                propByBook,
+                priceEV: (priceEV * 100).toFixed(1),
+                recommendedWager: recommendedWager.toFixed(2),
+              });
           }
         }
 
@@ -282,10 +301,10 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         return `${colors.gray(valueLabel)}\n${priceLabel}`;
       });
       if (
-        group[0].player.includes("Johnson") &&
-        group[0].stat === PropsStat.POINTS
+        group[0].player.includes("Curry") &&
+        group[0].stat === PropsStat.THREE_POINTERS_MADE
       ) {
-        console.log(group);
+        console.log(group, impliedProbability, fairLine);
       }
       if (isInteresting) {
         return [label, ...statsPerBook];
@@ -304,6 +323,10 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
     columnDefault: { width: 10, wrapWord: true },
   };
 
-  console.log(goodDFSPlays);
+  const cleanPlays = goodPlays.filter(
+    (p) => !bannedProps.includes(p.propByBook.stat)
+  );
+  cleanPlays.sort((a, b) => (a.priceEV > b.priceEV ? 1 : -1));
+  console.log(cleanPlays);
   return table(tableData, config);
 };

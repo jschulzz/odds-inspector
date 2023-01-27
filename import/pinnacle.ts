@@ -109,23 +109,19 @@ const getPinnacleEvents = (matchups: any, league: League) => {
 
       if (!storedEvent) {
         const participants = matchup.participants.map((p: any) => {
-          let name: string = p.name.split("(Games)")[0].trim()
+          let name: string = p.name.split("(Games)")[0].trim();
           if (league === League.NBA) {
-            name = name.split(' ').slice(1).join(' ').trim()
+            name = name.split(" ").slice(1).join(" ").trim();
           }
           return {
             ...p,
             name,
-          }
+          };
         });
 
         storedEvent = {
-          homeTeam: participants.find(
-            (x: any) => x.alignment === "home"
-          ).name,
-          awayTeam: participants.find(
-            (x: any) => x.alignment === "away"
-          ).name,
+          homeTeam: participants.find((x: any) => x.alignment === "home").name,
+          awayTeam: participants.find((x: any) => x.alignment === "away").name,
           time: new Date(matchup.startTime),
           id: matchup.id,
           moneylines: [],
@@ -309,16 +305,16 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
 
   const props: Prop[] = [];
   for (const matchup of matchups) {
-    const { data: pinnacleProps } = await axios.get(`https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`, {
-      headers: {
-        "x-api-key": PINNACLE_KEY,
-      },
-    })
+    const { data: pinnacleProps } = await axios.get(
+      `https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`,
+      {
+        headers: {
+          "x-api-key": PINNACLE_KEY,
+        },
+      }
+    );
     pinnacleProps.forEach((prop: any) => {
-      if (
-        prop.type !== "special" ||
-        prop.special.category !== "Player Props"
-      ) {
+      if (prop.type !== "special" || prop.special.category !== "Player Props") {
         return;
       }
       const propName = prop.special.description;
@@ -327,7 +323,10 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
       if (!stat) {
         return;
       }
-      const line = lines.find((l: any) => l.matchupId === prop.id)
+      const line = lines.find((l: any) => l.matchupId === prop.id);
+      if (!line) {
+        return;
+      }
       const value = line.prices[0].points;
 
       const overId = prop.participants.find(
@@ -368,7 +367,7 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
       props.push(overProp, underProp);
     });
   }
-  return props
+  return props;
 };
 
 // requestLines(League.NFL);

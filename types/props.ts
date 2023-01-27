@@ -2,8 +2,8 @@ import { Book } from "./books";
 import { LineChoice } from "./lines";
 
 export enum PropsPlatform {
-  UNDERDOG = "Underdog",
-  PRIZEPICKS = "PrizePicks",
+  UNDERDOG = "Underdog (3p)",
+  PRIZEPICKS = "PrizePicks (5p)",
   THRIVE = "Thrive",
 }
 
@@ -20,7 +20,7 @@ export enum PropsStat {
   LONGEST_RUSH = "longestRush",
   PASSING_YARDS = "passingYards",
   PASSING_TDS = "passingTouchdowns",
-  TOTAL_TDS = 'totalTouchdowns',
+  TOTAL_TDS = "totalTouchdowns",
   PASS_ATTEMPTS = "passAttempts",
   PASS_COMPLETIONS = "passCompletions",
   LONGEST_PASSING_COMPLETION = "longestPassingCompletion",
@@ -57,19 +57,19 @@ export enum PropsStat {
   SAVES = "saves",
   GOALS_AGAINST = "goalsAgainst",
 
-  TURNOVERS = 'turnovers',
-  STEALS_PLUS_BLOCKS = 'stealsPlusBlocks',
-  BLOCKS = 'blocks',
-  PRA = 'pointsPlusReboundsPlusAssists',
-  THREE_POINTERS_MADE = 'threePointersMade',
-  REBOUNDS = 'rebounds',
-  DOUBLE_DOUBLE = 'doubleDouble',
-  POINTS_PLUS_ASSISTS = 'pointsPlusAssists',
-  POINTS_PLUS_REBOUNDS = 'pointsPlusRebounds',
-  REBOUNDS_PLUS_ASSISTS = 'reboundsPlusAssists',
-  STEALS = 'steals',
-  POINTS = 'points',
-
+  TURNOVERS = "turnovers",
+  STEALS_PLUS_BLOCKS = "stealsPlusBlocks",
+  BLOCKS = "blocks",
+  PRA = "pointsPlusReboundsPlusAssists",
+  THREE_POINTERS_MADE = "threePointersMade",
+  REBOUNDS = "rebounds",
+  DOUBLE_DOUBLE = "doubleDouble",
+  POINTS_PLUS_ASSISTS = "pointsPlusAssists",
+  POINTS_PLUS_REBOUNDS = "pointsPlusRebounds",
+  REBOUNDS_PLUS_ASSISTS = "reboundsPlusAssists",
+  STEALS = "steals",
+  POINTS = "points",
+  FREE_THROWS_MADE = "freeThrowsMade",
 }
 
 export interface Prop {

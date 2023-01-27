@@ -65,7 +65,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
       team: player.team,
       book: PropsPlatform.UNDERDOG,
       choice: LineChoice.UNDER,
-      price: 0,
+      price: -122,
     });
     props.push({
       player: player.first_name + " " + player.last_name,
@@ -74,7 +74,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
       team: player.team,
       book: PropsPlatform.UNDERDOG,
       choice: LineChoice.OVER,
-      price: 0,
+      price: -122,
     });
   });
   console.log("Unknown Leagues:", unknownLeages);

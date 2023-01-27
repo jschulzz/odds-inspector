@@ -47,7 +47,12 @@ const statMaps = [
     stat: PropsStat.RECEIVING_YARDS,
   },
   {
-    names: ["TouchdownReceptions", "Rec TDs", "Receiving Touchdowns", 'Receiving TDs'],
+    names: [
+      "TouchdownReceptions",
+      "Rec TDs",
+      "Receiving Touchdowns",
+      "Receiving TDs",
+    ],
     stat: PropsStat.RECEIVING_TDS,
   },
   {
@@ -63,7 +68,12 @@ const statMaps = [
     stat: PropsStat.RECEIVING_RUSHING_YARDS,
   },
   {
-    names: ["Rushing + Receiving TDs", "Total TDs", "Pass+Rush+Rec TDs"],
+    names: [
+      "Rushing + Receiving TDs",
+      "Total TDs",
+      "Pass+Rush+Rec TDs",
+      "Rush+Rec TDs",
+    ],
     stat: PropsStat.TOTAL_TDS,
   },
   { names: ["Longest Rush"], stat: PropsStat.LONGEST_RUSH },
@@ -117,10 +127,10 @@ const statMaps = [
   { names: ["Hits Allowed"], stat: PropsStat.HITS_ALLOWED },
   { names: ["RBIs"], stat: PropsStat.RBIS },
   { names: ["Home Runs", "HomeRuns"], stat: PropsStat.HOME_RUNS },
-  { names: ["Doubles",], stat: PropsStat.DOUBLES },
-  { names: ["Singles",], stat: PropsStat.SINGLES },
-  { names: ["Triples",], stat: PropsStat.TRIPLES },
-  { names: ["Stolen Bases",], stat: PropsStat.STOLEN_BASES },
+  { names: ["Doubles"], stat: PropsStat.DOUBLES },
+  { names: ["Singles"], stat: PropsStat.SINGLES },
+  { names: ["Triples"], stat: PropsStat.TRIPLES },
+  { names: ["Stolen Bases"], stat: PropsStat.STOLEN_BASES },
   {
     names: ["EarnedRuns", "Earned Runs", "Earned Runs Allowed"],
     stat: PropsStat.EARNED_RUNS,
@@ -139,10 +149,16 @@ const statMaps = [
   { names: ["Saves", "Goalie Saves", "SAVs"], stat: PropsStat.SAVES },
   { names: ["Goals Against", "Goals Allowed"], stat: PropsStat.GOALS_AGAINST },
 
-  { names: ["Steals", 'STLS'], stat: PropsStat.STEALS },
+  { names: ["Steals", "STLS"], stat: PropsStat.STEALS },
   { names: ["TurnOvers", "Turnovers"], stat: PropsStat.TURNOVERS },
   {
-    names: ["StealsBlocks", "Blocks + Steals", "Blks+Stls", 'BLKS, STLS', 'Steals + Blocks'],
+    names: [
+      "StealsBlocks",
+      "Blocks + Steals",
+      "Blks+Stls",
+      "BLKS, STLS",
+      "Steals + Blocks",
+    ],
     stat: PropsStat.STEALS_PLUS_BLOCKS,
   },
   {
@@ -154,7 +170,7 @@ const statMaps = [
     stat: PropsStat.POINTS_PLUS_REBOUNDS,
   },
   {
-    names: ["Rebounds + Assists", "Rebs+Asts", 'REBS, ASTS'],
+    names: ["Rebounds + Assists", "Rebs+Asts", "REBS, ASTS"],
     stat: PropsStat.REBOUNDS_PLUS_ASSISTS,
   },
   {
@@ -163,16 +179,25 @@ const statMaps = [
       "PointsReboundsAssist",
       "Pts+Rebs+Asts",
       "PTS, REBS, ASTS",
-      'Points + Rebounds + Assists'
+      "Points + Rebounds + Assists",
     ],
     stat: PropsStat.PRA,
   },
   { names: ["Blocks", "Blocked Shots", "BLKS"], stat: PropsStat.BLOCKS },
   { names: ["Rebounds", "REBS"], stat: PropsStat.REBOUNDS },
-  { names: ["DoubleDouble", 'Double-Double'], stat: PropsStat.DOUBLE_DOUBLE },
+  { names: ["DoubleDouble", "Double-Double"], stat: PropsStat.DOUBLE_DOUBLE },
   {
-    names: ["3-Pointers Made", "ThreePointFieldGoals", "3-PT Made", 'Three Points Made'],
+    names: [
+      "3-Pointers Made",
+      "ThreePointFieldGoals",
+      "3-PT Made",
+      "Three Points Made",
+    ],
     stat: PropsStat.THREE_POINTERS_MADE,
+  },
+  {
+    names: ["FT Made", "Free Throws Made"],
+    stat: PropsStat.FREE_THROWS_MADE,
   },
 ];
 

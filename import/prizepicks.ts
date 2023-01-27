@@ -5,34 +5,34 @@ import { findStat } from "../props";
 import { League, Prop, PropsPlatform } from "../types";
 import { LineChoice } from "../types/lines";
 
-const leagueMap = new Map([
-  [League.NFL, 9],
-  [League.MLB, 2],
-  [League.NCAAF, 15],
-  [League.WNBA, 3],
-  [League.NHL, 8],
-  [League.NBA, 7],
-]);
+// const leagueMap = new Map([
+//   [League.NFL, 9],
+//   [League.MLB, 2],
+//   [League.NCAAF, 15],
+//   [League.WNBA, 3],
+//   [League.NHL, 8],
+//   [League.NBA, 7],
+// ]);
 
 export const getPrizePicksLines = async (league: League) => {
   const datastorePath = path.join(__dirname, "../backups/prizepicks");
   const linesFilename = `${datastorePath}/${league}.json`;
 
-  const MARKET_ID = leagueMap.get(league);
-  try {
-    const url = `https://cors-anywhere.herokuapp.com/https://api.prizepicks.com/projections?league_id=${MARKET_ID}`;
-    const { data } = await axios.get(url, {
-      headers: {
-        origin: "app.prizepicks.com",
-      },
-    });
-    fs.mkdirSync(datastorePath, { recursive: true });
+  // const MARKET_ID = leagueMap.get(league);
+  // try {
+  //   const url = `https://cors-anywhere.herokuapp.com/https://api.prizepicks.com/projections?league_id=${MARKET_ID}`;
+  //   const { data } = await axios.get(url, {
+  //     headers: {
+  //       origin: "app.prizepicks.com",
+  //     },
+  //   });
+  //   fs.mkdirSync(datastorePath, { recursive: true });
 
-    fs.writeFileSync(linesFilename, JSON.stringify(data, null, 4));
-  } catch (e) {
-    console.error(e);
-    console.log("Couldn't request new PP lines. Using saved lines");
-  }
+  //   fs.writeFileSync(linesFilename, JSON.stringify(data, null, 4));
+  // } catch (e) {
+  //   console.error(e);
+  //   console.log("Couldn't request new PP lines. Using saved lines");
+  // }
 
   const { data, included } = JSON.parse(
     fs.readFileSync(linesFilename).toString()
@@ -82,7 +82,7 @@ export const getPrizePicksLines = async (league: League) => {
       stat,
       value,
       book: PropsPlatform.PRIZEPICKS,
-      price: 0,
+      price: -119,
     };
     const overProp: Prop = {
       ...standard,

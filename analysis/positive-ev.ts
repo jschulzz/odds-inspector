@@ -36,14 +36,22 @@ interface DisplayPlay {
   width: number;
 }
 
-const findGoodPlays = (bettableLines: Line[], sourceLines: SourcedOdds): Play[] => {
+const findGoodPlays = (
+  bettableLines: Line[],
+  sourceLines: SourcedOdds
+): Play[] => {
   const positiveEVPlays: Play[] = [];
   bettableLines.forEach((bettableLine) => {
-    const [matchingPinnacleLine] = findMatchingEvents(bettableLine, sourceLines, {
-      wantSameChoice: true,
-      wantOppositeValue: false,
-    });
+    const [matchingPinnacleLine] = findMatchingEvents(
+      bettableLine,
+      sourceLines,
+      {
+        wantSameChoice: true,
+        wantOppositeValue: false,
+      }
+    );
     if (!matchingPinnacleLine || !bettableLine.price) {
+      // console.log("couldnt pinnacle line for", bettableLine);
       return;
     }
     // console.log("found pinnacle line for", bettableLine, matchingPinnacleLine);
@@ -58,7 +66,9 @@ const findGoodPlays = (bettableLines: Line[], sourceLines: SourcedOdds): Play[] 
     );
     const pinnacleProbabilityAgainst = 1 - pinnacleProbabilityFor;
 
-    const payoutMultiplier = Odds.fromFairLine(bettableLine.price).toPayoutMultiplier();
+    const payoutMultiplier = Odds.fromFairLine(
+      bettableLine.price
+    ).toPayoutMultiplier();
     const expectedValue =
       payoutMultiplier * pinnacleProbabilityFor - pinnacleProbabilityAgainst;
 
@@ -204,6 +214,14 @@ export const formatResults = async (
 
   const tableData = alignedWithEquivalents.map(({ play, matchingLines }) => {
     const mustBeatPrice = new Odds(play.likelihood).toAmericanOdds();
+    let widthString = play.width.toString();
+    if (play.width >= 25) {
+      widthString = widthString.bgRed;
+    } else if (play.width <= 15) {
+      widthString = widthString.bgGreen;
+    } else {
+      widthString = widthString.bgYellow;
+    }
 
     const label = `${play.awayTeam} @ ${play.homeTeam} - ${typeToString(
       play.choice,
@@ -213,7 +231,7 @@ export const formatResults = async (
       play.side
     )} (${(play.EV * 100).toFixed(2)}% EV, ${mustBeatPrice.toFixed(
       0
-    )}, width of ${play.width})`;
+    )}, width of ${widthString}, ${(play.likelihood * 100).toFixed(1)}%)`;
     const bookPrices = allBooks.map((book) => {
       const prices: number[] = matchingLines
         .filter((l) => l.book === book)
