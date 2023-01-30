@@ -10,7 +10,7 @@ import { LineChoice } from "../types/lines";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getThrive } from "../import/thrive";
 import { getActionLabsProps } from "../import/action-labs";
-import { calculateKelly } from "./calculate-kelly";
+import { Bankroll } from "../bankroll/bankroll";
 
 const bookWeights = new Map([
   [Book.PINNACLE, 4],
@@ -82,6 +82,7 @@ export const findOutliers = async (league: League) => {
 export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
   const goodDFSPlays: Prop[] = [];
   const goodPlays: any[] = [];
+  const bankroll = new Bankroll()
   const bannedProps = [PropsStat.POWER_PLAY_POINTS];
 
   const DFSPlatforms: (Book | PropsPlatform)[] = [
@@ -216,8 +217,8 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
 
         const isValueWayOff =
           Math.min(propByBook.value, mostPopularLine) /
-            Math.max(propByBook.value, mostPopularLine) <
-            0.9 &&
+          Math.max(propByBook.value, mostPopularLine) <
+          0.9 &&
           mostPopularLine > 10 &&
           (propByBook.value > mostPopularLine
             ? propByBook.choice === LineChoice.UNDER
@@ -255,10 +256,10 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
           priceLabel = colors.bgYellow(priceLabel);
           const priceEV =
             impliedProbability *
-              Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
+            Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
             (1 - impliedProbability);
           if (propByBook.value === mostPopularLine && priceEV > 0.04) {
-            const recommendedWager = calculateKelly(
+            const recommendedWager = bankroll.calculateKelly(
               impliedProbability,
               Odds.fromFairLine(propByBook.price).toPayoutMultiplier()
             );
@@ -300,12 +301,12 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         }
         return `${colors.gray(valueLabel)}\n${priceLabel}`;
       });
-      if (
-        group[0].player.includes("Curry") &&
-        group[0].stat === PropsStat.THREE_POINTERS_MADE
-      ) {
-        console.log(group, impliedProbability, fairLine);
-      }
+      // if (
+      //   group[0].player.includes("Curry") &&
+      //   group[0].stat === PropsStat.THREE_POINTERS_MADE
+      // ) {
+      //   console.log(group, impliedProbability, fairLine);
+      // }
       if (isInteresting) {
         return [label, ...statsPerBook];
       }

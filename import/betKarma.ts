@@ -18,9 +18,10 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
   }
   const endDate = `${yyyy}-${mm}-${dd}`;
   try {
-    const { data } = await axios.get(
+    const url =
       `https://api2-dev.betkarma.com/propsComparison?startDate=${startDate}&endDate=${endDate}&league=${league}`
-    );
+      console.log(url)
+    const { data } = await axios.get(url);
     //   console.log(JSON.parse(data.games[0].teamNames));
     if (data.error) {
       throw new Error(data.error);

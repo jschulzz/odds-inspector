@@ -305,67 +305,73 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
 
   const props: Prop[] = [];
   for (const matchup of matchups) {
-    const { data: pinnacleProps } = await axios.get(
-      `https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`,
-      {
-        headers: {
-          "x-api-key": PINNACLE_KEY,
-        },
-      }
-    );
-    pinnacleProps.forEach((prop: any) => {
-      if (prop.type !== "special" || prop.special.category !== "Player Props") {
-        return;
-      }
-      const propName = prop.special.description;
-      const playerName = propName.split("(")[0].trim();
-      const stat = findStat(prop.units);
-      if (!stat) {
-        return;
-      }
-      const line = lines.find((l: any) => l.matchupId === prop.id);
-      if (!line) {
-        return;
-      }
-      const value = line.prices[0].points;
+    try {
 
-      const overId = prop.participants.find(
-        (participant: any) => participant.name === "Over"
-      ).id;
-      const underId = prop.participants.find(
-        (participant: any) => participant.name === "Under"
-      ).id;
 
-      const overPrice = line.prices.find(
-        (price: any) => price.participantId === overId
-      )?.price;
+      const { data: pinnacleProps } = await axios.get(
+        `https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`,
+        {
+          headers: {
+            "x-api-key": PINNACLE_KEY,
+          },
+        }
+      );
+      pinnacleProps.forEach((prop: any) => {
+        if (prop.type !== "special" || prop.special.category !== "Player Props") {
+          return;
+        }
+        const propName = prop.special.description;
+        const playerName = propName.split("(")[0].trim();
+        const stat = findStat(prop.units);
+        if (!stat) {
+          return;
+        }
+        const line = lines.find((l: any) => l.matchupId === prop.id);
+        if (!line) {
+          return;
+        }
+        const value = line.prices[0].points;
 
-      const underPrice = line.prices.find(
-        (price: any) => price.participantId === underId
-      )?.price;
-      if (!overPrice || !underPrice) {
-        return undefined;
-      }
-      const overProp: Prop = {
-        player: playerName,
-        choice: LineChoice.OVER,
-        book: Book.PINNACLE,
-        team: "",
-        stat,
-        value,
-        price: overPrice,
-      };
-      const underProp: Prop = {
-        player: playerName,
-        choice: LineChoice.UNDER,
-        book: Book.PINNACLE,
-        team: "",
-        stat,
-        value,
-        price: underPrice,
-      };
-      props.push(overProp, underProp);
-    });
+        const overId = prop.participants.find(
+          (participant: any) => participant.name === "Over"
+        ).id;
+        const underId = prop.participants.find(
+          (participant: any) => participant.name === "Under"
+        ).id;
+
+        const overPrice = line.prices.find(
+          (price: any) => price.participantId === overId
+        )?.price;
+
+        const underPrice = line.prices.find(
+          (price: any) => price.participantId === underId
+        )?.price;
+        if (!overPrice || !underPrice) {
+          return undefined;
+        }
+        const overProp: Prop = {
+          player: playerName,
+          choice: LineChoice.OVER,
+          book: Book.PINNACLE,
+          team: "",
+          stat,
+          value,
+          price: overPrice,
+        };
+        const underProp: Prop = {
+          player: playerName,
+          choice: LineChoice.UNDER,
+          book: Book.PINNACLE,
+          team: "",
+          stat,
+          value,
+          price: underPrice,
+        };
+        props.push(overProp, underProp);
+      });
+    } catch (e) {
+      console.log("Nothing for that")
+    }
   }
   return props;
 };
