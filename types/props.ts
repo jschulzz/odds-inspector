@@ -5,6 +5,7 @@ export enum PropsPlatform {
   UNDERDOG = "Underdog (3p)",
   PRIZEPICKS = "PrizePicks (5p)",
   THRIVE = "Thrive",
+  NO_HOUSE = 'No House Advantage (5p)'
 }
 
 export enum PropsStat {

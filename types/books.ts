@@ -12,4 +12,12 @@ export enum Book {
   BORGATA = "Borgata",
   TWINSPIRES = "Twinspires",
   CIRCA = "Circa",
+  BETUS = "Bet US",
+  MYBOOKIE = "MyBookie",
+  SUPERBOOK = "Superbook",
+  BARSTOOL = "Barstool",
+  FOXBET = "FoxBet",
+  BOVADA = "Bovada",
+  LOWVIG = "LowVig",
+  BETONLINE = "BetOnline",
 }

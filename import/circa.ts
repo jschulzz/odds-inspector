@@ -13,6 +13,7 @@ import { LineChoice } from "../types/lines";
 
 const leagueMap = new Map([
   [League.NCAAF, "NCAA FOOTBALL > GAMES"],
+  [League.NCAAB, "NCAA MEN'S > GAMES"],
   [League.NFL, "NFL > GAMES"],
   [League.MLB, "MLB > MLB > MLB"],
   [League.NHL, "NHL > NHL"],
@@ -34,6 +35,18 @@ const periodMap = new Map([
 ]);
 
 const statMap = new Map([
+  [
+    League.NCAAB,
+    {
+      teamTotal: (line: any) => line.markettypename.includes("TEAM TOTAL"),
+      gameTotal: (line: any) =>
+        line.markettypename.includes("TOTAL") &&
+        !line.markettypename.includes("HOME") &&
+        !line.markettypename.includes("AWAY"),
+      moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS"),
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS"),
+    },
+  ],
   [
     League.NCAAF,
     {
@@ -288,16 +301,19 @@ export const getCircaLines = async (league: League): Promise<SourcedOdds> => {
   traverseNodes(data.bonavigationnodes);
 
   // console.log(allNodes.filter(x => x.name.includes("SOCCER")).map(x => x.name))
+  // console.log(leagueMap.get(league));
+  const targetMatches = allNodes.find((x) => {
+    // console.log(x.name);
+    return x.name.includes(leagueMap.get(league));
+  });
 
-  const targetMatches = allNodes.find((x) =>
-    x.name.includes(leagueMap.get(league))
-  );
 
   const endpoint = targetMatches.marketgroups[0].idfwmarketgroup;
 
   const gameData = await axios.get(
     `https://co.circasports.com/cache/psmg/UK/${endpoint}.json`
   );
+
 
   const odds: SourcedOdds = {
     moneylines: [],

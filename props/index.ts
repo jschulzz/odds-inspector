@@ -39,11 +39,17 @@ const statMaps = [
     stat: PropsStat.PASSING_TDS,
   },
   {
-    names: ["Passing Yards", "PassingYards", "Pass Yards", "Pass YDS"],
+    names: [
+      "Passing Yards",
+      "PassingYards",
+      "Pass Yards",
+      "Pass YDS",
+      "passing_yards",
+    ],
     stat: PropsStat.PASSING_YARDS,
   },
   {
-    names: ["Receiving Yards", "ReceivingYards", "Rec YDS"],
+    names: ["Receiving Yards", "ReceivingYards", "Rec YDS", "receiving_yards"],
     stat: PropsStat.RECEIVING_YARDS,
   },
   {
@@ -91,7 +97,13 @@ const statMaps = [
     stat: PropsStat.RUSHING_TDS,
   },
   {
-    names: ["Rushing Yards", "RushingYards", "Rush Yards", "Rush YDS"],
+    names: [
+      "Rushing Yards",
+      "RushingYards",
+      "Rush Yards",
+      "Rush YDS",
+      "rushing_yards",
+    ],
     stat: PropsStat.RUSHING_YARDS,
   },
   {
@@ -140,13 +152,13 @@ const statMaps = [
 
   { names: ["Goals", "GOLs"], stat: PropsStat.GOALS },
   {
-    names: ["Shots", "ShotsOnGoal", "Shots On Goal"],
+    names: ["Shots", "ShotsOnGoal", "Shots On Goal", "shot_on_goal"],
     stat: PropsStat.SHOTS_ON_GOAL,
   },
-  { names: ["Assists", "ASTs", "ASTS"], stat: PropsStat.ASSISTS },
-  { names: ["Points", "PTS", "GOLs, ASTs"], stat: PropsStat.POINTS },
+  { names: ["Assists", "ASTs", "ASTS", "assists"], stat: PropsStat.ASSISTS },
+  { names: ["Points", "PTS", "GOLs, ASTs", "points"], stat: PropsStat.POINTS },
   { names: ["Power Play Points"], stat: PropsStat.POWER_PLAY_POINTS },
-  { names: ["Saves", "Goalie Saves", "SAVs"], stat: PropsStat.SAVES },
+  { names: ["Saves", "Goalie Saves", "SAVs", "goal_tending_saves"], stat: PropsStat.SAVES },
   { names: ["Goals Against", "Goals Allowed"], stat: PropsStat.GOALS_AGAINST },
 
   { names: ["Steals", "STLS"], stat: PropsStat.STEALS },
@@ -180,11 +192,12 @@ const statMaps = [
       "Pts+Rebs+Asts",
       "PTS, REBS, ASTS",
       "Points + Rebounds + Assists",
+      "points+rebounds+assists",
     ],
     stat: PropsStat.PRA,
   },
   { names: ["Blocks", "Blocked Shots", "BLKS"], stat: PropsStat.BLOCKS },
-  { names: ["Rebounds", "REBS"], stat: PropsStat.REBOUNDS },
+  { names: ["Rebounds", "REBS", "rebounds"], stat: PropsStat.REBOUNDS },
   { names: ["DoubleDouble", "Double-Double"], stat: PropsStat.DOUBLE_DOUBLE },
   {
     names: [
@@ -192,6 +205,7 @@ const statMaps = [
       "ThreePointFieldGoals",
       "3-PT Made",
       "Three Points Made",
+      "Three_Pointers_Made",
     ],
     stat: PropsStat.THREE_POINTERS_MADE,
   },

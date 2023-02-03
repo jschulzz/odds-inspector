@@ -11,6 +11,7 @@ import { getPrizePicksLines } from "../import/prizepicks";
 import { getThrive } from "../import/thrive";
 import { getActionLabsProps } from "../import/action-labs";
 import { Bankroll } from "../bankroll/bankroll";
+import { getNoHouse } from "../import/no-house";
 
 const bookWeights = new Map([
   [Book.PINNACLE, 4],
@@ -53,6 +54,7 @@ export const findOutliers = async (league: League) => {
   const pinnacleProps = await getPinnacleProps(league);
   const underdogProps = await getUnderdogLines(league);
   const prizepicksProps = await getPrizePicksLines(league);
+  const noHouseProps = await getNoHouse(league);
   // const thriveProps = await getThrive(league);
   const allProps = [
     ...betKarmaProps,
@@ -60,6 +62,7 @@ export const findOutliers = async (league: League) => {
     ...pinnacleProps,
     ...underdogProps,
     ...prizepicksProps,
+    ...noHouseProps,
     // ...thriveProps,
   ];
   let remainingProps = [...allProps];
@@ -80,15 +83,15 @@ export const findOutliers = async (league: League) => {
 };
 
 export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
-  const goodDFSPlays: Prop[] = [];
   const goodPlays: any[] = [];
-  const bankroll = new Bankroll()
+  const bankroll = new Bankroll();
   const bannedProps = [PropsStat.POWER_PLAY_POINTS];
 
   const DFSPlatforms: (Book | PropsPlatform)[] = [
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
     PropsPlatform.THRIVE,
+    PropsPlatform.NO_HOUSE
   ];
   const orderedBooks: (Book | PropsPlatform)[] = [
     Book.PINNACLE,
@@ -122,13 +125,15 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
     }
     return a[0].team > b[0].team ? 1 : -1;
   });
+
   const tableData = sortedGroups
     .map((group) => {
       let isInteresting = false;
+      let shouldHighlight = false;
       const allValues = group.map((p) => p.value);
       const lowestLine = Math.min(...allValues);
       const highestLine = Math.max(...allValues);
-      let shouldHighlight = false;
+
       if (lowestLine / highestLine < 0.8 && highestLine > 5) {
         shouldHighlight = true;
       }
@@ -143,8 +148,6 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
       const mostPopularLine = [...linePopularity.entries()].sort((a, b) =>
         a[1] > b[1] ? -1 : 1
       )[0][0];
-
-      // console.log(linePopularity, mostPopularLine);
 
       const matchingProps = group
         .filter((p) => p.value === Number(mostPopularLine))
@@ -217,17 +220,13 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
 
         const isValueWayOff =
           Math.min(propByBook.value, mostPopularLine) /
-          Math.max(propByBook.value, mostPopularLine) <
-          0.9 &&
+            Math.max(propByBook.value, mostPopularLine) <
+            0.95 &&
           mostPopularLine > 10 &&
-          (propByBook.value > mostPopularLine
-            ? propByBook.choice === LineChoice.UNDER
-            : propByBook.choice === LineChoice.OVER);
-
-        const isGoodDFSPlay =
-          DFSPlatforms.includes(propByBook.book as PropsPlatform) &&
-          (isValueWayOff ||
-            (propByBook.value === mostPopularLine && isHighLikelihood));
+          propByBook.choice ===
+            (propByBook.value > mostPopularLine
+              ? LineChoice.UNDER
+              : LineChoice.OVER);
 
         const beatsAvgValue =
           // !DFSPlatforms.includes(propByBook.book as PropsPlatform) &&
@@ -244,8 +243,15 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         ).includes(book);
 
         if (
+          shouldHighlightPrice &&
+          DFSPlatforms.includes(propByBook.book as PropsPlatform)
+        ) {
+          isInteresting = true;
+        }
+
+        if (
           isValidBook &&
-          (shouldHighlightPrice || isGoodDFSPlay) &&
+          shouldHighlightPrice &&
           !bannedProps.includes(propByBook.stat)
         ) {
           isInteresting = true;
@@ -256,7 +262,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
           priceLabel = colors.bgYellow(priceLabel);
           const priceEV =
             impliedProbability *
-            Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
+              Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
             (1 - impliedProbability);
           if (propByBook.value === mostPopularLine && priceEV > 0.04) {
             const recommendedWager = bankroll.calculateKelly(
@@ -276,10 +282,6 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
         }
 
         let valueLabel = `@${propByBook.value.toString()}`;
-        if (isGoodDFSPlay) {
-          goodDFSPlays.push(propByBook);
-          valueLabel = colors.bgCyan(valueLabel);
-        }
 
         if (highestLine === lowestLine) {
           return `${colors.gray(valueLabel)}\n${priceLabel}`;

@@ -6,16 +6,24 @@ import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
 import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
 import { findMatchingEvents } from "./find-matching-events";
-import { GameTotal, LineChoice, Spread, TeamTotal } from "../types/lines";
+import {
+  GameTotal,
+  LineChoice,
+  Moneyline,
+  Spread,
+  TeamTotal,
+} from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
 import { Bankroll } from "../bankroll/bankroll";
+import { readOddsAPI } from "../import/odds-api";
 
 interface Play {
   expectedValue: number;
   likelihood: number;
   line: Line;
-  matchingPinnacleLine: Line;
-  width: number;
+  fairLine?: number;
+  matchingPinnacleLine?: Line;
+  width?: number;
 }
 
 interface DisplayPlay {
@@ -54,7 +62,6 @@ const findGoodPlays = (
       // console.log("couldnt pinnacle line for", bettableLine);
       return;
     }
-    // console.log("found pinnacle line for", bettableLine, matchingPinnacleLine);
     const pinnacleProbabilityFor = Odds.fromVigAmerican(
       matchingPinnacleLine.price,
       matchingPinnacleLine.otherOutcomePrice
@@ -95,29 +102,101 @@ const combineLines = (sources: SourcedOdds[]): SourcedOdds => {
   return combinedOdds;
 };
 
+const buildGroups = (sources: SourcedOdds): Line[][] => {
+  const lineTypes = [
+    sources.moneylines,
+    sources.gameTotals,
+    sources.spreads,
+    sources.teamTotals,
+  ];
+  const groups: Line[][] = [];
+  lineTypes.forEach((lineType) => {
+    let remainingLines = [...lineType];
+    while (remainingLines.length) {
+      const targetLine = remainingLines.pop() as Line;
+      const matchingLines = findMatchingEvents(targetLine, sources, {
+        wantSameChoice: true,
+        wantOppositeValue: false,
+      });
+      const group = [targetLine, ...matchingLines].filter((l) => l.price);
+      if (group.length >= 2) groups.push(group);
+      remainingLines = remainingLines.filter((line) => !group.includes(line));
+    }
+  });
+  return groups;
+};
+
+const evaluateGroup = (group: Line[]) => {
+  let fairLine = 0,
+    beatsFairLine = false;
+  let likelihoodSum = 0;
+  let count = 0;
+  group.forEach((line: Line) => {
+    let weight = 1;
+    if (line.book === Book.PINNACLE) {
+      weight = 3;
+    }
+    if (line.book === Book.CIRCA) {
+      weight = 2;
+    }
+    if (line.book === Book.BETONLINE) {
+      weight = 2;
+    }
+    const likelihood = Odds.fromVigAmerican(
+      line.price,
+      line.otherOutcomePrice
+    ).toProbability();
+    count += weight;
+    likelihoodSum += likelihood * weight;
+  });
+  const likelihood = likelihoodSum / count;
+  fairLine = Odds.probabilityToAmericanOdds(likelihood);
+
+  const beatingFairLine = group.filter((line) => line.price > fairLine);
+  // beatsFairLine = !!beatingFairLine.length;
+  return { fairLine, beatingFairLine };
+};
+
 export const findPositiveEv = async (league: League) => {
   const pinnacleLines = await getPinnacle(league);
   // const circaLines = await getCircaLines(league);
   const actionNetworkLines = await getActionNetworkLines(league);
-  // const otherLines = await getOddspedia(league, true);
+  // const oddsAPILines = readOddsAPI(league);
 
   console.log("Acquired Odds");
 
-  const bettableLines = combineLines([
-    // pinnacleLines,
-    actionNetworkLines,
-    // otherLines,
-  ]);
-  console.log(pinnacleLines.moneylines.length);
-  // console.log(circaLines.moneylines.length);
-  console.log(actionNetworkLines.moneylines.length);
-  // console.log(otherLines.moneylines.length);
+  const bettableLines = combineLines([actionNetworkLines]);
   const allLines = combineLines([
     pinnacleLines,
     // circaLines,
     actionNetworkLines,
-    // otherLines,
+    // oddsAPILines,
   ]);
+
+  const groups = buildGroups(allLines);
+
+  // const positiveEVPlays: Play[] = groups
+  //   .map((group) => {
+  //     const plays: Play[] = [];
+  //     const { fairLine, beatingFairLine } = evaluateGroup(group);
+  //     if (!beatingFairLine.length) {
+  //       return [];
+  //     }
+  //     const likelihood = Odds.fromFairLine(fairLine).toProbability();
+
+  //     beatingFairLine.forEach((line) => {
+  //       const payoutMultiplier = Odds.fromFairLine(
+  //         line.price
+  //       ).toPayoutMultiplier();
+  //       const expectedValue = payoutMultiplier * likelihood - (1 - likelihood);
+  //       const play: Play = { expectedValue, likelihood, line, fairLine };
+  //       if (line.price) plays.push(play);
+  //     });
+  //     return plays;
+  //   })
+  //   .flat();
+
+  // console.log(groups);
 
   const moneylines = findGoodPlays(bettableLines.moneylines, pinnacleLines);
   const spreads = findGoodPlays(bettableLines.spreads, pinnacleLines);
@@ -130,7 +209,7 @@ export const findPositiveEv = async (league: League) => {
     ...gameTotals,
   ];
 
-  console.log(`Found Positive ${positiveEVPlays.length} EV Plays`);
+  console.log(`Found ${positiveEVPlays.length} Positive EV Plays`);
 
   const sortedPlays: DisplayPlay[] = positiveEVPlays
     .sort(
@@ -140,7 +219,7 @@ export const findPositiveEv = async (league: League) => {
     .map((play) => ({
       line: play.line,
       EV: play.expectedValue,
-      width: play.width,
+      width: play.width || 0,
       likelihood: play.likelihood,
       homeTeam: play.line.homeTeam,
       awayTeam: play.line.awayTeam,
@@ -151,10 +230,12 @@ export const findPositiveEv = async (league: League) => {
       book: play.line.book,
       price: play.line.price,
       side: (play.line as TeamTotal).side,
-      fair: play.matchingPinnacleLine.price,
-      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${(play.line as Spread).value
-        }-${play.line.type}-${play.line.period}`,
-    }));
+      fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
+      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${
+        (play.line as Spread).value
+      }-${play.line.type}-${play.line.period}`,
+    }))
+    .filter((play) => play.fair < 200);
 
   return formatResults(sortedPlays, allLines);
 };
@@ -252,7 +333,8 @@ export const formatResults = async (
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${(otherValue as TeamTotal | GameTotal | Spread).price
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
+            (otherValue as TeamTotal | GameTotal | Spread).price
           }`
         );
       }
