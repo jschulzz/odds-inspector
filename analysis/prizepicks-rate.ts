@@ -65,7 +65,7 @@ export const evaluatePrizePicks = () => {
   const totalCorrect = results.reduce((prev, curr) => prev + curr.correct, 0);
   const totalWrong = results.reduce((prev, curr) => prev + curr.wrong, 0);
   const successRate = totalCorrect / (totalCorrect + totalWrong);
-  console.log(`Success Rate: ${(successRate * 100).toFixed(2)}%`);
+  console.log(`Success Rate: ${(successRate * 100).toFixed(2)}% over ${totalCorrect + totalWrong} picks`);
 
   const possibleResults = [
     { correctCount: 0, possibleWays: 1, payout: -5 },
