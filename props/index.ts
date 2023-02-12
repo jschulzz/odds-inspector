@@ -17,7 +17,7 @@ const statMaps = [
       "Total Yards",
       "Pass+Rush Yds",
       "Pass YDS, Rush YDS",
-      "pass_yards+rush_yards"
+      "pass_yards+rush_yards",
     ],
     stat: PropsStat.PASSING_RUSHING_YARDS,
   },
@@ -36,7 +36,7 @@ const statMaps = [
       "Passing TDs",
       "Pass TD's",
       "Pass TDs",
-      "passing_touchdowns"
+      "passing_touchdowns",
     ],
     stat: PropsStat.PASSING_TDS,
   },
@@ -72,7 +72,12 @@ const statMaps = [
     stat: PropsStat.LONGEST_RECEPTION,
   },
   {
-    names: ["Rushing + Receiving Yards", "Rush+Rec Yds", "Rush YDS, Rec YDS", "rec_yards+rush_yards"],
+    names: [
+      "Rushing + Receiving Yards",
+      "Rush+Rec Yds",
+      "Rush YDS, Rec YDS",
+      "rec_yards+rush_yards",
+    ],
     stat: PropsStat.RECEIVING_RUSHING_YARDS,
   },
   {
@@ -128,8 +133,8 @@ const statMaps = [
     names: ["Tackles + Assists", "Tackles+Ast"],
     stat: PropsStat.TACKLES_ASSISTS,
   },
-  { names: ["Tackles"], stat: PropsStat.TACKLES },
-  { names: ["Sacks"], stat: PropsStat.SACKS },
+  { names: ["Tackles", "tackles"], stat: PropsStat.TACKLES },
+  { names: ["Sacks", "sacks"], stat: PropsStat.SACKS },
 
   { names: ["Strikeouts", "Ks"], stat: PropsStat.STRIKEOUTS },
   { names: ["Walks"], stat: PropsStat.WALKS },
@@ -160,7 +165,10 @@ const statMaps = [
   { names: ["Assists", "ASTs", "ASTS", "assists"], stat: PropsStat.ASSISTS },
   { names: ["Points", "PTS", "GOLs, ASTs", "points"], stat: PropsStat.POINTS },
   { names: ["Power Play Points"], stat: PropsStat.POWER_PLAY_POINTS },
-  { names: ["Saves", "Goalie Saves", "SAVs", "goal_tending_saves"], stat: PropsStat.SAVES },
+  {
+    names: ["Saves", "Goalie Saves", "SAVs", "goal_tending_saves"],
+    stat: PropsStat.SAVES,
+  },
   { names: ["Goals Against", "Goals Allowed"], stat: PropsStat.GOALS_AGAINST },
 
   { names: ["Steals", "STLS"], stat: PropsStat.STEALS },
