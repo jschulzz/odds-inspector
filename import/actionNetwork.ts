@@ -26,6 +26,7 @@ const leagueMap = new Map([
   [League.MLB, "mlb?"],
   [League.NFL, "nfl?"],
   [League.TENNIS, "atp?period=competition&"],
+  [League.UFC, "ufc?period=competition&"],
 ]);
 
 const periodMap = new Map([
@@ -68,7 +69,7 @@ export const getActionNetworkLines = async (
       (team: any) => team.id === game.away_team_id || team.side === "away"
     );
 
-    if (league === League.TENNIS) {
+    if (league === League.TENNIS || league === League.UFC) {
       homeTeam.display_name = homeTeam.player.full_name;
       awayTeam.display_name = awayTeam.player.full_name;
     }

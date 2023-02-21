@@ -175,39 +175,39 @@ export const findPositiveEv = async (league: League) => {
 
   const groups = buildGroups(allLines);
 
-  // const positiveEVPlays: Play[] = groups
-  //   .map((group) => {
-  //     const plays: Play[] = [];
-  //     const { fairLine, beatingFairLine } = evaluateGroup(group);
-  //     if (!beatingFairLine.length) {
-  //       return [];
-  //     }
-  //     const likelihood = Odds.fromFairLine(fairLine).toProbability();
+  const positiveEVPlays: Play[] = groups
+    .map((group) => {
+      const plays: Play[] = [];
+      const { fairLine, beatingFairLine } = evaluateGroup(group);
+      if (!beatingFairLine.length) {
+        return [];
+      }
+      const likelihood = Odds.fromFairLine(fairLine).toProbability();
 
-  //     beatingFairLine.forEach((line) => {
-  //       const payoutMultiplier = Odds.fromFairLine(
-  //         line.price
-  //       ).toPayoutMultiplier();
-  //       const expectedValue = payoutMultiplier * likelihood - (1 - likelihood);
-  //       const play: Play = { expectedValue, likelihood, line, fairLine };
-  //       if (line.price) plays.push(play);
-  //     });
-  //     return plays;
-  //   })
-  //   .flat();
+      beatingFairLine.forEach((line) => {
+        const payoutMultiplier = Odds.fromFairLine(
+          line.price
+        ).toPayoutMultiplier();
+        const expectedValue = payoutMultiplier * likelihood - (1 - likelihood);
+        const play: Play = { expectedValue, likelihood, line, fairLine };
+        if (line.price) plays.push(play);
+      });
+      return plays;
+    })
+    .flat();
 
   // console.log(groups);
 
-  const moneylines = findGoodPlays(bettableLines.moneylines, pinnacleLines);
-  const spreads = findGoodPlays(bettableLines.spreads, pinnacleLines);
-  const teamTotals = findGoodPlays(bettableLines.teamTotals, pinnacleLines);
-  const gameTotals = findGoodPlays(bettableLines.gameTotals, pinnacleLines);
-  const positiveEVPlays = [
-    ...moneylines,
-    ...spreads,
-    ...teamTotals,
-    ...gameTotals,
-  ];
+  // const moneylines = findGoodPlays(bettableLines.moneylines, pinnacleLines);
+  // const spreads = findGoodPlays(bettableLines.spreads, pinnacleLines);
+  // const teamTotals = findGoodPlays(bettableLines.teamTotals, pinnacleLines);
+  // const gameTotals = findGoodPlays(bettableLines.gameTotals, pinnacleLines);
+  // const positiveEVPlays = [
+  //   ...moneylines,
+  //   ...spreads,
+  //   ...teamTotals,
+  //   ...gameTotals,
+  // ];
 
   console.log(`Found ${positiveEVPlays.length} Positive EV Plays`);
 
@@ -231,11 +231,14 @@ export const findPositiveEv = async (league: League) => {
       price: play.line.price,
       side: (play.line as TeamTotal).side,
       fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
-      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${
-        (play.line as Spread).value
-      }-${play.line.type}-${play.line.period}`,
+      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${(play.line as Spread).value
+        }-${play.line.type}-${play.line.period}`,
     }))
     .filter((play) => play.fair < 200);
+
+  console.log(`${sortedPlays.length} have a fair line of +200 or less`);
+
+
 
   return formatResults(sortedPlays, allLines);
 };
@@ -333,8 +336,7 @@ export const formatResults = async (
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
-            (otherValue as TeamTotal | GameTotal | Spread).price
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${(otherValue as TeamTotal | GameTotal | Spread).price
           }`
         );
       }

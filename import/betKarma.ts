@@ -1,7 +1,7 @@
 import axios from "axios";
 import { findBook } from "../books";
 import { findStat } from "../props";
-import { Book, League, Prop } from "../types";
+import { Book, League, Prop, PropsPlatform } from "../types";
 import { LineChoice } from "../types/lines";
 
 export const getBetKarma = async (league: League): Promise<Prop[]> => {
@@ -46,7 +46,7 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
         const team = playerMetadata.image;
         offer.outcomes.forEach((outcome: any) => {
           const book = findBook(outcome.source);
-          if (!book) {
+          if (!book || book === PropsPlatform.PRIZEPICKS) {
             return;
           }
           let oddsSource = undefined;

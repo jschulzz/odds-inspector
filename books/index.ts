@@ -1,4 +1,4 @@
-import { Book } from "../types";
+import { Book, PropsPlatform } from "../types";
 
 const bookMaps = [
   { names: ["Caesars", "William Hill", "CAESARS"], book: Book.CAESARS },
@@ -16,6 +16,7 @@ const bookMaps = [
   { names: ["Pinnacle"], book: Book.PINNACLE },
   { names: ["Borgata"], book: Book.BORGATA },
   { names: ["TWINSPIRES"], book: Book.TWINSPIRES },
+  { names: ["PrizePicks"], book: PropsPlatform.PRIZEPICKS },
 ];
 
 export const findBook = (book: string) => {

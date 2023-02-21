@@ -49,6 +49,7 @@ const statMap = new Map([
   [66, PropsStat.RECEIVING_RUSHING_YARDS],
 
   [31, PropsStat.SHOTS_ON_GOAL],
+  [38, PropsStat.SAVES],
   [55, PropsStat.POWER_PLAY_POINTS],
   [279, PropsStat.ASSISTS],
   [280, PropsStat.GOALS_PLUS_ASSISTS],
