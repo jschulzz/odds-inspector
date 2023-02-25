@@ -17,6 +17,8 @@ const bookMaps = [
   { names: ["Borgata"], book: Book.BORGATA },
   { names: ["TWINSPIRES"], book: Book.TWINSPIRES },
   { names: ["PrizePicks"], book: PropsPlatform.PRIZEPICKS },
+  { names: ["Underdog"], book: PropsPlatform.UNDERDOG },
+  { names: ["MKF"], book: PropsPlatform.MONKEY_KNIFE_FIGHT },
 ];
 
 export const findBook = (book: string) => {

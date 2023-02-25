@@ -314,7 +314,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
       }
       return [];
     })
-    .filter((x) => x.length);
+    .filter((x) => x.length); 
   const headers = ["Label", ...allBooks];
   const HEADER_GAP = 15;
   for (let i = 0; i + i / HEADER_GAP < tableData.length; i += HEADER_GAP) {

@@ -163,7 +163,7 @@ const statMaps = [
     stat: PropsStat.SHOTS_ON_GOAL,
   },
   { names: ["Assists", "ASTs", "ASTS", "assists"], stat: PropsStat.ASSISTS },
-  { names: ["Points", "PTS", "GOLs, ASTs", "points"], stat: PropsStat.POINTS },
+  { names: ["Points", "PTS", "GOLs, ASTs", "points", "Goals + Assists"], stat: PropsStat.POINTS },
   { names: ["Power Play Points"], stat: PropsStat.POWER_PLAY_POINTS },
   {
     names: ["Saves", "Goalie Saves", "SAVs", "goal_tending_saves"],

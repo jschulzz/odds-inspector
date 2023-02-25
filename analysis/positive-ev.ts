@@ -118,7 +118,8 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
         wantSameChoice: true,
         wantOppositeValue: false,
       });
-      const group = [targetLine, ...matchingLines].filter((l) => l.price);
+
+      const group = matchingLines.filter((l) => l.price);
       if (group.length >= 2) groups.push(group);
       remainingLines = remainingLines.filter((line) => !group.includes(line));
     }
@@ -127,8 +128,7 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
 };
 
 const evaluateGroup = (group: Line[]) => {
-  let fairLine = 0,
-    beatsFairLine = false;
+  let fairLine = 0;
   let likelihoodSum = 0;
   let count = 0;
   group.forEach((line: Line) => {
@@ -231,14 +231,13 @@ export const findPositiveEv = async (league: League) => {
       price: play.line.price,
       side: (play.line as TeamTotal).side,
       fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
-      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${(play.line as Spread).value
-        }-${play.line.type}-${play.line.period}`,
+      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${
+        (play.line as Spread).value
+      }-${play.line.type}-${play.line.period}`,
     }))
     .filter((play) => play.fair < 200);
 
   console.log(`${sortedPlays.length} have a fair line of +200 or less`);
-
-
 
   return formatResults(sortedPlays, allLines);
 };
@@ -336,7 +335,8 @@ export const formatResults = async (
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${(otherValue as TeamTotal | GameTotal | Spread).price
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
+            (otherValue as TeamTotal | GameTotal | Spread).price
           }`
         );
       }
