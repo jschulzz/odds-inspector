@@ -117,7 +117,7 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
       const matchingLines = findMatchingEvents(targetLine, sources, {
         wantSameChoice: true,
         wantOppositeValue: false,
-      });
+      }).filter(x => x.book !== Book.POINTSBET);
 
       const group = matchingLines.filter((l) => l.price);
       if (group.length >= 2) groups.push(group);
@@ -231,9 +231,8 @@ export const findPositiveEv = async (league: League) => {
       price: play.line.price,
       side: (play.line as TeamTotal).side,
       fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
-      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${
-        (play.line as Spread).value
-      }-${play.line.type}-${play.line.period}`,
+      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${(play.line as Spread).value
+        }-${play.line.type}-${play.line.period}`,
     }))
     .filter((play) => play.fair < 200);
 
@@ -335,8 +334,7 @@ export const formatResults = async (
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
-            (otherValue as TeamTotal | GameTotal | Spread).price
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${(otherValue as TeamTotal | GameTotal | Spread).price
           }`
         );
       }

@@ -43,11 +43,16 @@ export const getActionNetworkLines = async (
   league: League
 ): Promise<SourcedOdds> => {
   const leagueKey = leagueMap.get(league);
+  let today = new Date();
+  let yyyy = today.getFullYear();
+  let mm = (today.getMonth() + 1).toString().padStart(2, "0"); // Months start at 0
+  let dd = today.getDate().toString().padStart(2, "0");
+  const startDate = `${yyyy}${mm}${dd}`;
   if (!leagueKey) {
     throw new Error("Unknown league");
   }
 
-  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,68,973,939,972,1005,974,76,75,123`;
+  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
     moneylines: [],

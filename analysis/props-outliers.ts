@@ -15,8 +15,8 @@ import { getNoHouse } from "../import/no-house";
 
 const bookWeights = new Map([
   [Book.PINNACLE, 4],
-  [Book.DRAFTKINGS, 1.5],
-  [Book.FANDUEL, 1.5],
+  [Book.DRAFTKINGS, 2],
+  [Book.FANDUEL, 2],
   [Book.TWINSPIRES, 0],
   [Book.BETRIVERS, 0],
 ]);
@@ -264,7 +264,7 @@ export const formatOutliers = (groups: Prop[][], allProps: Prop[]) => {
             impliedProbability *
               Odds.fromFairLine(propByBook.price).toPayoutMultiplier() -
             (1 - impliedProbability);
-          if (propByBook.value === mostPopularLine && priceEV > 0.04) {
+          if (propByBook.value === mostPopularLine && priceEV > 0.02) {
             const recommendedWager = bankroll.calculateKelly(
               impliedProbability,
               Odds.fromFairLine(propByBook.price).toPayoutMultiplier()
