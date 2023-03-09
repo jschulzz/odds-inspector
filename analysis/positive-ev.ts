@@ -142,6 +142,12 @@ const evaluateGroup = (group: Line[]) => {
     if (line.book === Book.BETONLINE) {
       weight = 2;
     }
+    if (line.book === Book.DRAFTKINGS) {
+      weight = 1.5;
+    }
+    if (line.book === Book.FANDUEL) {
+      weight = 1.5;
+    }
     const likelihood = Odds.fromVigAmerican(
       line.price,
       line.otherOutcomePrice
