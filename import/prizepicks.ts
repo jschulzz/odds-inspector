@@ -82,7 +82,7 @@ export const getPrizePicksLines = async (league: League) => {
       stat,
       value,
       book: PropsPlatform.PRIZEPICKS,
-      price: -119,
+      price: -112,
     };
     const overProp: Prop = {
       ...standard,

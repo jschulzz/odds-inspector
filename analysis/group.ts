@@ -1,6 +1,6 @@
 import { compareTwoStrings } from "string-similarity";
 import { Odds } from "../odds/odds";
-import { Book, PropsPlatform } from "../types";
+import { Book, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 const bookWeights = new Map<Book | PropsPlatform, number>([
@@ -9,8 +9,9 @@ const bookWeights = new Map<Book | PropsPlatform, number>([
   [Book.FANDUEL, 2],
   [Book.TWINSPIRES, 0],
   [Book.BETRIVERS, 0],
+  [Book.CAESARS, 0.5],
   [PropsPlatform.PRIZEPICKS, 0],
-  [PropsPlatform.UNDERDOG, 1],
+  [PropsPlatform.UNDERDOG, 0],
 ]);
 
 export interface Price {
@@ -21,7 +22,7 @@ export interface Price {
 
 export interface GroupArgs {
   name: string;
-  stat: string;
+  stat: PropsStat;
   value: number;
   prices: Price[];
   side: LineChoice;
@@ -29,7 +30,7 @@ export interface GroupArgs {
 
 export class Group {
   public name: string;
-  public stat: string;
+  public stat: PropsStat;
   public prices: Price[];
   public value: number;
   public side: string;
@@ -80,6 +81,9 @@ export class Group {
   };
   maxEV = () => {
     const EVs = this.findEV();
+    // if (this.name === "Bradley Beal (WAS)" && this.stat === PropsStat.ASSISTS) {
+    //   console.log(this, EVs, this.getLikelihood());
+    // }
     return Math.max(...EVs.map((ev) => ev.EV));
   };
 }

@@ -109,19 +109,17 @@ export const findOutliers = async (league: League) => {
     (group) =>
       group.prices.length >= 3 ||
       group.prices.some((price) =>
-        [PropsPlatform.PRIZEPICKS, PropsPlatform.UNDERDOG].includes(
-          price.book as PropsPlatform
-        )
+        [
+          PropsPlatform.PRIZEPICKS,
+          PropsPlatform.UNDERDOG,
+          PropsPlatform.NO_HOUSE,
+        ].includes(price.book as PropsPlatform)
       )
   );
   return formatOutliers(groups);
 };
 
 export const formatOutliers = (groups: Group[]) => {
-  const goodPlays: any[] = [];
-  const bankroll = new Bankroll();
-  const bannedProps = [PropsStat.POWER_PLAY_POINTS];
-
   const DFSPlatforms: (Book | PropsPlatform)[] = [
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
@@ -174,6 +172,7 @@ export const formatOutliers = (groups: Group[]) => {
 
   const tableData = sortedGroups
     .map((group) => {
+      let isInteresting = false;
       const buildRateString = (g: Group) =>
         `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`;
 
@@ -185,6 +184,12 @@ export const formatOutliers = (groups: Group[]) => {
 
       const impliedProbability = group.getLikelihood();
       const isHighLikelihood = impliedProbability > 0.56;
+      const isPositiveEV = group.maxEV() > 0;
+      const isMisvaluedDFS = group.prices.some(
+        (x) =>
+          DFSPlatforms.includes(x.book) &&
+          relatedGroups.flatMap((g) => g.prices).length >= 4
+      );
 
       const coloredLikelihood = ratesOfEachPrice
         .map((rate, idx) => {
@@ -202,6 +207,24 @@ export const formatOutliers = (groups: Group[]) => {
       let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
         if (EVs.map((ev) => ev.book).includes(prop.book)) {
+          if (isMisvaluedDFS) {
+            if (
+              group.side === LineChoice.OVER &&
+              relatedGroups[0].value > group.value &&
+              relatedGroups[0].getLikelihood() > 0.49
+            ) {
+              isInteresting = true;
+              return colors.green(`@${value}\n${prop.price}`);
+            }
+            if (
+              group.side === LineChoice.UNDER &&
+              relatedGroups[0].value < group.value &&
+              relatedGroups[0].getLikelihood() > 0.49
+            ) {
+              isInteresting = true
+              return colors.green(`@${value}\n${prop.price}`);
+            }
+          }
           // within this group
           return `@${value}\n${prop.price}`;
         } else {
@@ -231,14 +254,7 @@ export const formatOutliers = (groups: Group[]) => {
         return priceLabel;
       });
 
-      const isPositiveEV = group.maxEV() > 0;
-      const isMisvaluedDFS = group.prices.some(
-        (x) =>
-          DFSPlatforms.includes(x.book) &&
-          relatedGroups.flatMap((g) => g.prices).length >= 4
-      );
-
-      if (isPositiveEV || isMisvaluedDFS) {
+      if (isPositiveEV || isInteresting) {
         return [label, ...statsPerBook];
       }
       return [];
@@ -255,10 +271,5 @@ export const formatOutliers = (groups: Group[]) => {
     columnDefault: { width: 10, wrapWord: true },
   };
 
-  const cleanPlays = goodPlays.filter(
-    (p) => !bannedProps.includes(p.propByBook.stat)
-  );
-  cleanPlays.sort((a, b) => (a.priceEV > b.priceEV ? 1 : -1));
-  console.log(cleanPlays);
   return table(tableData, config);
 };
