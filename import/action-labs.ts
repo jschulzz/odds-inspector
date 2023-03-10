@@ -87,7 +87,7 @@ export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
 
   for (const bookId of bookMap.keys()) {
     const book = bookMap.get(bookId);
-    if (!book) {
+    if (!book || [Book.UNIBET, Book.TWINSPIRES].includes(book)) {
       continue;
     }
     const { data } = await axios.get(

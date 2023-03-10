@@ -14,7 +14,6 @@ import { Bankroll } from "../bankroll/bankroll";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
 
-
 const findEquivalentPlays = (
   prop: Prop,
   corpus: Prop[],
@@ -72,33 +71,49 @@ export const findOutliers = async (league: League) => {
       name: `${prop.player} (${prop.team})`,
       stat: prop.stat,
       side: prop.choice,
-      prices: plays.map(play => {
-
-        const otherPlay = allProps.find(otherPlay => play.book === otherPlay.book && play.stat === otherPlay.stat && play.choice !== otherPlay.choice && compareTwoStrings(otherPlay.player, play.player) > 0.85)
+      prices: plays.map((play) => {
+        const otherPlay = allProps.find(
+          (otherPlay) =>
+            play.book === otherPlay.book &&
+            play.stat === otherPlay.stat &&
+            play.choice !== otherPlay.choice &&
+            compareTwoStrings(otherPlay.player, play.player) > 0.85
+        );
         if (!otherPlay) {
           return {
             book: play.book,
             price: play.price,
-            likelihood: 0.5
-          }
+            likelihood: 0.5,
+          };
         }
-        const likelihood = Odds.fromVigAmerican(play.price, otherPlay.price).toProbability()
+        const likelihood = Odds.fromVigAmerican(
+          play.price,
+          otherPlay.price
+        ).toProbability();
 
         return {
           book: play.book,
           price: play.price,
-          likelihood
-        }
+          likelihood,
+        };
       }),
-      value: prop.value
-    })
+      value: prop.value,
+    });
 
     remainingProps = remainingProps.filter((p) => !plays.includes(p));
     propGroups.push(group);
   }
 
   // @ts-ignore
-  const groups = propGroups.filter((group) => group.prices.length >= 3 || group.prices.some(price => [PropsPlatform.PRIZEPICKS, PropsPlatform.UNDERDOG].includes(price.book)));
+  const groups = propGroups.filter(
+    (group) =>
+      group.prices.length >= 3 ||
+      group.prices.some((price) =>
+        [PropsPlatform.PRIZEPICKS, PropsPlatform.UNDERDOG].includes(
+          price.book as PropsPlatform
+        )
+      )
+  );
   return formatOutliers(groups);
 };
 
@@ -111,7 +126,7 @@ export const formatOutliers = (groups: Group[]) => {
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
     PropsPlatform.THRIVE,
-    PropsPlatform.NO_HOUSE
+    PropsPlatform.NO_HOUSE,
   ];
   const orderedBooks: (Book | PropsPlatform)[] = [
     Book.PINNACLE,
@@ -125,10 +140,10 @@ export const formatOutliers = (groups: Group[]) => {
     // PropsPlatform.PRIZEPICKS,
     // PropsPlatform.THRIVE,
   ];
-  const allBooks = new Set(groups.flatMap((g) => g.prices.map((p) => p.book)))
-  allBooks.delete(Book.UNIBET)
-  allBooks.delete(Book.TWINSPIRES)
-  const sortedBooks = [...allBooks]
+  const allBooks = new Set(groups.flatMap((g) => g.prices.map((p) => p.book)));
+  allBooks.delete(Book.UNIBET);
+  allBooks.delete(Book.TWINSPIRES);
+  const sortedBooks = [...allBooks];
   sortedBooks.sort((a, b) => {
     if (orderedBooks.indexOf(a) === -1) {
       return 1;
@@ -143,12 +158,12 @@ export const formatOutliers = (groups: Group[]) => {
   });
 
   const sortedGroups = groups.sort((a, b) => {
-    if (a.findRelatedGroups(groups).flatMap(x => x.prices).length >= 4)
-      return 1
-    if (b.findRelatedGroups(groups).flatMap(x => x.prices).length >= 4)
-      return -1
-    return a.maxEV() < b.maxEV() ? 1 : -1
-  })
+    if (a.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
+      return 1;
+    if (b.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
+      return -1;
+    return a.maxEV() < b.maxEV() ? 1 : -1;
+  });
 
   // const sortedGroups = groups.sort((a, b) => {
   //   if (a[0].team === b[0].team) {
@@ -159,61 +174,69 @@ export const formatOutliers = (groups: Group[]) => {
 
   const tableData = sortedGroups
     .map((group) => {
-
       const buildRateString = (g: Group) =>
-        `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`
+        `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`;
 
+      const relatedGroups = group.findRelatedGroups(groups);
 
-      const relatedGroups = group.findRelatedGroups(groups)
-
-      const ratesOfEachPrice = [group, ...relatedGroups].map(buildRateString)
+      const ratesOfEachPrice = [group, ...relatedGroups].map(buildRateString);
 
       const eventString = `${group.name}: ${group.side} ${group.stat}`;
 
-      const impliedProbability = group.getLikelihood()
-      const isHighLikelihood = impliedProbability > 0.56
+      const impliedProbability = group.getLikelihood();
+      const isHighLikelihood = impliedProbability > 0.56;
 
-      const coloredLikelihood = ratesOfEachPrice.map((rate, idx) => {
-        if (idx === 0 && isHighLikelihood) {
-          return colors.bgYellow(rate)
-        }
-        return rate
-      }).join('\n')
+      const coloredLikelihood = ratesOfEachPrice
+        .map((rate, idx) => {
+          if (idx === 0 && isHighLikelihood) {
+            return colors.bgYellow(rate);
+          }
+          return rate;
+        })
+        .join("\n");
       const label = `${eventString}\n${coloredLikelihood}`;
-      const allProps = [group.prices, ...relatedGroups.flatMap(g => g.prices)].flat()
-      let EVs = group.findEV()
+      const allProps = [
+        group.prices,
+        ...relatedGroups.flatMap((g) => g.prices),
+      ].flat();
+      let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
-        if (EVs.map(ev => ev.book).includes(prop.book)) {
+        if (EVs.map((ev) => ev.book).includes(prop.book)) {
           // within this group
-          return `@${value}\n${prop.price}`
+          return `@${value}\n${prop.price}`;
         } else {
-          return colors.gray(`@${value}\n${prop.price}`)
+          return colors.gray(`@${value}\n${prop.price}`);
         }
-      }
+      };
       const statsPerBook: string[] = sortedBooks.map((book) => {
         let propByBook = allProps.find((g) => g.book === book);
         if (!propByBook) {
           return "";
         }
-        let propValue = relatedGroups.find(g => g.prices.some(x => x.book === book))?.value || group.value
-        const EV = EVs.find(ev => ev.book === book)
+        let propValue =
+          relatedGroups.find((g) => g.prices.some((x) => x.book === book))
+            ?.value || group.value;
+        const EV = EVs.find((ev) => ev.book === book);
 
-        let EVLabel = ''
+        let EVLabel = "";
         if (EV && EV.EV > 0) {
-          EVLabel = `${(EV.EV * 100).toFixed(1).toString()}%`
+          EVLabel = `${(EV.EV * 100).toFixed(1).toString()}%`;
           if (EV.EV > 0.05) {
-            EVLabel = colors.bgGreen(EVLabel)
-          }
-          else if (EV.EV > 0.03) {
-            EVLabel = colors.bgYellow(EVLabel)
+            EVLabel = colors.bgGreen(EVLabel);
+          } else {
+            EVLabel = colors.bgYellow(EVLabel);
           }
         }
         let priceLabel = `${decorateProp(propByBook, propValue)}\n${EVLabel}`;
-        return priceLabel
+        return priceLabel;
       });
 
       const isPositiveEV = group.maxEV() > 0;
-      const isMisvaluedDFS = group.prices.some(x => DFSPlatforms.includes(x.book) && relatedGroups.flatMap(g => g.prices).length >= 4)
+      const isMisvaluedDFS = group.prices.some(
+        (x) =>
+          DFSPlatforms.includes(x.book) &&
+          relatedGroups.flatMap((g) => g.prices).length >= 4
+      );
 
       if (isPositiveEV || isMisvaluedDFS) {
         return [label, ...statsPerBook];

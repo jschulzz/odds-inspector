@@ -65,7 +65,7 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
           if (!oddsSource || !oddsSource.line) {
             return;
           }
-          if (book === Book.CAESARS) {
+          if ([Book.TWINSPIRES, Book.UNIBET].includes(book as Book)) {
             return;
           }
           const prop: Prop = {
