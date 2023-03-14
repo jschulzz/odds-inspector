@@ -51,6 +51,8 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
               PropsPlatform.PRIZEPICKS,
               PropsPlatform.MONKEY_KNIFE_FIGHT,
               PropsPlatform.UNDERDOG,
+              // we grab pointsbet from ActionLabs
+              Book.POINTSBET
             ].includes(book as PropsPlatform)
           ) {
             return;

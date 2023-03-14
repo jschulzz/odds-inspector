@@ -4,14 +4,15 @@ import { Book, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 const bookWeights = new Map<Book | PropsPlatform, number>([
-  [Book.PINNACLE, 4],
+  [Book.PINNACLE, 3],
   [Book.DRAFTKINGS, 2],
   [Book.FANDUEL, 2],
   [Book.TWINSPIRES, 0],
-  [Book.BETRIVERS, 0],
-  [Book.CAESARS, 0.5],
+  [Book.BETRIVERS, 1],
+  [Book.CAESARS, 1],
   [PropsPlatform.PRIZEPICKS, 0],
   [PropsPlatform.UNDERDOG, 0],
+  [PropsPlatform.NO_HOUSE, 0],
 ]);
 
 export interface Price {
@@ -64,7 +65,18 @@ export class Group {
     let sum = 0;
     return (
       this.prices.reduce((prev, curr) => {
-        const weight = bookWeights.get(curr.book) || 1;
+        let weight = 1;
+        if (bookWeights.has(curr.book)) {
+          // @ts-ignore
+          weight = bookWeights.get(curr.book);
+        }
+        // if (
+        //   this.name.includes("Anderson") &&
+        //   this.stat === PropsStat.REBOUNDS_PLUS_ASSISTS &&
+        //   this.side === LineChoice.OVER
+        // ) {
+        //   console.log(weight, curr.book, curr.likelihood);
+        // }
         sum += weight;
         return prev + weight * curr.likelihood;
       }, 0) / sum

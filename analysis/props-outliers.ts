@@ -13,6 +13,7 @@ import { getActionLabsProps } from "../import/action-labs";
 import { Bankroll } from "../bankroll/bankroll";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
+import { getActionNetworkProps } from "../import/actionNetwork";
 
 const findEquivalentPlays = (
   prop: Prop,
@@ -42,16 +43,18 @@ const findEquivalentPlays = (
   );
 
 export const findOutliers = async (league: League) => {
-  const betKarmaProps = await getBetKarma(league);
-  const actionLabsProps = await getActionLabsProps(league);
+  // const betKarmaProps = await getBetKarma(league);
+  // const actionLabsProps = await getActionLabsProps(league);
+  const actionNetworkProps = await getActionNetworkProps(league);
   const pinnacleProps = await getPinnacleProps(league);
   const underdogProps = await getUnderdogLines(league);
   const prizepicksProps = await getPrizePicksLines(league);
   const noHouseProps = await getNoHouse(league);
   // const thriveProps = await getThrive(league);
   const allProps = [
-    ...betKarmaProps,
-    ...actionLabsProps,
+    // ...betKarmaProps,
+    // ...actionLabsProps,
+    ...actionNetworkProps,
     ...pinnacleProps,
     ...underdogProps,
     ...prizepicksProps,
@@ -67,36 +70,38 @@ export const findOutliers = async (league: League) => {
       wantSameChoice: true,
     });
     const plays = [prop, ...equalProps];
+
+    let prices: Price[] = plays.map((play) => {
+      const otherPlay = allProps.find(
+        (otherPlay) =>
+          play.book === otherPlay.book &&
+          play.stat === otherPlay.stat &&
+          play.choice !== otherPlay.choice &&
+          compareTwoStrings(otherPlay.player, play.player) > 0.85
+      );
+      if (!otherPlay) {
+        return {
+          book: play.book,
+          price: play.price,
+          likelihood: 0.5,
+        };
+      }
+      const likelihood = Odds.fromVigAmerican(
+        play.price,
+        otherPlay.price
+      ).toProbability();
+
+      return {
+        book: play.book,
+        price: play.price,
+        likelihood,
+      };
+    });
     const group = new Group({
       name: `${prop.player} (${prop.team})`,
       stat: prop.stat,
       side: prop.choice,
-      prices: plays.map((play) => {
-        const otherPlay = allProps.find(
-          (otherPlay) =>
-            play.book === otherPlay.book &&
-            play.stat === otherPlay.stat &&
-            play.choice !== otherPlay.choice &&
-            compareTwoStrings(otherPlay.player, play.player) > 0.85
-        );
-        if (!otherPlay) {
-          return {
-            book: play.book,
-            price: play.price,
-            likelihood: 0.5,
-          };
-        }
-        const likelihood = Odds.fromVigAmerican(
-          play.price,
-          otherPlay.price
-        ).toProbability();
-
-        return {
-          book: play.book,
-          price: play.price,
-          likelihood,
-        };
-      }),
+      prices,
       value: prop.value,
     });
 
@@ -206,6 +211,7 @@ export const formatOutliers = (groups: Group[]) => {
       ].flat();
       let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
+        let text = `@${value}\n${prop.price}`;
         if (EVs.map((ev) => ev.book).includes(prop.book)) {
           if (isMisvaluedDFS) {
             if (
@@ -214,21 +220,21 @@ export const formatOutliers = (groups: Group[]) => {
               relatedGroups[0].getLikelihood() > 0.49
             ) {
               isInteresting = true;
-              return colors.green(`@${value}\n${prop.price}`);
+              return colors.green(text);
             }
             if (
               group.side === LineChoice.UNDER &&
               relatedGroups[0].value < group.value &&
               relatedGroups[0].getLikelihood() > 0.49
             ) {
-              isInteresting = true
-              return colors.green(`@${value}\n${prop.price}`);
+              isInteresting = true;
+              return colors.green(text);
             }
           }
           // within this group
-          return `@${value}\n${prop.price}`;
+          return text;
         } else {
-          return colors.gray(`@${value}\n${prop.price}`);
+          return colors.gray(text);
         }
       };
       const statsPerBook: string[] = sortedBooks.map((book) => {
