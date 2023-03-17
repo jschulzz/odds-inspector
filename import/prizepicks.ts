@@ -63,7 +63,7 @@ export const getPrizePicksLines = async (league: League) => {
       console.log(fixture.type);
     }
   });
-  const props: Prop[] = [];
+  let props: Prop[] = [];
 
   data.forEach((projection: any) => {
     const player = fixtures.players.find(
@@ -73,6 +73,7 @@ export const getPrizePicksLines = async (league: League) => {
     if (!stat) {
       return;
     }
+
     const value =
       projection.attributes.flash_sale_line_score ||
       projection.attributes.line_score;
@@ -92,7 +93,24 @@ export const getPrizePicksLines = async (league: League) => {
       ...standard,
       choice: LineChoice.UNDER,
     };
-    props.push(overProp, underProp);
+    const existingProps = props.filter((p) => {
+      return (
+        p.player === standard.player &&
+        p.stat === standard.stat &&
+        p.value !== standard.value
+      );
+    });
+    let newProps = [overProp, underProp]
+    if (existingProps.length) {
+      if (existingProps[0].value > standard.value) {
+        console.log("Found a better one");
+        props = props.filter((p) => !existingProps.includes(p));
+      } else {
+        console.log("Better one already exists");
+        newProps = [underProp]
+      }
+    }
+    props.push(...newProps);
   });
   return props;
 };

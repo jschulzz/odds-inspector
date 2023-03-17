@@ -161,11 +161,42 @@ export const formatOutliers = (groups: Group[]) => {
   });
 
   const sortedGroups = groups.sort((a, b) => {
+    if (a.maxEV() > 0 || b.maxEV() > 0) {
+      return a.maxEV() < b.maxEV() ? 1 : -1;
+    }
     if (a.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
       return 1;
     if (b.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
       return -1;
-    return a.maxEV() < b.maxEV() ? 1 : -1;
+    return -1;
+  });
+
+  sortedGroups.forEach((group) => {
+    const arbs = group.hasArbs(sortedGroups);
+    const totalStake = 100;
+    if (arbs.length) {
+      let text = `${group.name} on ${group.value} ${group.stat}\n`;
+      const stakes = arbs.map((arb) => {
+        const stake1 =
+          totalStake /
+          (Odds.fromFairLine(arb[0].price).toDecimal() /
+            Odds.fromFairLine(arb[1].price).toDecimal() +
+            1);
+        const stake2 =
+          totalStake /
+          (Odds.fromFairLine(arb[1].price).toDecimal() /
+            Odds.fromFairLine(arb[0].price).toDecimal() +
+            1);
+        const profit = `Profit: $${(
+          Odds.fromFairLine(arb[0].price).toPayoutMultiplier() * stake1 -
+          stake2
+        ).toFixed(2)}`;
+        return `\t${arb[0].price} @ ${arb[0].book}: ${stake1.toFixed(2)}\n\t${
+          arb[1].price
+        } @ ${arb[1].book}: ${stake2.toFixed(2)}\n\t${profit}\n`;
+      });
+      console.log(text + stakes.join("\n"));
+    }
   });
 
   // const sortedGroups = groups.sort((a, b) => {

@@ -4,7 +4,7 @@ import { Book, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 const bookWeights = new Map<Book | PropsPlatform, number>([
-  [Book.PINNACLE, 3],
+  [Book.PINNACLE, 2.5],
   [Book.DRAFTKINGS, 2],
   [Book.FANDUEL, 2],
   [Book.TWINSPIRES, 0],
@@ -91,11 +91,53 @@ export class Group {
         group.value !== this.value
     );
   };
+  findOppositeGroup = (groups: Group[]) => {
+    return groups.find(
+      (group) =>
+        group.stat === this.stat &&
+        group.side !== this.side &&
+        compareTwoStrings(group.name, this.name) > 0.85 &&
+        group.value === this.value
+    );
+  };
   maxEV = () => {
     const EVs = this.findEV();
     // if (this.name === "Bradley Beal (WAS)" && this.stat === PropsStat.ASSISTS) {
     //   console.log(this, EVs, this.getLikelihood());
     // }
     return Math.max(...EVs.map((ev) => ev.EV));
+  };
+  hasArbs = (groups: Group[]) => {
+    let arbs: Price[][] = [];
+    // don't need to do it twice, just ignore the overs
+    if(this.side === LineChoice.OVER){
+      return []
+    }
+    let oppositeOutcomeGroup = this.findOppositeGroup(groups);
+    if (!oppositeOutcomeGroup) {
+      return [];
+    }
+    this.prices.forEach((price1) => {
+      oppositeOutcomeGroup?.prices.forEach((price2) => {
+        if (
+          price1 !== price2 &&
+          ![price1.book, price2.book].includes(Book.PINNACLE)
+        ) {
+          const sum =
+            Odds.fromFairLine(price1.price).toProbability() +
+            Odds.fromFairLine(price2.price).toProbability();
+          // if (
+          //   this.name.includes("Jalen Green") &&
+          //   this.stat === PropsStat.THREE_POINTERS_MADE
+          // ) {
+          //   console.log(price1, price2, sum);
+          // }
+          if (sum < 1) {
+            arbs.push([price1, price2]);
+          }
+        }
+      });
+    });
+    return arbs;
   };
 }

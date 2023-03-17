@@ -21,9 +21,7 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [68, Book.DRAFTKINGS],
   [266, Book.TWINSPIRES],
 ]);
-const newYorkActionNetworkSportsbooks = [
-  972, 973, 1006, 974, 939, 68, 266,
-];
+const newYorkActionNetworkSportsbooks = [972, 973, 1006, 974, 939, 68, 266];
 
 const leagueMap = new Map([
   [League.NBA, "nba?"],
@@ -267,8 +265,14 @@ export const getActionNetworkProps = async (league: League) => {
       throw new Error(`Unknown prop ${prop}`);
     }
     const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
-    console.log(url);
-    const { data } = await axios.get(url);
+
+    let data;
+    try {
+      ({ data } = await axios.get(url));
+    } catch (error) {
+      console.log(`No ActionNetwork props for ${prop}`);
+      continue
+    }
 
     const odds = data.markets[0];
     const OVER = Object.entries(odds.rules.options)
@@ -311,6 +315,5 @@ export const getActionNetworkProps = async (league: League) => {
       });
     });
   }
-  console.log(new Set(props.map((x) => x.book)));
   return props;
 };
