@@ -228,6 +228,8 @@ export const getActionNetworkProps = async (league: League) => {
 
     [PropsStat.SHOTS_ON_GOAL, "core_bet_type_31_shots_on_goal"],
     [PropsStat.SAVES, "core_bet_type_38_goaltender_saves"],
+    [PropsStat.HOCKEY_ASSISTS, "core_bet_type_279_assists"],
+    [PropsStat.HOCKEY_POINTS, "core_bet_type_280_points"],
   ]);
 
   const leaguePropsMap = new Map([
@@ -248,7 +250,15 @@ export const getActionNetworkProps = async (league: League) => {
         PropsStat.STEALS_PLUS_BLOCKS,
       ],
     ],
-    [League.NHL, [PropsStat.SHOTS_ON_GOAL, PropsStat.SAVES]],
+    [
+      League.NHL,
+      [
+        PropsStat.SHOTS_ON_GOAL,
+        PropsStat.SAVES,
+        PropsStat.HOCKEY_ASSISTS,
+        PropsStat.HOCKEY_POINTS,
+      ],
+    ],
   ]);
 
   const leagueId = leagueIdMap.get(league);
@@ -271,7 +281,7 @@ export const getActionNetworkProps = async (league: League) => {
       ({ data } = await axios.get(url));
     } catch (error) {
       console.log(`No ActionNetwork props for ${prop}`);
-      continue
+      continue;
     }
 
     const odds = data.markets[0];

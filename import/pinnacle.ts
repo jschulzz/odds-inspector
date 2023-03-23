@@ -11,6 +11,7 @@ import {
   Moneyline,
   Period,
   Prop,
+  PropsStat,
   SourcedOdds,
   Spread,
 } from "../types";
@@ -306,8 +307,6 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
   const props: Prop[] = [];
   for (const matchup of matchups) {
     try {
-
-
       const { data: pinnacleProps } = await axios.get(
         `https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`,
         {
@@ -317,12 +316,24 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
         }
       );
       pinnacleProps.forEach((prop: any) => {
-        if (prop.type !== "special" || prop.special.category !== "Player Props") {
+        if (
+          prop.type !== "special" ||
+          prop.special.category !== "Player Props"
+        ) {
           return;
         }
         const propName = prop.special.description;
         const playerName = propName.split("(")[0].trim();
-        const stat = findStat(prop.units);
+        let stat = findStat(prop.units);
+        if (league === League.NHL) {
+          if (stat === PropsStat.POINTS) {
+            stat = PropsStat.HOCKEY_POINTS;
+          }
+          if (stat === PropsStat.ASSISTS) {
+            stat = PropsStat.HOCKEY_ASSISTS;
+          }
+        }
+
         if (!stat) {
           return;
         }
@@ -370,7 +381,7 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
         props.push(overProp, underProp);
       });
     } catch (e) {
-      console.log("Nothing for that")
+      console.log("Nothing for that");
     }
   }
   return props;

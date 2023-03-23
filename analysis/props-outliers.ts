@@ -136,12 +136,13 @@ export const formatOutliers = (groups: Group[]) => {
     Book.FANDUEL,
     Book.DRAFTKINGS,
     Book.CAESARS,
-    Book.BETRIVERS,
     Book.BETMGM,
+    Book.POINTSBET,
+    Book.BETRIVERS,
     Book.WYNNBET,
-    // PropsPlatform.UNDERDOG,
-    // PropsPlatform.PRIZEPICKS,
-    // PropsPlatform.THRIVE,
+    PropsPlatform.UNDERDOG,
+    PropsPlatform.PRIZEPICKS,
+    PropsPlatform.NO_HOUSE,
   ];
   const allBooks = new Set(groups.flatMap((g) => g.prices.map((p) => p.book)));
   allBooks.delete(Book.UNIBET);

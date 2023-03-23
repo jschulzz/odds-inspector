@@ -2,37 +2,33 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
+import { NO_HOUSE_KEY } from "../secrets";
 import { League, Prop, PropsPlatform } from "../types";
 import { LineChoice } from "../types/lines";
-
-// const leagueMap = new Map([
-//   [League.NFL, 9],
-//   [League.MLB, 2],
-//   [League.NCAAF, 15],
-//   [League.WNBA, 3],
-//   [League.NHL, 8],
-//   [League.NBA, 7],
-// ]);
 
 export const getNoHouse = async (league: League) => {
   const datastorePath = path.join(__dirname, "../backups/no-house");
   const linesFilename = `${datastorePath}/data.json`;
 
-  // const MARKET_ID = leagueMap.get(league);
-  // try {
-  //   const url = `https://cors-anywhere.herokuapp.com/https://api.prizepicks.com/projections?league_id=${MARKET_ID}`;
-  //   const { data } = await axios.get(url, {
-  //     headers: {
-  //       origin: "app.prizepicks.com",
-  //     },
-  //   });
-  //   fs.mkdirSync(datastorePath, { recursive: true });
+  try {
+    const url = `https://webadmin.nohouseadvantage.com/api/thehousecontest/get-contest`;
+    const { data } = await axios.post(
+      url,
+      { timezone: "America/New_York", type: 1 },
+      {
+        headers: {
+          authorization: NO_HOUSE_KEY,
+        },
+      }
+    );
+    fs.mkdirSync(datastorePath, { recursive: true });
 
-  //   fs.writeFileSync(linesFilename, JSON.stringify(data, null, 4));
-  // } catch (e) {
-  //   console.error(e);
-  //   console.log("Couldn't request new PP lines. Using saved lines");
-  // }
+    fs.writeFileSync(linesFilename, JSON.stringify(data, null, 4));
+  } catch (e) {
+    // @ts-ignore
+    console.error(e.response);
+    console.log("Couldn't request new No House lines. Using saved lines");
+  }
 
   const { data } = JSON.parse(fs.readFileSync(linesFilename).toString());
 

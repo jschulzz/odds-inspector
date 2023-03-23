@@ -58,6 +58,8 @@ export enum PropsStat {
   POWER_PLAY_POINTS = "powerPlayPoints",
   SAVES = "saves",
   GOALS_AGAINST = "goalsAgainst",
+  HOCKEY_POINTS = 'hockeyPoints',
+  HOCKEY_ASSISTS = 'hockeyAssists',
 
   TURNOVERS = "turnovers",
   STEALS_PLUS_BLOCKS = "stealsPlusBlocks",
