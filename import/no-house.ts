@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
 import { NO_HOUSE_KEY } from "../secrets";
-import { League, Prop, PropsPlatform } from "../types";
+import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 export const getNoHouse = async (league: League) => {
@@ -32,13 +32,21 @@ export const getNoHouse = async (league: League) => {
 
   const { data } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
-  const props: Prop[] = [];
+  let props: Prop[] = [];
 
   data
     .filter((x: any) => x.league.toLowerCase() === league)
     .forEach((prop: any) => {
       const player = prop.player1.name;
-      const stat = findStat(prop.player_spreads);
+      let stat = findStat(prop.player_spreads);
+      if (league === League.NHL) {
+        if (stat === PropsStat.POINTS) {
+          stat = PropsStat.HOCKEY_POINTS;
+        }
+        if (stat === PropsStat.ASSISTS) {
+          stat = PropsStat.HOCKEY_ASSISTS;
+        }
+      }
       if (!stat) {
         return;
       }
@@ -59,7 +67,24 @@ export const getNoHouse = async (league: League) => {
         ...standard,
         choice: LineChoice.UNDER,
       };
-      props.push(overProp, underProp);
+      const existingProps = props.filter((p) => {
+        return (
+          p.player === standard.player &&
+          p.stat === standard.stat &&
+          p.value !== standard.value
+        );
+      });
+      let newProps = [overProp, underProp];
+      if (existingProps.length) {
+        if (existingProps[0].value > standard.value) {
+          console.log("Found a better one");
+          props = props.filter((p) => !existingProps.includes(p));
+        } else {
+          console.log("Better one already exists");
+          newProps = [underProp];
+        }
+      }
+      props.push(...newProps);
     });
   return props;
 };

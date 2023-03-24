@@ -1,6 +1,6 @@
 import axios from "axios";
 import { findStat } from "../props";
-import { League, Prop, PropsPlatform } from "../types";
+import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 const leagueMap = new Map([
@@ -52,7 +52,15 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
     if (sport !== league) {
       return;
     }
-    const stat = findStat(line.over_under.appearance_stat.display_stat);
+    let stat = findStat(line.over_under.appearance_stat.display_stat);
+    if (league === League.NHL) {
+      if (stat === PropsStat.POINTS) {
+        stat = PropsStat.HOCKEY_POINTS;
+      }
+      if (stat === PropsStat.ASSISTS) {
+        stat = PropsStat.HOCKEY_ASSISTS;
+      }
+    }
     if (!stat) {
       return;
     }

@@ -2,7 +2,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
-import { League, Prop, PropsPlatform } from "../types";
+import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
 // const leagueMap = new Map([
@@ -69,7 +69,15 @@ export const getPrizePicksLines = async (league: League) => {
     const player = fixtures.players.find(
       (p) => p.id === projection.relationships.new_player.data.id
     );
-    const stat = findStat(projection.attributes.stat_type);
+    let stat = findStat(projection.attributes.stat_type);
+    if (league === League.NHL) {
+      if (stat === PropsStat.POINTS) {
+        stat = PropsStat.HOCKEY_POINTS;
+      }
+      if (stat === PropsStat.ASSISTS) {
+        stat = PropsStat.HOCKEY_ASSISTS;
+      }
+    }
     if (!stat) {
       return;
     }
@@ -100,14 +108,14 @@ export const getPrizePicksLines = async (league: League) => {
         p.value !== standard.value
       );
     });
-    let newProps = [overProp, underProp]
+    let newProps = [overProp, underProp];
     if (existingProps.length) {
       if (existingProps[0].value > standard.value) {
         console.log("Found a better one");
         props = props.filter((p) => !existingProps.includes(p));
       } else {
         console.log("Better one already exists");
-        newProps = [underProp]
+        newProps = [underProp];
       }
     }
     props.push(...newProps);
