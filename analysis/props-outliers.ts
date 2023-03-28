@@ -109,10 +109,15 @@ export const findOutliers = async (league: League) => {
     propGroups.push(group);
   }
 
+  propGroups.forEach((group) => {
+    group.findRelatedGroups(propGroups);
+    group.findOppositeGroup(propGroups);
+  });
+
   // @ts-ignore
   const groups = propGroups.filter(
     (group) =>
-      group.prices.length >= 3 ||
+      group.getFullSize() >= 3 ||
       group.prices.some((price) =>
         [
           PropsPlatform.PRIZEPICKS,
@@ -165,10 +170,8 @@ export const formatOutliers = (groups: Group[]) => {
     if (a.maxEV() > 0 || b.maxEV() > 0) {
       return a.maxEV() < b.maxEV() ? 1 : -1;
     }
-    if (a.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
-      return 1;
-    if (b.findRelatedGroups(groups).flatMap((x) => x.prices).length >= 4)
-      return -1;
+    if (a.relatedGroups.flatMap((x) => x.prices).length >= 4) return 1;
+    if (b.relatedGroups.flatMap((x) => x.prices).length >= 4) return -1;
     return -1;
   });
 
@@ -213,9 +216,9 @@ export const formatOutliers = (groups: Group[]) => {
       const buildRateString = (g: Group) =>
         `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`;
 
-      const relatedGroups = group.findRelatedGroups(groups);
-
-      const ratesOfEachPrice = [group, ...relatedGroups].map(buildRateString);
+      const ratesOfEachPrice = [group, ...group.relatedGroups].map(
+        buildRateString
+      );
 
       const eventString = `${group.name}: ${group.side} ${group.stat}`;
 
@@ -225,7 +228,7 @@ export const formatOutliers = (groups: Group[]) => {
       const isMisvaluedDFS = group.prices.some(
         (x) =>
           DFSPlatforms.includes(x.book) &&
-          relatedGroups.flatMap((g) => g.prices).length >= 4
+          group.relatedGroups.flatMap((g) => g.prices).length >= 4
       );
 
       const coloredLikelihood = ratesOfEachPrice
@@ -239,7 +242,7 @@ export const formatOutliers = (groups: Group[]) => {
       const label = `${eventString}\n${coloredLikelihood}`;
       const allProps = [
         group.prices,
-        ...relatedGroups.flatMap((g) => g.prices),
+        ...group.relatedGroups.flatMap((g) => g.prices),
       ].flat();
       let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
@@ -248,16 +251,16 @@ export const formatOutliers = (groups: Group[]) => {
           if (isMisvaluedDFS) {
             if (
               group.side === LineChoice.OVER &&
-              relatedGroups[0].value > group.value &&
-              relatedGroups[0].getLikelihood() > 0.49
+              group.relatedGroups[0].value > group.value &&
+              group.relatedGroups[0].getLikelihood() > 0.49
             ) {
               isInteresting = true;
               return colors.green(text);
             }
             if (
               group.side === LineChoice.UNDER &&
-              relatedGroups[0].value < group.value &&
-              relatedGroups[0].getLikelihood() > 0.49
+              group.relatedGroups[0].value < group.value &&
+              group.relatedGroups[0].getLikelihood() > 0.49
             ) {
               isInteresting = true;
               return colors.green(text);
@@ -275,7 +278,7 @@ export const formatOutliers = (groups: Group[]) => {
           return "";
         }
         let propValue =
-          relatedGroups.find((g) => g.prices.some((x) => x.book === book))
+          group.relatedGroups.find((g) => g.prices.some((x) => x.book === book))
             ?.value || group.value;
         const EV = EVs.find((ev) => ev.book === book);
 

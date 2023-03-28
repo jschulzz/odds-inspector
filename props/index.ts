@@ -184,15 +184,15 @@ const statMaps = [
     stat: PropsStat.STEALS_PLUS_BLOCKS,
   },
   {
-    names: ["Points + Assists", "Pts+Asts", "PTS, ASTS"],
+    names: ["Points + Assists", "Pts+Asts", "PTS, ASTS", "points+assists"],
     stat: PropsStat.POINTS_PLUS_ASSISTS,
   },
   {
-    names: ["Points + Rebounds", "Pts+Rebs", "PTS, REBS"],
+    names: ["Points + Rebounds", "Pts+Rebs", "PTS, REBS", "points+rebounds"],
     stat: PropsStat.POINTS_PLUS_REBOUNDS,
   },
   {
-    names: ["Rebounds + Assists", "Rebs+Asts", "REBS, ASTS"],
+    names: ["Rebounds + Assists", "Rebs+Asts", "REBS, ASTS", "assists+rebounds"],
     stat: PropsStat.REBOUNDS_PLUS_ASSISTS,
   },
   {
@@ -208,7 +208,7 @@ const statMaps = [
   },
   { names: ["Blocks", "Blocked Shots", "BLKS"], stat: PropsStat.BLOCKS },
   { names: ["Rebounds", "REBS", "rebounds"], stat: PropsStat.REBOUNDS },
-  { names: ["DoubleDouble", "Double-Double"], stat: PropsStat.DOUBLE_DOUBLE },
+  { names: ["DoubleDouble", "Double-Double", "Double Doubles"], stat: PropsStat.DOUBLE_DOUBLE },
   {
     names: [
       "3-Pointers Made",
