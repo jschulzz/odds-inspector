@@ -1,6 +1,7 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { findStat } from "../props";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
@@ -14,7 +15,10 @@ import { LineChoice } from "../types/lines";
 //   [League.NBA, 7],
 // ]);
 
-export const getPrizePicksLines = async (league: League) => {
+export const getPrizePicksLines = async (
+  league: League,
+  playerRegistry: PlayerRegistry
+) => {
   const datastorePath = path.join(__dirname, "../backups/prizepicks");
   const linesFilename = `${datastorePath}/${league}.json`;
 
@@ -86,24 +90,30 @@ export const getPrizePicksLines = async (league: League) => {
       projection.attributes.flash_sale_line_score ||
       projection.attributes.line_score;
     const standard = {
-      player: player.attributes.name,
+      playerName: player.attributes.name,
       team: player.attributes.team,
       stat,
       value,
       book: PropsPlatform.PRIZEPICKS,
       price: -119,
     };
-    const overProp: Prop = {
-      ...standard,
-      choice: LineChoice.OVER,
-    };
-    const underProp: Prop = {
-      ...standard,
-      choice: LineChoice.UNDER,
-    };
+    const overProp = new Prop(
+      {
+        ...standard,
+        choice: LineChoice.OVER,
+      },
+      playerRegistry
+    );
+    const underProp = new Prop(
+      {
+        ...standard,
+        choice: LineChoice.UNDER,
+      },
+      playerRegistry
+    );
     const existingProps = props.filter((p) => {
       return (
-        p.player === standard.player &&
+        p.player === standard.playerName &&
         p.stat === standard.stat &&
         p.value !== standard.value
       );

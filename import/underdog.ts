@@ -1,4 +1,5 @@
 import axios from "axios";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { findStat } from "../props";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
@@ -12,7 +13,10 @@ const leagueMap = new Map([
   // ["NHL", League.NHL],
 ]);
 
-export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
+export const getUnderdogLines = async (
+  league: League,
+  playerRegistry: PlayerRegistry
+): Promise<Prop[]> => {
   const { data: teamData } = await axios.get(
     "https://stats.underdogfantasy.com/v1/teams"
   );
@@ -66,24 +70,33 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
     }
 
     // const gameTime = new Date(event.game.scheduled_at).toLocaleString();
-    props.push({
-      player: player.first_name + " " + player.last_name,
-      stat,
-      value: Number(line.stat_value),
-      team: player.team,
-      book: PropsPlatform.UNDERDOG,
-      choice: LineChoice.UNDER,
-      price: -122,
-    });
-    props.push({
-      player: player.first_name + " " + player.last_name,
-      stat,
-      value: Number(line.stat_value),
-      team: player.team,
-      book: PropsPlatform.UNDERDOG,
-      choice: LineChoice.OVER,
-      price: -122,
-    });
+
+    const underProp = new Prop(
+      {
+        playerName: player.first_name + " " + player.last_name,
+        stat,
+        value: Number(line.stat_value),
+        team: player.team,
+        book: PropsPlatform.UNDERDOG,
+        choice: LineChoice.UNDER,
+        price: -122,
+      },
+      playerRegistry
+    );
+    const overProp = new Prop(
+      {
+        playerName: player.first_name + " " + player.last_name,
+        stat,
+        value: Number(line.stat_value),
+        team: player.team,
+        book: PropsPlatform.UNDERDOG,
+        choice: LineChoice.OVER,
+        price: -122,
+      },
+      playerRegistry
+    );
+
+    props.push(overProp, underProp);
   });
   console.log("Unknown Leagues:", unknownLeages);
 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { findMarket } from "../markets";
 import { findStat } from "../props";
 import { PINNACLE_KEY } from "../secrets";
@@ -301,7 +302,10 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   return odds;
 };
 
-export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
+export const getPinnacleProps = async (
+  league: League,
+  playerRegistry: PlayerRegistry
+): Promise<Prop[]> => {
   const { lines, matchups } = await requestLines(league);
 
   const props: Prop[] = [];
@@ -360,24 +364,30 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
         if (!overPrice || !underPrice) {
           return undefined;
         }
-        const overProp: Prop = {
-          player: playerName,
-          choice: LineChoice.OVER,
-          book: Book.PINNACLE,
-          team: "",
-          stat,
-          value,
-          price: overPrice,
-        };
-        const underProp: Prop = {
-          player: playerName,
-          choice: LineChoice.UNDER,
-          book: Book.PINNACLE,
-          team: "",
-          stat,
-          value,
-          price: underPrice,
-        };
+        const overProp = new Prop(
+          {
+            playerName,
+            choice: LineChoice.OVER,
+            book: Book.PINNACLE,
+            team: "",
+            stat,
+            value,
+            price: overPrice,
+          },
+          playerRegistry
+        );
+        const underProp = new Prop(
+          {
+            playerName,
+            choice: LineChoice.UNDER,
+            book: Book.PINNACLE,
+            team: "",
+            stat,
+            value,
+            price: underPrice,
+          },
+          playerRegistry
+        );
         props.push(overProp, underProp);
       });
     } catch (e) {

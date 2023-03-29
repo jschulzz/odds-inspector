@@ -1,4 +1,5 @@
 import axios from "axios";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { findBook } from "../books";
 import {
   Book,
@@ -194,7 +195,10 @@ export const getActionNetworkLines = async (
   return lines;
 };
 
-export const getActionNetworkProps = async (league: League) => {
+export const getActionNetworkProps = async (
+  league: League,
+  playerRegistry: PlayerRegistry
+) => {
   const leagueKey = leagueMap.get(league);
   let today = new Date();
   let yyyy = today.getFullYear();
@@ -269,10 +273,10 @@ export const getActionNetworkProps = async (league: League) => {
   const propTypes = leaguePropsMap.get(league) || [];
   const props: Prop[] = [];
 
-  for (const prop of propTypes) {
-    const endpoint = propEndpointMap.get(prop);
+  for (const propType of propTypes) {
+    const endpoint = propEndpointMap.get(propType);
     if (!endpoint) {
-      throw new Error(`Unknown prop ${prop}`);
+      throw new Error(`Unknown prop ${propType}`);
     }
     const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
 
@@ -280,7 +284,7 @@ export const getActionNetworkProps = async (league: League) => {
     try {
       ({ data } = await axios.get(url));
     } catch (error) {
-      console.log(`No ActionNetwork props for ${prop}`);
+      console.log(`No ActionNetwork props for ${propType}`);
       continue;
     }
 
@@ -293,7 +297,7 @@ export const getActionNetworkProps = async (league: League) => {
       .toString();
     // console.log(OVER, UNDER);
     if (!OVER || !UNDER) {
-      throw new Error(`Unknown options for ${prop}`);
+      throw new Error(`Unknown options for ${propType}`);
     }
     odds.books.forEach((book: any) => {
       const book_id = book.book_id;
@@ -313,15 +317,20 @@ export const getActionNetworkProps = async (league: League) => {
           // console.log(`unknown book: ${player} ${choice} ${prop} @ ${price} on book ${book_id}`);
           return;
         }
-        props.push({
-          value,
-          choice,
-          book: bookName,
-          stat: prop,
-          player,
-          team,
-          price,
-        });
+        const prop = new Prop(
+          {
+            value,
+            choice,
+            book: bookName,
+            stat: propType,
+            playerName: player,
+            team,
+            price,
+          },
+          playerRegistry
+        );
+
+        props.push(prop);
       });
     });
   }

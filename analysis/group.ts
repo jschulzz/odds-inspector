@@ -2,6 +2,8 @@ import { compareTwoStrings } from "string-similarity";
 import { Odds } from "../odds/odds";
 import { Book, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
+import { Player } from "./player";
+import { PlayerRegistry } from "./player-registry";
 
 const bookWeights = new Map<Book | PropsPlatform, number>([
   [Book.PINNACLE, 2.5],
@@ -22,7 +24,7 @@ export interface Price {
 }
 
 export interface GroupArgs {
-  name: string;
+  player: Player;
   stat: PropsStat;
   value: number;
   prices: Price[];
@@ -30,16 +32,16 @@ export interface GroupArgs {
 }
 
 export class Group {
-  public name: string;
   public stat: PropsStat;
   public prices: Price[];
   public value: number;
   public side: string;
   public relatedGroups: Group[];
   public oppositeGroup?: Group;
+  public player: Player;
 
   constructor(args: GroupArgs) {
-    this.name = args.name;
+    this.player = args.player;
     this.stat = args.stat;
     this.prices = args.prices;
     this.side = args.side;
@@ -73,13 +75,6 @@ export class Group {
           // @ts-ignore
           weight = bookWeights.get(curr.book);
         }
-        // if (
-        //   this.name.includes("Anderson") &&
-        //   this.stat === PropsStat.REBOUNDS_PLUS_ASSISTS &&
-        //   this.side === LineChoice.OVER
-        // ) {
-        //   console.log(weight, curr.book, curr.likelihood);
-        // }
         sum += weight;
         return prev + weight * curr.likelihood;
       }, 0) / sum
@@ -87,20 +82,10 @@ export class Group {
   };
   findRelatedGroups = (groups: Group[]) => {
     this.relatedGroups = groups.filter((group) => {
-      if (
-        this.stat === PropsStat.REBOUNDS_PLUS_ASSISTS &&
-        group.stat === PropsStat.REBOUNDS_PLUS_ASSISTS &&
-        this.name.includes("Jalen Wil") &&
-        group.name.includes("Jalen Wil") &&
-        this.side === LineChoice.OVER &&
-        group.side === LineChoice.OVER
-      ) {
-        console.log(this, group, compareTwoStrings(group.name, this.name));
-      }
       return (
         group.stat === this.stat &&
         group.side === this.side &&
-        compareTwoStrings(group.name, this.name) > 0.8 &&
+        group.player === this.player &&
         group.value !== this.value
       );
     });
@@ -110,7 +95,7 @@ export class Group {
       (group) =>
         group.stat === this.stat &&
         group.side !== this.side &&
-        compareTwoStrings(group.name, this.name) >= 0.85 &&
+        group.player === this.player &&
         group.value === this.value
     );
   };

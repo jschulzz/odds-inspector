@@ -1,3 +1,5 @@
+import { Player } from "../analysis/player";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { Book } from "./books";
 import { LineChoice } from "./lines";
 
@@ -5,8 +7,8 @@ export enum PropsPlatform {
   UNDERDOG = "Underdog (3p)",
   PRIZEPICKS = "PrizePicks (5p)",
   THRIVE = "Thrive",
-  NO_HOUSE = 'No House Advantage (5p)',
-  MONKEY_KNIFE_FIGHT = 'Monkey Knife Fight'
+  NO_HOUSE = "No House Advantage (5p)",
+  MONKEY_KNIFE_FIGHT = "Monkey Knife Fight",
 }
 
 export enum PropsStat {
@@ -58,8 +60,8 @@ export enum PropsStat {
   POWER_PLAY_POINTS = "powerPlayPoints",
   SAVES = "saves",
   GOALS_AGAINST = "goalsAgainst",
-  HOCKEY_POINTS = 'hockeyPoints',
-  HOCKEY_ASSISTS = 'hockeyAssists',
+  HOCKEY_POINTS = "hockeyPoints",
+  HOCKEY_ASSISTS = "hockeyAssists",
 
   TURNOVERS = "turnovers",
   STEALS_PLUS_BLOCKS = "stealsPlusBlocks",
@@ -76,12 +78,50 @@ export enum PropsStat {
   FREE_THROWS_MADE = "freeThrowsMade",
 }
 
-export interface Prop {
+export interface PropArgs {
   book: PropsPlatform | Book;
   value: number;
   stat: PropsStat;
-  player: string;
+  playerName: string;
   team: string;
   price: number;
   choice: LineChoice;
+}
+export class Prop {
+  public book: PropsPlatform | Book;
+  public value: number;
+  public stat: PropsStat;
+  public player: Player;
+  public price: number;
+  public choice: LineChoice;
+
+  constructor(args: PropArgs, playerRegistry: PlayerRegistry) {
+    this.book = args.book;
+    this.value = args.value;
+    this.stat = args.stat;
+    this.price = args.price;
+    this.choice = args.choice;
+
+    const tempPlayer = new Player(args.playerName, args.team);
+
+    const { players, exact } = playerRegistry.find(tempPlayer);
+
+    if (!players.length) {
+      this.player = tempPlayer;
+      playerRegistry.add(this.player);
+    } else if (exact) {
+      this.player = players[0];
+      if (!this.player.team) {
+        this.player.team = args.team;
+      }
+    } else {
+      console.log(
+        `Who is this? ${args.playerName}\n\t${players
+          .map((x) => x.name)
+          .join("\n\t")}`
+      );
+      this.player = players[0];
+      players[0].addAlias(args.playerName, args.team);
+    }
+  }
 }

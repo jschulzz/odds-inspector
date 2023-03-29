@@ -14,6 +14,7 @@ import { Bankroll } from "../bankroll/bankroll";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
 import { getActionNetworkProps } from "../import/actionNetwork";
+import { PlayerRegistry } from "./player-registry";
 
 const findEquivalentPlays = (
   prop: Prop,
@@ -36,20 +37,25 @@ const findEquivalentPlays = (
       (wantSameChoice
         ? samplePlay.choice === prop.choice
         : samplePlay.choice !== prop.choice) &&
-      compareTwoStrings(samplePlay.player, prop.player) > 0.85 &&
+      samplePlay.player === prop.player &&
       samplePlay.stat === prop.stat &&
       //   samplePlay.team === prop.team &&
       (wantSameValue ? samplePlay.value === prop.value : true)
   );
 
 export const findOutliers = async (league: League) => {
+  const playerRegistry = new PlayerRegistry();
+
   // const betKarmaProps = await getBetKarma(league);
   // const actionLabsProps = await getActionLabsProps(league);
-  const actionNetworkProps = await getActionNetworkProps(league);
-  const pinnacleProps = await getPinnacleProps(league);
-  const underdogProps = await getUnderdogLines(league);
-  const prizepicksProps = await getPrizePicksLines(league);
-  const noHouseProps = await getNoHouse(league);
+  const actionNetworkProps = await getActionNetworkProps(
+    league,
+    playerRegistry
+  );
+  const pinnacleProps = await getPinnacleProps(league, playerRegistry);
+  const underdogProps = await getUnderdogLines(league, playerRegistry);
+  const prizepicksProps = await getPrizePicksLines(league, playerRegistry);
+  const noHouseProps = await getNoHouse(league, playerRegistry);
   // const thriveProps = await getThrive(league);
   const allProps = [
     // ...betKarmaProps,
@@ -77,7 +83,7 @@ export const findOutliers = async (league: League) => {
           play.book === otherPlay.book &&
           play.stat === otherPlay.stat &&
           play.choice !== otherPlay.choice &&
-          compareTwoStrings(otherPlay.player, play.player) > 0.85
+          otherPlay.player === play.player
       );
       if (!otherPlay) {
         return {
@@ -98,7 +104,7 @@ export const findOutliers = async (league: League) => {
       };
     });
     const group = new Group({
-      name: `${prop.player} (${prop.team})`,
+      player: prop.player,
       stat: prop.stat,
       side: prop.choice,
       prices,
@@ -179,7 +185,7 @@ export const formatOutliers = (groups: Group[]) => {
     const arbs = group.hasArbs(sortedGroups);
     const totalStake = 100;
     if (arbs.length) {
-      let text = `${group.name} on ${group.value} ${group.stat}\n`;
+      let text = `${group.player.name} on ${group.value} ${group.stat}\n`;
       const stakes = arbs.map((arb) => {
         const stake1 =
           totalStake /
@@ -220,7 +226,7 @@ export const formatOutliers = (groups: Group[]) => {
         buildRateString
       );
 
-      const eventString = `${group.name}: ${group.side} ${group.stat}`;
+      const eventString = `${group.player.name} (${group.player.team}): ${group.side} ${group.stat}`;
 
       const impliedProbability = group.getLikelihood();
       const isHighLikelihood = impliedProbability > 0.56;

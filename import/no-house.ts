@@ -1,12 +1,16 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { PlayerRegistry } from "../analysis/player-registry";
 import { findStat } from "../props";
 import { NO_HOUSE_KEY } from "../secrets";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 
-export const getNoHouse = async (league: League) => {
+export const getNoHouse = async (
+  league: League,
+  playerRegistry: PlayerRegistry
+) => {
   const datastorePath = path.join(__dirname, "../backups/no-house");
   const linesFilename = `${datastorePath}/data.json`;
 
@@ -37,7 +41,7 @@ export const getNoHouse = async (league: League) => {
   data
     .filter((x: any) => x.league.toLowerCase() === league)
     .forEach((prop: any) => {
-      const player = prop.player1.name;
+      const playerName = prop.player1.name;
       let stat = findStat(prop.player_spreads);
       if (league === League.NHL) {
         if (stat === PropsStat.POINTS) {
@@ -52,24 +56,30 @@ export const getNoHouse = async (league: League) => {
       }
       const value = +prop.player1.points;
       const standard = {
-        player,
+        playerName,
         team: prop.player1.team,
         stat,
         value,
         book: PropsPlatform.NO_HOUSE,
         price: -119,
       };
-      const overProp: Prop = {
-        ...standard,
-        choice: LineChoice.OVER,
-      };
-      const underProp: Prop = {
-        ...standard,
-        choice: LineChoice.UNDER,
-      };
+      const overProp = new Prop(
+        {
+          ...standard,
+          choice: LineChoice.OVER,
+        },
+        playerRegistry
+      );
+      const underProp = new Prop(
+        {
+          ...standard,
+          choice: LineChoice.UNDER,
+        },
+        playerRegistry
+      );
       const existingProps = props.filter((p) => {
         return (
-          p.player === standard.player &&
+          p.player === standard.playerName &&
           p.stat === standard.stat &&
           p.value !== standard.value
         );
