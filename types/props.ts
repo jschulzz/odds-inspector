@@ -52,6 +52,7 @@ export enum PropsStat {
   SINGLES = "singles",
   TRIPLES = "triples",
   STOLEN_BASES = "stolenBases",
+  HITS_RUNS_RBIS = "hitsPlusRunsPlusRBIs",
 
   GOALS = "goals",
   SHOTS_ON_GOAL = "shotsOnGoal",
@@ -106,7 +107,7 @@ export class Prop {
 
     const { players, exact } = playerRegistry.find(tempPlayer);
 
-    if (!players.length) {
+    if (!players.length || args.playerName.includes("+")) {
       this.player = tempPlayer;
       playerRegistry.add(this.player);
     } else if (exact) {

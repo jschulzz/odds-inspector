@@ -1,4 +1,5 @@
 import { table, TableUserConfig } from "table";
+import path from 'path'
 import { getBetKarma } from "../import/betKarma";
 import { compareTwoStrings } from "string-similarity";
 import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
@@ -44,7 +45,8 @@ const findEquivalentPlays = (
   );
 
 export const findOutliers = async (league: League) => {
-  const playerRegistry = new PlayerRegistry();
+  const playerRegistryPath = path.join(__dirname, "../backups/playerRegistry.json");
+  const playerRegistry = new PlayerRegistry(playerRegistryPath);
 
   // const betKarmaProps = await getBetKarma(league);
   // const actionLabsProps = await getActionLabsProps(league);
@@ -116,6 +118,9 @@ export const findOutliers = async (league: League) => {
   }
 
   propGroups.forEach((group) => {
+    if(group.player.name.includes("Fortes")){
+      console.log(group)
+    }
     group.findRelatedGroups(propGroups);
     group.findOppositeGroup(propGroups);
   });
@@ -132,6 +137,7 @@ export const findOutliers = async (league: League) => {
         ].includes(price.book as PropsPlatform)
       )
   );
+  playerRegistry.saveRegistry()
   return formatOutliers(groups);
 };
 

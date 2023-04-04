@@ -136,10 +136,13 @@ const statMaps = [
   { names: ["Tackles", "tackles"], stat: PropsStat.TACKLES },
   { names: ["Sacks", "sacks"], stat: PropsStat.SACKS },
 
-  { names: ["Strikeouts", "Ks"], stat: PropsStat.STRIKEOUTS },
-  { names: ["Walks"], stat: PropsStat.WALKS },
   {
-    names: ["TotalBases", "Total Bases", "BASEs"],
+    names: ["Strikeouts", "Ks", "Pitcher Strikeouts", "strikeouts_(pitcher)"],
+    stat: PropsStat.STRIKEOUTS,
+  },
+  { names: ["Walks", "Walks Allowed"], stat: PropsStat.WALKS },
+  {
+    names: ["TotalBases", "Total Bases", "BASEs", "total_bases"],
     stat: PropsStat.TOTAL_BASES,
   },
   { names: ["Hits", "HITs"], stat: PropsStat.HITS },
@@ -147,15 +150,19 @@ const statMaps = [
   { names: ["RBIs"], stat: PropsStat.RBIS },
   { names: ["Home Runs", "HomeRuns"], stat: PropsStat.HOME_RUNS },
   { names: ["Doubles"], stat: PropsStat.DOUBLES },
-  { names: ["Singles"], stat: PropsStat.SINGLES },
+  { names: ["Singles", "singles"], stat: PropsStat.SINGLES },
   { names: ["Triples"], stat: PropsStat.TRIPLES },
   { names: ["Stolen Bases"], stat: PropsStat.STOLEN_BASES },
+  { names: ["Hits + Runs + RBIs", "Hits+Runs+RBIS", "hits+rbi+runs"], stat: PropsStat.HITS_RUNS_RBIS },
   {
-    names: ["EarnedRuns", "Earned Runs", "Earned Runs Allowed"],
+    names: ["EarnedRuns", "Earned Runs", "Earned Runs Allowed", "pitching_earned_runs"],
     stat: PropsStat.EARNED_RUNS,
   },
-  { names: ["PitchingOuts", "Outs"], stat: PropsStat.PITCHING_OUTS },
-  { names: ["Runs"], stat: PropsStat.RUNS },
+  {
+    names: ["PitchingOuts", "Outs", "Pitching Outs"],
+    stat: PropsStat.PITCHING_OUTS,
+  },
+  { names: ["Runs", "runs"], stat: PropsStat.RUNS },
 
   { names: ["Goals", "GOLs"], stat: PropsStat.GOALS },
   {
@@ -163,7 +170,10 @@ const statMaps = [
     stat: PropsStat.SHOTS_ON_GOAL,
   },
   { names: ["Assists", "ASTs", "ASTS", "assists"], stat: PropsStat.ASSISTS },
-  { names: ["Points", "PTS", "GOLs, ASTs", "points", "Goals + Assists"], stat: PropsStat.POINTS },
+  {
+    names: ["Points", "PTS", "GOLs, ASTs", "points", "Goals + Assists"],
+    stat: PropsStat.POINTS,
+  },
   { names: ["Power Play Points"], stat: PropsStat.POWER_PLAY_POINTS },
   {
     names: ["Saves", "Goalie Saves", "SAVs", "goal_tending_saves"],
@@ -192,7 +202,12 @@ const statMaps = [
     stat: PropsStat.POINTS_PLUS_REBOUNDS,
   },
   {
-    names: ["Rebounds + Assists", "Rebs+Asts", "REBS, ASTS", "assists+rebounds"],
+    names: [
+      "Rebounds + Assists",
+      "Rebs+Asts",
+      "REBS, ASTS",
+      "assists+rebounds",
+    ],
     stat: PropsStat.REBOUNDS_PLUS_ASSISTS,
   },
   {
@@ -208,7 +223,10 @@ const statMaps = [
   },
   { names: ["Blocks", "Blocked Shots", "BLKS"], stat: PropsStat.BLOCKS },
   { names: ["Rebounds", "REBS", "rebounds"], stat: PropsStat.REBOUNDS },
-  { names: ["DoubleDouble", "Double-Double", "Double Doubles"], stat: PropsStat.DOUBLE_DOUBLE },
+  {
+    names: ["DoubleDouble", "Double-Double", "Double Doubles"],
+    stat: PropsStat.DOUBLE_DOUBLE,
+  },
   {
     names: [
       "3-Pointers Made",

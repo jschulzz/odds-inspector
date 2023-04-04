@@ -1,17 +1,30 @@
+import fs from "fs";
 import { Player } from "./player";
 
 export class PlayerRegistry {
   public players: Player[];
   public exceptions: string[][];
+  private filePath: string;
 
-  constructor() {
-    this.players = [];
+  constructor(filePath: string) {
     this.exceptions = [
       ["Alex Ovechkin + Bo Horvat", "Alex Ovechkin"],
       ["Mikko Rantanen + Matt Boldy", "Mikko Rantanen"],
       ["Alex Ovechkin + Nic Dowd", "Alex Ovechkin"],
       ["Jaylin Williams", "Jalen Williams"],
+      ["Auston Matthews + Brady Tkachuk", "Auston Matthews + Matthew Tkachuk"],
+      ["Clayton Keller", "Clayton Kershaw"],
+      ["Ryan Strome", "Dylan Strome"],
+      ["Chandler Stephenson", "Tyler Stephenson"],
+      ["Taylor Ward", "Taylor Walls"],
+      ["Zach Eflin + Spencer Turnbull", "Spencer Turnbull"],
     ];
+    this.filePath = filePath;
+    this.players = [];
+
+    JSON.parse(fs.readFileSync(filePath).toString()).forEach((player: any) => {
+      this.players.push(new Player(player.name, player.team, player.aliases));
+    });
   }
 
   public add(player: Player) {
@@ -39,5 +52,9 @@ export class PlayerRegistry {
         return !exception;
       });
     return { players: closeMatches, exact: false };
+  }
+
+  public saveRegistry() {
+    fs.writeFileSync(this.filePath, JSON.stringify(this.players, null, 2));
   }
 }

@@ -18,8 +18,10 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [1006, Book.FANDUEL],
   [974, Book.WYNNBET],
   // [1005, Book.CAESARS],
-  [939, Book.BETMGM],
+  // [15, Book.CAESARS],
   [68, Book.DRAFTKINGS],
+  [939, Book.BETMGM],
+  [347, Book.BETMGM],
   [266, Book.TWINSPIRES],
 ]);
 const newYorkActionNetworkSportsbooks = [972, 973, 1006, 974, 939, 68, 266];
@@ -234,6 +236,19 @@ export const getActionNetworkProps = async (
     [PropsStat.SAVES, "core_bet_type_38_goaltender_saves"],
     [PropsStat.HOCKEY_ASSISTS, "core_bet_type_279_assists"],
     [PropsStat.HOCKEY_POINTS, "core_bet_type_280_points"],
+
+    [PropsStat.WALKS, "core_bet_type_76_walks"],
+    [PropsStat.DOUBLES, "core_bet_type_35_doubles"],
+    [PropsStat.EARNED_RUNS, "core_bet_type_74_earned_runs"],
+    [PropsStat.HITS, "core_bet_type_36_hits"],
+    [PropsStat.HOME_RUNS, "core_bet_type_33_hr"],
+    [PropsStat.STRIKEOUTS, "core_bet_type_37_strikeouts"],
+    [PropsStat.PITCHING_OUTS, "core_bet_type_42_pitching_outs"],
+    [PropsStat.RBIS, "core_bet_type_34_rbi"],
+    [PropsStat.RUNS, "core_bet_type_78_runs_scored"],
+    [PropsStat.STOLEN_BASES, "core_bet_type_73_stolen_bases"],
+    [PropsStat.SINGLES, "core_bet_type_32_singles"],
+    [PropsStat.TOTAL_BASES, "core_bet_type_77_total_bases"],
   ]);
 
   const leaguePropsMap = new Map([
@@ -261,6 +276,23 @@ export const getActionNetworkProps = async (
         PropsStat.SAVES,
         PropsStat.HOCKEY_ASSISTS,
         PropsStat.HOCKEY_POINTS,
+      ],
+    ],
+    [
+      League.MLB,
+      [
+        PropsStat.WALKS,
+        PropsStat.DOUBLES,
+        PropsStat.EARNED_RUNS,
+        PropsStat.HITS,
+        PropsStat.HOME_RUNS,
+        PropsStat.STRIKEOUTS,
+        PropsStat.PITCHING_OUTS,
+        PropsStat.RBIS,
+        PropsStat.RUNS,
+        PropsStat.STOLEN_BASES,
+        PropsStat.SINGLES,
+        PropsStat.TOTAL_BASES,
       ],
     ],
   ]);

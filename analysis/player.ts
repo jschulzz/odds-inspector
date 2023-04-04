@@ -5,10 +5,10 @@ export class Player {
   public name: string;
   public aliases: string[];
 
-  constructor(name: string, team?: string) {
-    this.team = team;
+  constructor(name: string, team?: string, aliases?: string[]) {
     this.name = name;
-    this.aliases = [];
+    this.team = team;
+    this.aliases = aliases || [];
   }
 
   public compare(name: string, team?: string) {
