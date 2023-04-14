@@ -1,17 +1,12 @@
 import { table, TableUserConfig } from "table";
-import path from 'path'
-import { getBetKarma } from "../import/betKarma";
-import { compareTwoStrings } from "string-similarity";
+import path from "path";
 import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
-import colors, { bgGreen, bgYellow } from "colors";
+import colors from "colors";
 import { Odds } from "../odds/odds";
 import { getPinnacleProps } from "../import/pinnacle";
 import { getUnderdogLines } from "../import/underdog";
 import { LineChoice } from "../types/lines";
 import { getPrizePicksLines } from "../import/prizepicks";
-import { getThrive } from "../import/thrive";
-import { getActionLabsProps } from "../import/action-labs";
-import { Bankroll } from "../bankroll/bankroll";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
 import { getActionNetworkProps } from "../import/actionNetwork";
@@ -45,7 +40,10 @@ const findEquivalentPlays = (
   );
 
 export const findOutliers = async (league: League) => {
-  const playerRegistryPath = path.join(__dirname, "../backups/playerRegistry.json");
+  const playerRegistryPath = path.join(
+    __dirname,
+    "../backups/playerRegistry.json"
+  );
   const playerRegistry = new PlayerRegistry(playerRegistryPath);
 
   // const betKarmaProps = await getBetKarma(league);
@@ -118,8 +116,11 @@ export const findOutliers = async (league: League) => {
   }
 
   propGroups.forEach((group) => {
-    if(group.player.name.includes("Fortes")){
-      console.log(group)
+    if (
+      group.player.name.includes("Caruso") &&
+      group.stat === PropsStat.PRA
+    ) {
+      console.log(group);
     }
     group.findRelatedGroups(propGroups);
     group.findOppositeGroup(propGroups);
@@ -128,16 +129,17 @@ export const findOutliers = async (league: League) => {
   // @ts-ignore
   const groups = propGroups.filter(
     (group) =>
-      group.getFullSize() >= 3 ||
-      group.prices.some((price) =>
-        [
-          PropsPlatform.PRIZEPICKS,
-          PropsPlatform.UNDERDOG,
-          PropsPlatform.NO_HOUSE,
-        ].includes(price.book as PropsPlatform)
-      )
+      group.getLikelihood() > 0.35 &&
+      (group.getFullSize() >= 3 ||
+        group.prices.some((price) =>
+          [
+            PropsPlatform.PRIZEPICKS,
+            PropsPlatform.UNDERDOG,
+            PropsPlatform.NO_HOUSE,
+          ].includes(price.book as PropsPlatform)
+        ))
   );
-  playerRegistry.saveRegistry()
+  playerRegistry.saveRegistry();
   return formatOutliers(groups);
 };
 

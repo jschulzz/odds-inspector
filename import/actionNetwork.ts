@@ -17,7 +17,7 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [973, Book.POINTSBET],
   [1006, Book.FANDUEL],
   [974, Book.WYNNBET],
-  // [1005, Book.CAESARS],
+  [1005, Book.CAESARS],
   // [15, Book.CAESARS],
   [68, Book.DRAFTKINGS],
   [939, Book.BETMGM],
@@ -202,11 +202,7 @@ export const getActionNetworkProps = async (
   playerRegistry: PlayerRegistry
 ) => {
   const leagueKey = leagueMap.get(league);
-  let today = new Date();
-  let yyyy = today.getFullYear();
-  let mm = (today.getMonth() + 1).toString().padStart(2, "0"); // Months start at 0
-  let dd = today.getDate().toString().padStart(2, "0");
-  const startDate = `${yyyy}${mm}${dd}`;
+
   if (!leagueKey) {
     throw new Error("Unknown league");
   }
@@ -304,67 +300,80 @@ export const getActionNetworkProps = async (
 
   const propTypes = leaguePropsMap.get(league) || [];
   const props: Prop[] = [];
+  let now = new Date();
+  let endDate = new Date(now);
+  if (league === League.NBA) {
+    endDate.setDate(endDate.getDate() + 2);
+  }
 
-  for (const propType of propTypes) {
-    const endpoint = propEndpointMap.get(propType);
-    if (!endpoint) {
-      throw new Error(`Unknown prop ${propType}`);
-    }
-    const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
+  for (let date = now; date <= endDate; date.setDate(date.getDate() + 1)) {
+    let yyyy = date.getFullYear();
+    let mm = (date.getMonth() + 1).toString().padStart(2, "0"); // Months start at 0
+    let dd = date.getDate().toString().padStart(2, "0");
+    const endpointDate = `${yyyy}${mm}${dd}`;
+    for (const propType of propTypes) {
+      const endpoint = propEndpointMap.get(propType);
+      if (!endpoint) {
+        throw new Error(`Unknown prop ${propType}`);
+      }
+      const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
 
-    let data;
-    try {
-      ({ data } = await axios.get(url));
-    } catch (error) {
-      console.log(`No ActionNetwork props for ${propType}`);
-      continue;
-    }
+      let data;
+      try {
+        ({ data } = await axios.get(url));
+      } catch (error) {
+        console.log(`No ActionNetwork props for ${propType}`);
+        continue;
+      }
 
-    const odds = data.markets[0];
-    const OVER = Object.entries(odds.rules.options)
-      .find(([key, value]: any) => ["o"].includes(value.abbreviation))?.[0]
-      .toString();
-    const UNDER = Object.entries(odds.rules.options)
-      .find(([key, value]: any) => ["u"].includes(value.abbreviation))?.[0]
-      .toString();
-    // console.log(OVER, UNDER);
-    if (!OVER || !UNDER) {
-      throw new Error(`Unknown options for ${propType}`);
-    }
-    odds.books.forEach((book: any) => {
-      const book_id = book.book_id;
-      let bookName = newYorkActionNetworkSportsBookMap.get(book_id);
-      book.odds.forEach((listing: any) => {
-        const value = listing.value;
-        const player = odds.players.find(
-          (p: any) => p.id === listing.player_id
-        ).full_name;
-        const team = odds.teams.find((t: any) => t.id === listing.team_id).abbr;
-        const choice =
-          listing.option_type_id.toString() === OVER
-            ? LineChoice.OVER
-            : LineChoice.UNDER;
-        const price = listing.money;
-        if (!bookName) {
-          // console.log(`unknown book: ${player} ${choice} ${prop} @ ${price} on book ${book_id}`);
-          return;
-        }
-        const prop = new Prop(
-          {
-            value,
-            choice,
-            book: bookName,
-            stat: propType,
-            playerName: player,
-            team,
-            price,
-          },
-          playerRegistry
-        );
+      const odds = data.markets[0];
+      const OVER = Object.entries(odds.rules.options)
+        .find(([key, value]: any) => ["o"].includes(value.abbreviation))?.[0]
+        .toString();
+      const UNDER = Object.entries(odds.rules.options)
+        .find(([key, value]: any) => ["u"].includes(value.abbreviation))?.[0]
+        .toString();
+      // console.log(OVER, UNDER);
+      if (!OVER || !UNDER) {
+        throw new Error(`Unknown options for ${propType}`);
+      }
+      odds.books.forEach((book: any) => {
+        const book_id = book.book_id;
+        let bookName = newYorkActionNetworkSportsBookMap.get(book_id);
+        book.odds.forEach((listing: any) => {
+          const value = listing.value;
+          const player = odds.players.find(
+            (p: any) => p.id === listing.player_id
+          ).full_name;
+          const team = odds.teams.find(
+            (t: any) => t.id === listing.team_id
+          ).abbr;
+          const choice =
+            listing.option_type_id.toString() === OVER
+              ? LineChoice.OVER
+              : LineChoice.UNDER;
+          const price = listing.money;
+          if (!bookName) {
+            // console.log(`unknown book: ${player} ${choice} ${prop} @ ${price} on book ${book_id}`);
+            return;
+          }
+          const prop = new Prop(
+            {
+              value,
+              choice,
+              book: bookName,
+              stat: propType,
+              playerName: player,
+              team,
+              price,
+            },
+            playerRegistry
+          );
 
-        props.push(prop);
+          props.push(prop);
+        });
       });
-    });
+    }
   }
   return props;
 };
