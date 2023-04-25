@@ -1,7 +1,8 @@
 import { table, TableUserConfig } from "table";
 import path from "path";
-import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
 import colors from "colors";
+import { Stats } from "fast-stats";
+import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
 import { Odds } from "../odds/odds";
 import { getPinnacleProps } from "../import/pinnacle";
 import { getUnderdogLines } from "../import/underdog";
@@ -122,8 +123,8 @@ export const findOutliers = async (league: League) => {
   });
 
   // @ts-ignore
-  const groups = propGroups.filter(
-    (group) =>
+  const groups = propGroups.filter((group) => {
+    return (
       group.getLikelihood() > 0.35 &&
       (group.getFullSize() >= 3 ||
         group.prices.some((price) =>
@@ -133,7 +134,8 @@ export const findOutliers = async (league: League) => {
             PropsPlatform.NO_HOUSE,
           ].includes(price.book as PropsPlatform)
         ))
-  );
+    );
+  });
   playerRegistry.saveRegistry();
   return formatOutliers(groups);
 };
@@ -234,10 +236,21 @@ export const formatOutliers = (groups: Group[]) => {
       const impliedProbability = group.getLikelihood();
       const isHighLikelihood = impliedProbability > 0.56;
       const isPositiveEV = group.maxEV() > 0;
+      const allValues = new Stats().push([
+        ...Array(group.prices.length).fill(group.value),
+        ...group.relatedGroups.flatMap((g) =>
+          Array(g.prices.length).fill(g.value)
+        ),
+      ]);
+      const iqr = allValues.percentile(75) - allValues.percentile(25);
+      const iqr_scale = 1.5;
+      const upperbound = allValues.percentile(75) + iqr * iqr_scale;
+      const lowererbound = allValues.percentile(12) - iqr * iqr_scale;
       const isMisvaluedDFS = group.prices.some(
         (x) =>
           DFSPlatforms.includes(x.book) &&
-          group.relatedGroups.flatMap((g) => g.prices).length >= 4
+          group.relatedGroups.flatMap((g) => g.prices).length >= 4 &&
+          (group.value > upperbound || group.value < lowererbound)
       );
 
       const coloredLikelihood = ratesOfEachPrice
@@ -258,19 +271,20 @@ export const formatOutliers = (groups: Group[]) => {
         let text = `@${value}\n${prop.price}`;
         if (EVs.map((ev) => ev.book).includes(prop.book)) {
           if (isMisvaluedDFS) {
-            if (
-              group.side === LineChoice.OVER &&
-              group.relatedGroups[0].value > group.value &&
-              group.relatedGroups[0].getLikelihood() > 0.49
-            ) {
-              isInteresting = true;
-              return colors.green(text);
-            }
-            if (
-              group.side === LineChoice.UNDER &&
-              group.relatedGroups[0].value < group.value &&
-              group.relatedGroups[0].getLikelihood() > 0.49
-            ) {
+            const isValueWayOff =
+              Math.min(allValues.median(), group.value) /
+                Math.max(allValues.median(), group.value) <
+                0.9 && Math.abs(allValues.median() - group.value) > 0.5;
+
+            const marketFavorsDiffLine =
+              (group.side === LineChoice.OVER &&
+                group.value < allValues.median() &&
+                group.relatedGroups[0].getLikelihood() > 0.49) ||
+              (group.side === LineChoice.UNDER &&
+                group.value > allValues.median() &&
+                group.relatedGroups[0].getLikelihood() > 0.49);
+
+            if (marketFavorsDiffLine || isValueWayOff) {
               isInteresting = true;
               return colors.green(text);
             }

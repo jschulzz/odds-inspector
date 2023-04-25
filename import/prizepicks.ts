@@ -86,9 +86,12 @@ export const getPrizePicksLines = async (
       return;
     }
 
+    let isFlashSale = !!projection.attributes.flash_sale_line_score;
+
     const value =
       projection.attributes.flash_sale_line_score ||
       projection.attributes.line_score;
+
     const standard = {
       playerName: player.attributes.name,
       team: player.attributes.team,
@@ -113,15 +116,15 @@ export const getPrizePicksLines = async (
     );
     const existingProps = props.filter((p) => {
       return (
-        p.player === standard.playerName &&
+        p.player === overProp.player &&
         p.stat === standard.stat &&
         p.value !== standard.value
       );
     });
     let newProps = [overProp, underProp];
     if (existingProps.length) {
-      if (existingProps[0].value > standard.value) {
-        console.log("Found a better one");
+      if (isFlashSale) {
+        console.log("Found a better one", overProp.value);
         props = props.filter((p) => !existingProps.includes(p));
       } else {
         console.log("Better one already exists");

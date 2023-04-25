@@ -101,20 +101,22 @@ export class Group {
   getLikelihood = () => {
     let sum = 0;
     const bookWeights = leagueWeights.get(this.league);
-    if(!bookWeights){
-      throw new Error("Unknown league")
+    if (!bookWeights) {
+      throw new Error("Unknown league");
     }
-    return (
-      this.prices.reduce((prev, curr) => {
-        let weight = 1;
-        if (bookWeights.has(curr.book)) {
-          // @ts-ignore
-          weight = bookWeights.get(curr.book);
-        }
-        sum += weight;
-        return prev + weight * curr.likelihood;
-      }, 0) / sum
-    );
+    const total = this.prices.reduce((prev, curr) => {
+      let weight = 1;
+      if (bookWeights.has(curr.book)) {
+        // @ts-ignore
+        weight = bookWeights.get(curr.book);
+      }
+      sum += weight;
+      return prev + weight * curr.likelihood;
+    }, 0);
+    if (sum === 0) {
+      return 0.5;
+    }
+    return total / sum;
   };
   findRelatedGroups = (groups: Group[]) => {
     this.relatedGroups = groups.filter((group) => {
