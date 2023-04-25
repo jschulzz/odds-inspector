@@ -146,7 +146,7 @@ const statMaps = [
     stat: PropsStat.TOTAL_BASES,
   },
   { names: ["Hits", "HITs"], stat: PropsStat.HITS },
-  { names: ["Hits Allowed", 'pitching_hits'], stat: PropsStat.HITS_ALLOWED },
+  { names: ["Hits Allowed", 'pitching_hits', 'HitsAllowed'], stat: PropsStat.HITS_ALLOWED },
   { names: ["RBIs"], stat: PropsStat.RBIS },
   { names: ["Home Runs", "HomeRuns"], stat: PropsStat.HOME_RUNS },
   { names: ["Doubles"], stat: PropsStat.DOUBLES },

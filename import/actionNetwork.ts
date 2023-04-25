@@ -303,7 +303,7 @@ export const getActionNetworkProps = async (
   let now = new Date();
   let endDate = new Date(now);
   if (league === League.NBA) {
-    endDate.setDate(endDate.getDate() + 2);
+    endDate.setDate(endDate.getDate() + 1);
   }
 
   for (let date = now; date <= endDate; date.setDate(date.getDate() + 1)) {

@@ -109,6 +109,7 @@ export const findOutliers = async (league: League) => {
       side: prop.choice,
       prices,
       value: prop.value,
+      league,
     });
 
     remainingProps = remainingProps.filter((p) => !plays.includes(p));
@@ -116,12 +117,6 @@ export const findOutliers = async (league: League) => {
   }
 
   propGroups.forEach((group) => {
-    if (
-      group.player.name.includes("Caruso") &&
-      group.stat === PropsStat.PRA
-    ) {
-      console.log(group);
-    }
     group.findRelatedGroups(propGroups);
     group.findOppositeGroup(propGroups);
   });

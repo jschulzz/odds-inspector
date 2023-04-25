@@ -1,21 +1,49 @@
 import { compareTwoStrings } from "string-similarity";
 import { Odds } from "../odds/odds";
-import { Book, PropsPlatform, PropsStat } from "../types";
+import { Book, League, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
 import { Player } from "./player";
 import { PlayerRegistry } from "./player-registry";
 
-const bookWeights = new Map<Book | PropsPlatform, number>([
-  [Book.PINNACLE, 2.5],
-  [Book.DRAFTKINGS, 2],
-  [Book.FANDUEL, 2],
-  [Book.TWINSPIRES, 0],
-  // [Book.BETRIVERS, 1],
-  // [Book.BETMGM, 1],
-  // [Book.CAESARS, 1],
-  [PropsPlatform.PRIZEPICKS, 0],
-  [PropsPlatform.UNDERDOG, 0],
-  [PropsPlatform.NO_HOUSE, 0],
+const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
+  [
+    League.NBA,
+    new Map<Book | PropsPlatform, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.TWINSPIRES, 0],
+      [PropsPlatform.PRIZEPICKS, 0],
+      [PropsPlatform.UNDERDOG, 0],
+      [PropsPlatform.NO_HOUSE, 0],
+    ]),
+  ],
+  [
+    League.NHL,
+    new Map<Book | PropsPlatform, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.TWINSPIRES, 0],
+      [PropsPlatform.PRIZEPICKS, 0],
+      [PropsPlatform.UNDERDOG, 0],
+      [PropsPlatform.NO_HOUSE, 0],
+    ]),
+  ],
+  [
+    League.MLB,
+    new Map<Book | PropsPlatform, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.TWINSPIRES, 0],
+      [Book.BETRIVERS, 2],
+      // [Book.CAESARS, 1],
+      [PropsPlatform.PRIZEPICKS, 0],
+      [PropsPlatform.UNDERDOG, 0],
+      [PropsPlatform.NO_HOUSE, 0],
+    ]),
+  ],
 ]);
 
 export interface Price {
@@ -30,6 +58,7 @@ export interface GroupArgs {
   value: number;
   prices: Price[];
   side: LineChoice;
+  league: League;
 }
 
 export class Group {
@@ -40,6 +69,7 @@ export class Group {
   public relatedGroups: Group[];
   public oppositeGroup?: Group;
   public player: Player;
+  public league: League;
 
   constructor(args: GroupArgs) {
     this.player = args.player;
@@ -47,6 +77,7 @@ export class Group {
     this.prices = args.prices;
     this.side = args.side;
     this.value = args.value;
+    this.league = args.league;
     this.relatedGroups = [];
   }
 
@@ -69,6 +100,10 @@ export class Group {
   };
   getLikelihood = () => {
     let sum = 0;
+    const bookWeights = leagueWeights.get(this.league);
+    if(!bookWeights){
+      throw new Error("Unknown league")
+    }
     return (
       this.prices.reduce((prev, curr) => {
         let weight = 1;

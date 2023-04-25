@@ -98,7 +98,7 @@ export class Prop {
 
   constructor(args: PropArgs, playerRegistry: PlayerRegistry) {
     this.book = args.book;
-    this.value = args.value;
+    this.value = Number(args.value);
     this.stat = args.stat;
     this.price = args.price;
     this.choice = args.choice;
