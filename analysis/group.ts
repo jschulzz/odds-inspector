@@ -33,7 +33,7 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
     League.MLB,
     new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
+      [Book.PINNACLE, 2],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],

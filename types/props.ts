@@ -7,7 +7,7 @@ export enum PropsPlatform {
   UNDERDOG = "Underdog (3p)",
   PRIZEPICKS = "PrizePicks (5p)",
   THRIVE = "Thrive",
-  NO_HOUSE = "No House Advantage (5p)",
+  NO_HOUSE = "No House Advantage (5p flx)",
   MONKEY_KNIFE_FIGHT = "Monkey Knife Fight",
 }
 

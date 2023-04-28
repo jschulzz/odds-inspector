@@ -245,12 +245,13 @@ export const formatOutliers = (groups: Group[]) => {
       const iqr = allValues.percentile(75) - allValues.percentile(25);
       const iqr_scale = 1.5;
       const upperbound = allValues.percentile(75) + iqr * iqr_scale;
-      const lowererbound = allValues.percentile(12) - iqr * iqr_scale;
+      const lowerbound = allValues.percentile(25) - iqr * iqr_scale;
+
       const isMisvaluedDFS = group.prices.some(
         (x) =>
           DFSPlatforms.includes(x.book) &&
           group.relatedGroups.flatMap((g) => g.prices).length >= 4 &&
-          (group.value > upperbound || group.value < lowererbound)
+          (group.value > upperbound || group.value < lowerbound)
       );
 
       const coloredLikelihood = ratesOfEachPrice
@@ -269,6 +270,7 @@ export const formatOutliers = (groups: Group[]) => {
       let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
         let text = `@${value}\n${prop.price}`;
+
         if (EVs.map((ev) => ev.book).includes(prop.book)) {
           if (isMisvaluedDFS) {
             const isValueWayOff =

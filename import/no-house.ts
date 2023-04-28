@@ -61,7 +61,7 @@ export const getNoHouse = async (
         stat,
         value,
         book: PropsPlatform.NO_HOUSE,
-        price: -119,
+        price: -114,
       };
       const overProp = new Prop(
         {
