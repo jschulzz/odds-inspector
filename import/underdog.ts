@@ -9,6 +9,7 @@ const leagueMap = new Map([
   ["NBA", League.NBA],
   ["NHL", League.NHL],
   ["MLB", League.MLB],
+  ["WNBA", League.WNBA],
   // ["ESP:ORTY", League.NHL],
   // ["NHL", League.NHL],
 ]);

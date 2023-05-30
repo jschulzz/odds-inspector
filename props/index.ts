@@ -138,7 +138,13 @@ const statMaps = [
   { names: ["Sacks", "sacks"], stat: PropsStat.SACKS },
 
   {
-    names: ["Strikeouts", "Ks", "Pitcher Strikeouts", "strikeouts_(pitcher)", "strikeouts"],
+    names: [
+      "Strikeouts",
+      "Ks",
+      "Pitcher Strikeouts",
+      "strikeouts_(pitcher)",
+      "strikeouts",
+    ],
     stat: PropsStat.STRIKEOUTS,
   },
   {
@@ -149,7 +155,7 @@ const statMaps = [
     names: ["TotalBases", "Total Bases", "BASEs", "total_bases"],
     stat: PropsStat.TOTAL_BASES,
   },
-  { names: ["Hits", "HITs"], stat: PropsStat.HITS },
+  { names: ["Hits", "HITs", "hits"], stat: PropsStat.HITS },
   {
     names: ["Hits Allowed", "pitching_hits", "HitsAllowed"],
     stat: PropsStat.HITS_ALLOWED,
@@ -250,6 +256,7 @@ const statMaps = [
       "3-PT Made",
       "Three Points Made",
       "Three_Pointers_Made",
+      "three_pointers_made"
     ],
     stat: PropsStat.THREE_POINTERS_MADE,
   },

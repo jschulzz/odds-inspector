@@ -7,6 +7,18 @@ import { PlayerRegistry } from "./player-registry";
 
 const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
+    League.WNBA,
+    new Map<Book | PropsPlatform, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.TWINSPIRES, 0],
+      [PropsPlatform.PRIZEPICKS, 0],
+      [PropsPlatform.UNDERDOG, 0],
+      [PropsPlatform.NO_HOUSE, 0],
+    ]),
+  ],
+  [
     League.NBA,
     new Map<Book | PropsPlatform, number>([
       [Book.PINNACLE, 2.5],

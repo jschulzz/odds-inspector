@@ -208,6 +208,7 @@ export const getActionNetworkProps = async (
   }
 
   const leagueIdMap = new Map([
+    [League.WNBA, 5],
     [League.NBA, 4],
     [League.NFL, 1],
     [League.NHL, 3],
@@ -248,6 +249,14 @@ export const getActionNetworkProps = async (
   ]);
 
   const leaguePropsMap = new Map([
+    [
+      League.WNBA,
+      [
+        PropsStat.POINTS,
+        PropsStat.REBOUNDS,
+        PropsStat.ASSISTS,
+      ],
+    ],
     [
       League.NBA,
       [

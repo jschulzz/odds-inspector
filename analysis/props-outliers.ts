@@ -78,32 +78,36 @@ export const findOutliers = async (league: League) => {
     });
     const plays = [prop, ...equalProps];
 
-    let prices: Price[] = plays.map((play) => {
-      const otherPlay = allProps.find(
-        (otherPlay) =>
-          play.book === otherPlay.book &&
-          play.stat === otherPlay.stat &&
-          play.choice !== otherPlay.choice &&
-          otherPlay.player === play.player
-      );
-      if (!otherPlay) {
+    // @ts-ignore
+    let prices: Price[] = plays
+      .map((play) => {
+        const otherPlay = allProps.find(
+          (otherPlay) =>
+            play.book === otherPlay.book &&
+            play.stat === otherPlay.stat &&
+            play.choice !== otherPlay.choice &&
+            otherPlay.player === play.player
+        );
+        if (!otherPlay || play.price === 0) {
+          return undefined;
+          return {
+            book: play.book,
+            price: play.price,
+            likelihood: Odds.fromFairLine(play.price).toProbability(),
+          };
+        }
+        const likelihood = Odds.fromVigAmerican(
+          play.price,
+          otherPlay.price
+        ).toProbability();
+
         return {
           book: play.book,
           price: play.price,
-          likelihood: Odds.fromFairLine(play.price).toProbability(),
+          likelihood,
         };
-      }
-      const likelihood = Odds.fromVigAmerican(
-        play.price,
-        otherPlay.price
-      ).toProbability();
-
-      return {
-        book: play.book,
-        price: play.price,
-        likelihood,
-      };
-    });
+      })
+      .filter(Boolean);
     const group = new Group({
       player: prop.player,
       stat: prop.stat,
@@ -114,12 +118,12 @@ export const findOutliers = async (league: League) => {
     });
 
     remainingProps = remainingProps.filter((p) => !plays.includes(p));
-    if (
-      group.stat === PropsStat.HOME_RUNS &&
-      group.player.name.includes("Straw")
-    ) {
-      console.log(group);
-    }
+    // if (
+    //   group.stat === PropsStat.HOME_RUNS &&
+    //   group.player.name.includes("Straw")
+    // ) {
+    //   console.log(group);
+    // }
     propGroups.push(group);
   }
 
