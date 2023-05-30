@@ -107,7 +107,7 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
     sources.moneylines,
     sources.gameTotals,
     sources.spreads,
-    sources.teamTotals,
+    // sources.teamTotals,
   ];
   const groups: Line[][] = [];
   lineTypes.forEach((lineType) => {

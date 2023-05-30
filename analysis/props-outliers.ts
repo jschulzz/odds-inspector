@@ -90,7 +90,7 @@ export const findOutliers = async (league: League) => {
         return {
           book: play.book,
           price: play.price,
-          likelihood: 0.5,
+          likelihood: Odds.fromFairLine(play.price).toProbability(),
         };
       }
       const likelihood = Odds.fromVigAmerican(
@@ -114,6 +114,12 @@ export const findOutliers = async (league: League) => {
     });
 
     remainingProps = remainingProps.filter((p) => !plays.includes(p));
+    if (
+      group.stat === PropsStat.HOME_RUNS &&
+      group.player.name.includes("Straw")
+    ) {
+      console.log(group);
+    }
     propGroups.push(group);
   }
 
@@ -126,7 +132,7 @@ export const findOutliers = async (league: League) => {
   const groups = propGroups.filter((group) => {
     return (
       group.getLikelihood() > 0.35 &&
-      (group.getFullSize() >= 3 ||
+      (group.getFullSize() >= 4 ||
         group.prices.some((price) =>
           [
             PropsPlatform.PRIZEPICKS,

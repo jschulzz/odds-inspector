@@ -4,6 +4,7 @@ const statMaps = [
   {
     names: [
       "Fantasy Points",
+      "Fantasy_Points",
       "Fantasy Score",
       "Hitter Fantasy Score",
       "Pitcher Fantasy Score",
@@ -137,25 +138,39 @@ const statMaps = [
   { names: ["Sacks", "sacks"], stat: PropsStat.SACKS },
 
   {
-    names: ["Strikeouts", "Ks", "Pitcher Strikeouts", "strikeouts_(pitcher)"],
+    names: ["Strikeouts", "Ks", "Pitcher Strikeouts", "strikeouts_(pitcher)", "strikeouts"],
     stat: PropsStat.STRIKEOUTS,
   },
-  { names: ["Walks", "Walks Allowed", 'pitching_walks'], stat: PropsStat.WALKS },
+  {
+    names: ["Walks", "Walks Allowed", "pitching_walks"],
+    stat: PropsStat.WALKS,
+  },
   {
     names: ["TotalBases", "Total Bases", "BASEs", "total_bases"],
     stat: PropsStat.TOTAL_BASES,
   },
   { names: ["Hits", "HITs"], stat: PropsStat.HITS },
-  { names: ["Hits Allowed", 'pitching_hits', 'HitsAllowed'], stat: PropsStat.HITS_ALLOWED },
+  {
+    names: ["Hits Allowed", "pitching_hits", "HitsAllowed"],
+    stat: PropsStat.HITS_ALLOWED,
+  },
   { names: ["RBIs"], stat: PropsStat.RBIS },
   { names: ["Home Runs", "HomeRuns"], stat: PropsStat.HOME_RUNS },
   { names: ["Doubles"], stat: PropsStat.DOUBLES },
   { names: ["Singles", "singles"], stat: PropsStat.SINGLES },
   { names: ["Triples"], stat: PropsStat.TRIPLES },
   { names: ["Stolen Bases"], stat: PropsStat.STOLEN_BASES },
-  { names: ["Hits + Runs + RBIs", "Hits+Runs+RBIS", "hits+rbi+runs"], stat: PropsStat.HITS_RUNS_RBIS },
   {
-    names: ["EarnedRuns", "Earned Runs", "Earned Runs Allowed", "pitching_earned_runs"],
+    names: ["Hits + Runs + RBIs", "Hits+Runs+RBIS", "hits+rbi+runs"],
+    stat: PropsStat.HITS_RUNS_RBIS,
+  },
+  {
+    names: [
+      "EarnedRuns",
+      "Earned Runs",
+      "Earned Runs Allowed",
+      "pitching_earned_runs",
+    ],
     stat: PropsStat.EARNED_RUNS,
   },
   {
@@ -182,7 +197,7 @@ const statMaps = [
   { names: ["Goals Against", "Goals Allowed"], stat: PropsStat.GOALS_AGAINST },
 
   { names: ["Steals", "STLS"], stat: PropsStat.STEALS },
-  { names: ["TurnOvers", "Turnovers"], stat: PropsStat.TURNOVERS },
+  { names: ["TurnOvers", "Turnovers", "turnovers"], stat: PropsStat.TURNOVERS },
   {
     names: [
       "StealsBlocks",
@@ -190,6 +205,7 @@ const statMaps = [
       "Blks+Stls",
       "BLKS, STLS",
       "Steals + Blocks",
+      "steals+blocks",
     ],
     stat: PropsStat.STEALS_PLUS_BLOCKS,
   },

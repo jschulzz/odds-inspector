@@ -35,9 +35,9 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
     new Map<Book | PropsPlatform, number>([
       [Book.PINNACLE, 2],
       [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 2],
+      [Book.FANDUEL, 1],
       [Book.TWINSPIRES, 0],
-      [Book.BETRIVERS, 2],
+      [Book.BETRIVERS, 1.5],
       // [Book.CAESARS, 1],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
