@@ -204,8 +204,6 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
     if (!period) {
       return;
     }
-    const homeTeam = correspondingMatchup.game.homeTeam;
-    const awayTeam = correspondingMatchup.game.awayTeam;
     const market = findMarket(line.type);
     if (market === Market.GAME_TOTAL) {
       const over = line.prices.find((p: any) => p.designation === "over");
@@ -299,6 +297,9 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const homeLine = home.points;
       const awayPrice = away.price;
       const awayLine = away.points;
+      if(homeLine === undefined){
+        console.log(line, correspondingMatchup.game)
+      }
       const standard = {
         period,
         book: Book.PINNACLE,

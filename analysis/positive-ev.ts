@@ -1,7 +1,5 @@
 import { table, TableUserConfig } from "table";
 import colors from "colors";
-import { getCircaLines } from "../import/circa";
-import { getOddspedia } from "../import/oddspedia";
 import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
 import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
@@ -14,9 +12,9 @@ import {
   TeamTotal,
 } from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
-import { Bankroll } from "../bankroll/bankroll";
-import { readOddsAPI } from "../import/odds-api";
 import { Team } from "../database/team";
+import { Price } from "./group";
+import { GameGroup } from "./game-group";
 
 interface Play {
   expectedValue: number;
@@ -103,14 +101,14 @@ const combineLines = (sources: SourcedOdds[]): SourcedOdds => {
   return combinedOdds;
 };
 
-const buildGroups = (sources: SourcedOdds): Line[][] => {
-  const lineTypes = [
+const buildGroups = (sources: SourcedOdds): GameGroup[] => {
+  const lineTypes: (Moneyline | GameTotal | Spread)[][] = [
     sources.moneylines,
     sources.gameTotals,
     sources.spreads,
     // sources.teamTotals,
   ];
-  const groups: Line[][] = [];
+  const groups: GameGroup[] = [];
   lineTypes.forEach((lineType) => {
     let remainingLines = [...lineType];
     while (remainingLines.length) {
@@ -118,50 +116,58 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
       const matchingLines = findMatchingEvents(targetLine, sources, {
         wantSameChoice: true,
         wantOppositeValue: false,
-      }).filter((x) => x.book !== Book.POINTSBET);
+      });
 
-      const group = matchingLines.filter((l) => l.price);
-      if (group.length >= 2) groups.push(group);
-      remainingLines = remainingLines.filter((line) => !group.includes(line));
+      // @ts-ignore
+      const prices: Price[] = matchingLines
+        .map((matchingLine) => {
+          const otherLine = findMatchingEvents(matchingLine, sources, {
+            wantSameChoice: false,
+            wantOppositeValue: true,
+          }).filter((x) => x.book === matchingLine.book);
+
+          if (!otherLine.length) {
+            return undefined;
+          }
+          const price: Price = {
+            book: matchingLine.book,
+            price: matchingLine.price,
+            likelihood: Odds.fromVigAmerican(
+              matchingLine.price,
+              otherLine[0].price
+            ).toProbability(),
+          };
+          return price;
+        })
+        .filter(Boolean);
+
+      const group = new GameGroup({
+        prices,
+        game: targetLine.game,
+        lineType: targetLine.type,
+        side: targetLine.choice,
+        league: targetLine.game.league,
+        period: targetLine.period,
+        // @ts-ignore
+        value: targetLine.value,
+      });
+
+      // const group = matchingLines.filter((l) => l.price);
+      groups.push(group);
+      remainingLines = remainingLines.filter(
+        (line) =>
+          !(
+            group.prices.map((p) => p.book).includes(line.book) &&
+            line.choice === group.side &&
+            line.game === group.game &&
+            line.period === group.period &&
+            // @ts-ignore
+            line.value === group.value
+          )
+      );
     }
   });
   return groups;
-};
-
-const evaluateGroup = (group: Line[]) => {
-  let fairLine = 0;
-  let likelihoodSum = 0;
-  let count = 0;
-  group.forEach((line: Line) => {
-    let weight = 1;
-    if (line.book === Book.PINNACLE) {
-      weight = 3;
-    }
-    if (line.book === Book.CIRCA) {
-      weight = 2;
-    }
-    if (line.book === Book.BETONLINE) {
-      weight = 2;
-    }
-    if (line.book === Book.DRAFTKINGS) {
-      weight = 1.5;
-    }
-    if (line.book === Book.FANDUEL) {
-      weight = 1.5;
-    }
-    const likelihood = Odds.fromVigAmerican(
-      line.price,
-      line.otherOutcomePrice
-    ).toProbability();
-    count += weight;
-    likelihoodSum += likelihood * weight;
-  });
-  const likelihood = likelihoodSum / count;
-  fairLine = Odds.probabilityToAmericanOdds(likelihood);
-
-  const beatingFairLine = group.filter((line) => line.price > fairLine);
-  // beatsFairLine = !!beatingFairLine.length;
-  return { fairLine, beatingFairLine };
 };
 
 export const findPositiveEv = async (league: League) => {
@@ -174,84 +180,33 @@ export const findPositiveEv = async (league: League) => {
 
   const groups = buildGroups(allLines);
 
-  const positiveEVPlays: Play[] = groups
-    .map((group) => {
-      const plays: Play[] = [];
-      const { fairLine, beatingFairLine } = evaluateGroup(group);
-      if (!beatingFairLine.length) {
-        return [];
-      }
-      const likelihood = Odds.fromFairLine(fairLine).toProbability();
+  groups.forEach((group) => {
+    group.findOppositeGroup(groups);
+    group.findRelatedGroups(groups);
+  });
 
-      beatingFairLine.forEach((line) => {
-        const payoutMultiplier = Odds.fromFairLine(
-          line.price
-        ).toPayoutMultiplier();
-        const expectedValue = payoutMultiplier * likelihood - (1 - likelihood);
-        const play: Play = { expectedValue, likelihood, line, fairLine };
-        if (line.price) plays.push(play);
-      });
-      return plays;
-    })
-    .flat();
-
-  console.log(`Found ${positiveEVPlays.length} Positive EV Plays`);
-
-  const sortedPlays: DisplayPlay[] = positiveEVPlays
-    .sort(
-      ({ expectedValue: expectedValueA }, { expectedValue: expectedValueB }) =>
-        expectedValueA < expectedValueB ? 1 : -1
-    )
-    .map((play) => ({
-      line: play.line,
-      EV: play.expectedValue,
-      width: play.width || 0,
-      likelihood: play.likelihood,
-      homeTeam: play.line.game.homeTeam,
-      awayTeam: play.line.game.awayTeam,
-      choice: play.line.choice,
-      value: (play.line as Spread).value,
-      type: play.line.type,
-      period: play.line.period,
-      book: play.line.book,
-      price: play.line.price,
-      side: (play.line as TeamTotal).side,
-      fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
-      key: `${play.line.game.homeTeam}-${play.line.game.awayTeam}-${
-        play.line.choice
-      }-${(play.line as Spread).value}-${play.line.type}-${play.line.period}`,
-    }))
-    .filter((play) => play.fair < 200);
-
-  console.log(`${sortedPlays.length} have a fair line of +200 or less`);
-
-  return formatResults(sortedPlays, allLines);
-};
-
-export const formatResults = async (
-  plays: DisplayPlay[],
-  lines: SourcedOdds
-) => {
-  const filteredPlays = plays.filter(
-    (p, idx) => !plays.slice(0, idx).find((x) => p.key === x.key)
+  const positiveEvGroups = groups.filter((group) => group.maxEV() > 0);
+  const sortedGroups = positiveEvGroups.sort((a, b) =>
+    a.maxEV() > b.maxEV() ? 1 : -1
+  );
+  const filteredGroups = sortedGroups.filter(
+    (group) => group.getFairLine() < 200
   );
 
-  const allLines = [
-    ...lines.gameTotals,
-    ...lines.moneylines,
-    ...lines.spreads,
-    ...lines.teamTotals,
-  ];
+  console.log(
+    `${filteredGroups.length} positive EV groups have a fair line of +200 or less`
+  );
 
-  const allBooks = [...new Set(allLines.map((play) => play.book))];
+  return formatResults(filteredGroups);
+};
+
+export const formatResults = async (groups: GameGroup[]) => {
+  const allBooks = [
+    ...new Set(
+      groups.map((group) => group.prices.map((price) => price.book)).flat()
+    ),
+  ];
   console.log(allBooks);
-  const alignedWithEquivalents = filteredPlays.map((p) => ({
-    play: p,
-    matchingLines: findMatchingEvents(p.line, lines, {
-      wantOppositeValue: false,
-      wantSameChoice: true,
-    }),
-  }));
 
   const typeToString = (
     choice: LineChoice,
@@ -280,70 +235,56 @@ export const formatResults = async (
     }
   };
 
-  const tableData = alignedWithEquivalents.map(({ play, matchingLines }) => {
-    const mustBeatPrice = new Odds(play.likelihood).toAmericanOdds();
-    let widthString = play.width.toString();
-    if (play.width >= 25) {
-      widthString = widthString.bgRed;
-    } else if (play.width <= 15) {
-      widthString = widthString.bgGreen;
-    } else {
-      widthString = widthString.bgYellow;
-    }
+  const tableData = groups.map((group) => {
+    const fairline = group.getFairLine();
 
-    const label = `${play.awayTeam.abbreviation} @ ${
-      play.homeTeam.abbreviation
+    const label = `${group.game.awayTeam.abbreviation} @ ${
+      group.game.homeTeam.abbreviation
     } - ${typeToString(
-      play.choice,
-      play.value,
-      play.type,
-      play.period,
-      play.side
-    )} (${(play.EV * 100).toFixed(2)}% EV, ${mustBeatPrice.toFixed(
-      0
-    )}, width of ${widthString}, ${(play.likelihood * 100).toFixed(1)}%)`;
+      group.side,
+      // @ts-ignore
+      group.value,
+      group.lineType,
+      group.period,
+      group.side
+    )} (${fairline.toFixed(0)}, ${(group.getLikelihood() * 100).toFixed(1)}%)`;
+    if (
+      group.game.awayTeam.abbreviation === "WSH" &&
+      group.lineType === Market.SPREAD &&
+      group.side === LineChoice.HOME &&
+      group.period === Period.FIRST_HALF &&
+      group.value === -0.5
+    ) {
+      console.log(group);
+    }
     const bookPrices = allBooks.map((book) => {
-      const prices: number[] = matchingLines
-        .filter((l) => l.book === book)
-        .map((l) => l.price);
-      if (!prices.length) {
-        const otherValue = allLines.find(
-          (line) =>
-            line.game.awayTeam === play.awayTeam &&
-            line.type === play.type &&
-            line.book === book &&
-            line.period === play.period &&
-            line.choice === play.choice &&
-            (line as TeamTotal).side === play.side
-        );
-        if (
-          !otherValue ||
-          !(otherValue as TeamTotal | GameTotal | Spread).value
-        ) {
+      const thisBooksPrice = group.prices.find((price) => price.book === book);
+      const thisBooksEV = group.findEV().find((EV) => EV.book === book);
+      if (!thisBooksPrice) {
+        const otherGroup = group.oppositeGroup;
+        // console.log(group, otherGroup)
+        if (!otherGroup || !otherGroup.value) {
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
-            (otherValue as TeamTotal | GameTotal | Spread).price
+          `@${otherGroup.value}\n${
+            otherGroup.prices.find((price) => price.book === book)?.price
           }`
         );
       }
 
-      const minPrice = Math.min(...prices);
-      const bankroll = new Bankroll();
-      const recommendedWager = bankroll.calculateKelly(
-        play.likelihood,
-        Odds.fromFairLine(minPrice).toPayoutMultiplier()
-      );
-      const priceString = prices.join(", ");
-      if (prices.includes(play.line.price)) {
-        return `${colors.bgGreen(priceString)}\n$${recommendedWager.toFixed(
-          2
-        )}`;
-      } else if (prices.length && prices.every((p) => p > mustBeatPrice)) {
-        return `${colors.bgYellow(priceString)}\n$${recommendedWager.toFixed(
-          2
-        )}`;
+      const priceString = thisBooksPrice.price.toString();
+      if (!thisBooksEV) {
+        return priceString;
+      }
+      if (thisBooksEV?.EV > 0.05) {
+        return `${colors.bgGreen(priceString)}\n${(
+          thisBooksEV.EV * 100
+        ).toFixed(1)}%`;
+      } else if (thisBooksEV?.EV > 0) {
+        return `${colors.bgYellow(priceString)}\n${(
+          thisBooksEV.EV * 100
+        ).toFixed(1)}%`;
       }
       return priceString;
     });

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { PlayerRegistry } from "../analysis/player-registry";
-import { findBook } from "../books";
 import {
   Book,
   League,
