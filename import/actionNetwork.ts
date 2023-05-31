@@ -11,6 +11,9 @@ import {
   SourcedOdds,
 } from "../types";
 import { GameTotal, LineChoice, Spread, TeamTotal } from "../types/lines";
+import { TeamManager } from "../database/team-manager";
+import { Team } from "../database/team";
+import { Game } from "../database/game";
 
 const newYorkActionNetworkSportsBookMap = new Map([
   [972, Book.BETRIVERS],
@@ -51,6 +54,7 @@ const periodMap = new Map([
 export const getActionNetworkLines = async (
   league: League
 ): Promise<SourcedOdds> => {
+  const teamManager = new TeamManager();
   const leagueKey = leagueMap.get(league);
   let today = new Date();
   let yyyy = today.getFullYear();
@@ -73,26 +77,51 @@ export const getActionNetworkLines = async (
   const useFullName = ["nfl", "mlb", "wnba", "nhl"].includes(league);
 
   const dataSet = data.games || data.competitions;
-
-  dataSet.forEach((game: any) => {
-    const opponents = game.competitors || game.teams;
-    const homeTeam = opponents.find(
-      (team: any) => team.id === game.home_team_id || team.side === "home"
+  for (let i = 0; i < dataSet.length; i++) {
+    const gameRecord = dataSet[i];
+    const opponents = gameRecord.competitors || gameRecord.teams;
+    const homeTeamObj = opponents.find(
+      (team: any) => team.id === gameRecord.home_team_id || team.side === "home"
     );
-    const awayTeam = opponents.find(
-      (team: any) => team.id === game.away_team_id || team.side === "away"
+    const awayTeamObj = opponents.find(
+      (team: any) => team.id === gameRecord.away_team_id || team.side === "away"
     );
 
     if (league === League.TENNIS || league === League.UFC) {
-      homeTeam.display_name = homeTeam.player.full_name;
-      awayTeam.display_name = awayTeam.player.full_name;
+      homeTeamObj.display_name = homeTeamObj.player.full_name;
+      awayTeamObj.display_name = awayTeamObj.player.full_name;
     }
 
-    if (!game.odds) {
-      return;
+    const homeTeamName = useFullName
+      ? homeTeamObj.full_name
+      : homeTeamObj.display_name;
+    const awayTeamName = useFullName
+      ? awayTeamObj.full_name
+      : awayTeamObj.display_name;
+
+    let homeTeam = await teamManager.find(homeTeamName, league);
+    if (!homeTeam) {
+      homeTeam = new Team({ name: homeTeamName, league });
+      await teamManager.add(homeTeam);
+    }
+    let awayTeam = await teamManager.find(awayTeamName, league);
+    if (!awayTeam) {
+      awayTeam = new Team({ name: awayTeamName, league });
+      await teamManager.add(awayTeam);
     }
 
-    game.odds
+    if (!gameRecord.odds) {
+      continue;
+    }
+
+    const game = new Game({
+      homeTeam,
+      awayTeam,
+      league,
+      gameTime: gameRecord.start_time,
+    });
+
+    gameRecord.odds
       .filter((odds: any) => odds.meta)
       .filter((odds: any) =>
         newYorkActionNetworkSportsbooks.includes(odds.book_id)
@@ -104,11 +133,9 @@ export const getActionNetworkLines = async (
           return;
         }
         const gameData = {
-          homeTeam: useFullName ? homeTeam.full_name : homeTeam.display_name,
-          awayTeam: useFullName ? awayTeam.full_name : awayTeam.display_name,
+          game,
           period,
           book,
-          gameTime: game.start_time,
         };
         const homeMoneyline = new Moneyline({
           ...gameData,
@@ -193,7 +220,7 @@ export const getActionNetworkLines = async (
           underAwayTotal
         );
       });
-  });
+  }
   return lines;
 };
 
@@ -249,14 +276,7 @@ export const getActionNetworkProps = async (
   ]);
 
   const leaguePropsMap = new Map([
-    [
-      League.WNBA,
-      [
-        PropsStat.POINTS,
-        PropsStat.REBOUNDS,
-        PropsStat.ASSISTS,
-      ],
-    ],
+    [League.WNBA, [PropsStat.POINTS, PropsStat.REBOUNDS, PropsStat.ASSISTS]],
     [
       League.NBA,
       [

@@ -16,6 +16,7 @@ import {
 import { getActionNetworkLines } from "../import/actionNetwork";
 import { Bankroll } from "../bankroll/bankroll";
 import { readOddsAPI } from "../import/odds-api";
+import { Team } from "../database/team";
 
 interface Play {
   expectedValue: number;
@@ -30,8 +31,8 @@ interface DisplayPlay {
   line: Line;
   EV: number;
   likelihood: number;
-  homeTeam: string;
-  awayTeam: string;
+  homeTeam: Team;
+  awayTeam: Team;
   choice: LineChoice;
   value: number;
   type: Market;
@@ -117,7 +118,7 @@ const buildGroups = (sources: SourcedOdds): Line[][] => {
       const matchingLines = findMatchingEvents(targetLine, sources, {
         wantSameChoice: true,
         wantOppositeValue: false,
-      }).filter(x => x.book !== Book.POINTSBET);
+      }).filter((x) => x.book !== Book.POINTSBET);
 
       const group = matchingLines.filter((l) => l.price);
       if (group.length >= 2) groups.push(group);
@@ -165,19 +166,11 @@ const evaluateGroup = (group: Line[]) => {
 
 export const findPositiveEv = async (league: League) => {
   const pinnacleLines = await getPinnacle(league);
-  // const circaLines = await getCircaLines(league);
   const actionNetworkLines = await getActionNetworkLines(league);
-  // const oddsAPILines = readOddsAPI(league);
 
   console.log("Acquired Odds");
 
-  const bettableLines = combineLines([actionNetworkLines]);
-  const allLines = combineLines([
-    pinnacleLines,
-    // circaLines,
-    actionNetworkLines,
-    // oddsAPILines,
-  ]);
+  const allLines = combineLines([pinnacleLines, actionNetworkLines]);
 
   const groups = buildGroups(allLines);
 
@@ -202,19 +195,6 @@ export const findPositiveEv = async (league: League) => {
     })
     .flat();
 
-  // console.log(groups);
-
-  // const moneylines = findGoodPlays(bettableLines.moneylines, pinnacleLines);
-  // const spreads = findGoodPlays(bettableLines.spreads, pinnacleLines);
-  // const teamTotals = findGoodPlays(bettableLines.teamTotals, pinnacleLines);
-  // const gameTotals = findGoodPlays(bettableLines.gameTotals, pinnacleLines);
-  // const positiveEVPlays = [
-  //   ...moneylines,
-  //   ...spreads,
-  //   ...teamTotals,
-  //   ...gameTotals,
-  // ];
-
   console.log(`Found ${positiveEVPlays.length} Positive EV Plays`);
 
   const sortedPlays: DisplayPlay[] = positiveEVPlays
@@ -227,8 +207,8 @@ export const findPositiveEv = async (league: League) => {
       EV: play.expectedValue,
       width: play.width || 0,
       likelihood: play.likelihood,
-      homeTeam: play.line.homeTeam,
-      awayTeam: play.line.awayTeam,
+      homeTeam: play.line.game.homeTeam,
+      awayTeam: play.line.game.awayTeam,
       choice: play.line.choice,
       value: (play.line as Spread).value,
       type: play.line.type,
@@ -237,8 +217,9 @@ export const findPositiveEv = async (league: League) => {
       price: play.line.price,
       side: (play.line as TeamTotal).side,
       fair: play.matchingPinnacleLine?.price || play.fairLine || 0,
-      key: `${play.line.homeTeam}-${play.line.awayTeam}-${play.line.choice}-${(play.line as Spread).value
-        }-${play.line.type}-${play.line.period}`,
+      key: `${play.line.game.homeTeam}-${play.line.game.awayTeam}-${
+        play.line.choice
+      }-${(play.line as Spread).value}-${play.line.type}-${play.line.period}`,
     }))
     .filter((play) => play.fair < 200);
 
@@ -310,7 +291,9 @@ export const formatResults = async (
       widthString = widthString.bgYellow;
     }
 
-    const label = `${play.awayTeam} @ ${play.homeTeam} - ${typeToString(
+    const label = `${play.awayTeam.abbreviation} @ ${
+      play.homeTeam.abbreviation
+    } - ${typeToString(
       play.choice,
       play.value,
       play.type,
@@ -326,7 +309,7 @@ export const formatResults = async (
       if (!prices.length) {
         const otherValue = allLines.find(
           (line) =>
-            line.awayTeam === play.awayTeam &&
+            line.game.awayTeam === play.awayTeam &&
             line.type === play.type &&
             line.book === book &&
             line.period === play.period &&
@@ -340,7 +323,8 @@ export const formatResults = async (
           return "";
         }
         return colors.gray(
-          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${(otherValue as TeamTotal | GameTotal | Spread).price
+          `@${(otherValue as TeamTotal | GameTotal | Spread).value}\n${
+            (otherValue as TeamTotal | GameTotal | Spread).price
           }`
         );
       }

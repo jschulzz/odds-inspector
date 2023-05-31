@@ -1,3 +1,4 @@
+import { Game } from "../database/game";
 import { Book } from "./books";
 import { Market } from "./markets";
 import { Period } from "./sportData";
@@ -10,9 +11,7 @@ export enum LineChoice {
 }
 
 export interface LineConstructor {
-  homeTeam: string;
-  awayTeam: string;
-  gameTime: Date;
+  game: Game;
   book: Book;
   period: Period;
   price: number;
@@ -22,9 +21,7 @@ export interface LineConstructor {
 
 export class Line {
   constructor(args: LineConstructor, type: Market) {
-    this.homeTeam = args.homeTeam;
-    this.awayTeam = args.awayTeam;
-    this.gameTime = args.gameTime;
+    this.game = args.game;
     this.type = type;
     this.period = args.period;
     this.book = args.book;
@@ -33,9 +30,7 @@ export class Line {
     this.otherOutcomePrice = args.otherOutcomePrice;
   }
 
-  homeTeam!: string;
-  awayTeam!: string;
-  gameTime: Date;
+  game!: Game;
   type!: Market;
   book: Book;
   period: Period;

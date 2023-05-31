@@ -1,5 +1,4 @@
 import { Line, Market, SourcedOdds, Spread, TeamTotal } from "../types";
-import SS from "string-similarity";
 
 export const findMatchingEvents = (
   targetLine: Line,
@@ -22,15 +21,9 @@ export const findMatchingEvents = (
   }
 
   return marketLines.filter((line) => {
-    const awayTeamScore = SS.compareTwoStrings(
-      line.awayTeam,
-      targetLine.awayTeam
-    );
-    const homeTeamScore = SS.compareTwoStrings(
-      line.homeTeam,
-      targetLine.homeTeam
-    );
-    const verySimilarTeams = homeTeamScore + awayTeamScore > 1.5;
+    const sameTeams =
+      line.game.awayTeam === targetLine.game.awayTeam &&
+      line.game.homeTeam === targetLine.game.homeTeam;
     const sameLine = options.wantOppositeValue
       ? (line as Spread).value === -(targetLine as Spread).value
       : (line as Spread).value === (targetLine as Spread).value;
@@ -42,6 +35,6 @@ export const findMatchingEvents = (
       (line as TeamTotal).side === (targetLine as TeamTotal).side;
 
     // TODO: verify game times. Only an issue for double-header sports
-    return verySimilarTeams && sameLine && samePeriod && sameChoice && sameSide;
+    return sameTeams && sameLine && samePeriod && sameChoice && sameSide;
   });
 };

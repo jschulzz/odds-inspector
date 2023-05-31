@@ -17,6 +17,9 @@ import {
   Spread,
 } from "../types";
 import { GameTotal, LineChoice, TeamTotal } from "../types/lines";
+import { Game } from "../database/game";
+import { TeamManager } from "../database/team-manager";
+import { Team } from "../database/team";
 
 const leagueIDs = new Map([
   [League.NCAAF, 880],
@@ -85,9 +88,7 @@ const requestLines = async (league: League) => {
 };
 
 interface Event {
-  homeTeam: string;
-  awayTeam: string;
-  time: Date;
+  game: Game;
   id: number;
   moneylines: Moneyline[];
   spreads: Spread[];
@@ -95,53 +96,82 @@ interface Event {
   teamTotals: TeamTotal[];
 }
 
-const getPinnacleEvents = (matchups: any, league: League) => {
+const getPinnacleEvents = async (matchups: any, league: League) => {
   let events = new Map<number, Event>();
-  matchups
+  const filteredMatchups = matchups
     .filter((matchup: any) => matchup.type === "matchup")
     .filter((matchup: any) => {
       if (league === League.TENNIS) {
         // ignore tennis sets
         return matchup.units !== "Sets";
       }
+      if ([League.MLB, League.NBA, League.WNBA].includes(league)) {
+        return matchup.units === "Regular";
+      }
       return !matchup.parentId;
-    })
-    .forEach((matchup: any) => {
-      let storedEvent = events.get(matchup.id);
+    });
+  for (let i = 0; i < filteredMatchups.length; i++) {
+    const matchup: any = filteredMatchups[i];
+    let storedEvent = events.get(matchup.id);
 
-      if (!storedEvent) {
-        const participants = matchup.participants.map((p: any) => {
-          let name: string = p.name.split("(Games)")[0].trim();
-          if (league === League.NBA) {
-            name = name.split(" ").slice(1).join(" ").trim();
-          }
-          return {
-            ...p,
-            name,
-          };
-        });
-
-        storedEvent = {
-          homeTeam: participants.find((x: any) => x.alignment === "home").name,
-          awayTeam: participants.find((x: any) => x.alignment === "away").name,
-          time: new Date(matchup.startTime),
-          id: matchup.id,
-          moneylines: [],
-          spreads: [],
-          gameTotals: [],
-          teamTotals: [],
+    if (!storedEvent) {
+      const participants = matchup.participants.map((p: any) => {
+        let name: string = p.name.split("(Games)")[0].trim();
+        if (league === League.NBA) {
+          name = name.split(" ").slice(1).join(" ").trim();
+        }
+        return {
+          ...p,
+          name,
         };
+      });
+
+      const teamManager = new TeamManager();
+
+      const homeTeamName = participants.find(
+        (x: any) => x.alignment === "home"
+      ).name;
+      const awayTeamName = participants.find(
+        (x: any) => x.alignment === "away"
+      ).name;
+
+      let homeTeam = await teamManager.find(homeTeamName, league);
+      if (!homeTeam) {
+        homeTeam = new Team({ name: homeTeamName, league });
+        await teamManager.add(homeTeam);
+      }
+      let awayTeam = await teamManager.find(awayTeamName, league);
+      if (!awayTeam) {
+        awayTeam = new Team({ name: awayTeamName, league });
+        await teamManager.add(awayTeam);
       }
 
-      events.set(matchup.id, storedEvent);
-    });
+      const game = new Game({
+        homeTeam,
+        awayTeam,
+        gameTime: new Date(matchup.startTime),
+        league,
+      });
+
+      storedEvent = {
+        game,
+        id: matchup.id,
+        moneylines: [],
+        spreads: [],
+        gameTotals: [],
+        teamTotals: [],
+      };
+    }
+
+    events.set(matchup.id, storedEvent);
+  }
   return events;
 };
 
 export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   const { lines, matchups } = await requestLines(league);
 
-  const events = getPinnacleEvents(matchups, league);
+  const events = await getPinnacleEvents(matchups, league);
 
   const odds: SourcedOdds = {
     moneylines: [],
@@ -174,8 +204,8 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
     if (!period) {
       return;
     }
-    const homeTeam = correspondingMatchup.homeTeam;
-    const awayTeam = correspondingMatchup.awayTeam;
+    const homeTeam = correspondingMatchup.game.homeTeam;
+    const awayTeam = correspondingMatchup.game.awayTeam;
     const market = findMarket(line.type);
     if (market === Market.GAME_TOTAL) {
       const over = line.prices.find((p: any) => p.designation === "over");
@@ -186,11 +216,9 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const underLine = under.points;
 
       const standard = {
-        homeTeam,
-        awayTeam,
+        game: correspondingMatchup.game,
         period,
         book: Book.PINNACLE,
-        gameTime: correspondingMatchup.time,
       };
 
       const overTotal = new GameTotal({
@@ -219,12 +247,10 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const underLine = under.points;
 
       const standard = {
-        homeTeam,
-        awayTeam,
+        game: correspondingMatchup.game,
         period,
         book: Book.PINNACLE,
         side: line.side,
-        gameTime: correspondingMatchup.time,
       };
       const overTotal = new TeamTotal({
         ...standard,
@@ -248,11 +274,9 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const homePrice = home.price;
       const awayPrice = away.price;
       const standard = {
-        homeTeam,
-        awayTeam,
+        game: correspondingMatchup.game,
         period,
         book: Book.PINNACLE,
-        gameTime: correspondingMatchup.time,
       };
       const homeMoneyline = new Moneyline({
         ...standard,
@@ -276,11 +300,9 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const awayPrice = away.price;
       const awayLine = away.points;
       const standard = {
-        homeTeam,
-        awayTeam,
         period,
         book: Book.PINNACLE,
-        gameTime: correspondingMatchup.time,
+        game: correspondingMatchup.game,
       };
       const homeSpread = new Spread({
         ...standard,
