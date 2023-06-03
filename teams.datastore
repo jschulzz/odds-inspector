@@ -1,12 +1,17 @@
+{"name":"Washington Mystics","league":"wnba","aliases":[],"abbreviation":"WAS","_id":"0dThGmrQp2yjAQEq"}
 {"name":"San Francisco Giants","league":"mlb","aliases":[],"abbreviation":"SF","_id":"5gefInm1QfbUGiB1"}
 {"name":"Dallas Wings","league":"wnba","aliases":[],"abbreviation":"DAL","_id":"6iZxNPCfTJ3E27rZ"}
 {"name":"Texas Rangers","league":"mlb","aliases":[],"abbreviation":"TEX","_id":"6sCFU6gSFc3CN4xs"}
 {"name":"Los Angeles Angels","league":"mlb","aliases":[],"abbreviation":"LAA","_id":"7vC9ms1jfk2j7has"}
 {"name":"Arizona Diamondbacks","league":"mlb","aliases":[],"abbreviation":"ARI","_id":"8kKKoP7OLodJWJjq"}
+{"name":"Florida Panthers","league":"nhl","aliases":[],"abbreviation":"FLA","_id":"BtPquKQo2VUnpxh2"}
 {"name":"Tampa Bay Rays","league":"mlb","aliases":[],"abbreviation":"TB","_id":"CbcCZNDCl2pI3hAO"}
 {"name":"Home Runs (15 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"DuFfbv8J7FbTtj9D"}
 {"name":"Heat","league":"nba","aliases":["Miami Heat"],"abbreviation":"MIA","_id":"F43T2O0s4PMh66IF"}
 {"name":"Kansas City Royals","league":"mlb","aliases":[],"abbreviation":"KC","_id":"FiyOoQlO0iRPcuBd"}
+{"name":"Away Runs (14 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"Flu3HSF4nlf3ZIg2"}
+{"name":"Home Runs (14 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"G8GGzJzcqvqb03sB"}
+{"name":"Away Runs (7 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"HBpkAmnwy3DJEuvC"}
 {"name":"Detroit Tigers","league":"mlb","aliases":[],"abbreviation":"DET","_id":"HHQmbnBlw4tsIgZJ"}
 {"name":"Chicago Cubs","league":"mlb","aliases":[],"abbreviation":"CHC","_id":"J1Dar6tPnPi585Vf"}
 {"name":"Indiana Fever","league":"wnba","aliases":[],"abbreviation":"IND","_id":"N36YHhEhRyOyQFkQ"}
@@ -17,6 +22,7 @@
 {"name":"Colorado Rockies","league":"mlb","aliases":[],"abbreviation":"COL","_id":"VCQtSAPaKsMgZsdU"}
 {"name":"Chicago Sky","league":"wnba","aliases":[],"abbreviation":"CHI","_id":"VgdCjlMSKKCtYbiE"}
 {"name":"Los Angeles Dodgers","league":"mlb","aliases":[],"abbreviation":"LAD","_id":"WVBsHbzNViNJsBuW"}
+{"name":"Las Vegas Aces","league":"wnba","aliases":[],"abbreviation":"LV","_id":"XU29ASymmafkTChx"}
 {"name":"St. Louis Cardinals","league":"mlb","aliases":[],"abbreviation":"STL","_id":"YrGWT6jh99hywubM"}
 {"name":"Oakland Athletics","league":"mlb","aliases":[],"abbreviation":"OAK","_id":"aBFvHEDuTtb169j4"}
 {"name":"Toronto Blue Jays","league":"mlb","aliases":[],"abbreviation":"TOR","_id":"auLrHUvhGfaLNtZJ"}
@@ -29,9 +35,12 @@
 {"name":"Houston Astros","league":"mlb","aliases":[],"abbreviation":"HOU","_id":"iGBuapR2myl5mVsE"}
 {"name":"Cleveland Guardians","league":"mlb","aliases":[],"abbreviation":"CLE","_id":"ipy8zyF2JtsIaGwI"}
 {"name":"Milwaukee Brewers","league":"mlb","aliases":[],"abbreviation":"MIL","_id":"kQLHN74SDGD2KRUW"}
+{"name":"Los Angeles Sparks","league":"wnba","aliases":[],"abbreviation":"LA","_id":"kgX3WROQ8ZYRmssA"}
 {"name":"Cincinnati Reds","league":"mlb","aliases":[],"abbreviation":"CIN","_id":"n2wimNLIwmpT0iTm"}
 {"name":"Minnesota Twins","league":"mlb","aliases":[],"abbreviation":"MIN","_id":"ny4PKpoDEGIu8hiu"}
+{"name":"Home Runs (7 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"rrxtVAmsvn7p4fp9"}
 {"name":"New York Yankees","league":"mlb","aliases":[],"abbreviation":"NYY","_id":"rzPmf1TmgmqCM1m7"}
+{"name":"Phoenix Mercury","league":"wnba","aliases":[],"abbreviation":"PHX","_id":"siWgOZ3VA5Q8bNnd"}
 {"name":"Philadelphia Phillies","league":"mlb","aliases":[],"abbreviation":"PHI","_id":"t0Q7B3iU7nGBepby"}
 {"name":"Atlanta Dream","league":"wnba","aliases":[],"abbreviation":"ATL","_id":"t13gi9IJuGVCcgsA"}
 {"name":"Seattle Mariners","league":"mlb","aliases":[],"abbreviation":"SEA","_id":"vFJHlUZMB7b4A4SI"}
@@ -40,3 +49,4 @@
 {"name":"Minnesota Lynx","league":"wnba","aliases":[],"abbreviation":"MIN","_id":"yCoeYom4x5wYRBlt"}
 {"name":"San Diego Padres","league":"mlb","aliases":[],"abbreviation":"SD","_id":"zPjTYEyNSSNLa2YC"}
 {"name":"Nuggets","league":"nba","aliases":["Denver Nuggets"],"abbreviation":"DEN","_id":"zTU5rYPZYim6DH9x"}
+{"name":"Vegas Golden Knights","league":"nhl","aliases":[],"abbreviation":"VGK","_id":"zopeWvKuksuqSkZx"}

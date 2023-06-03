@@ -35,11 +35,12 @@ const leagueWeights = new Map<League, Map<Book, number>>([
   [
     League.MLB,
     new Map<Book, number>([
-      [Book.PINNACLE, 2],
+      [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 1],
+      [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1.5],
+      [Book.POINTSBET, 0.2],
     ]),
   ],
 ]);
@@ -121,7 +122,7 @@ export class GameGroup {
     this.relatedGroups = groups.filter((group) => {
       return (
         group.game === this.game &&
-        group.lineType == this.lineType &&
+        group.lineType === this.lineType &&
         group.period === this.period &&
         group.side === this.side &&
         group.value !== this.value

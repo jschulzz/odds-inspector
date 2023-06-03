@@ -4,13 +4,7 @@ import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
 import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
 import { findMatchingEvents } from "./find-matching-events";
-import {
-  GameTotal,
-  LineChoice,
-  Moneyline,
-  Spread,
-  TeamTotal,
-} from "../types/lines";
+import { GameTotal, LineChoice, Moneyline, Spread } from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
 import { Team } from "../database/team";
 import { Price } from "./group";
@@ -42,54 +36,6 @@ interface DisplayPlay {
   key: string;
   width: number;
 }
-
-const findGoodPlays = (
-  bettableLines: Line[],
-  sourceLines: SourcedOdds
-): Play[] => {
-  const positiveEVPlays: Play[] = [];
-  bettableLines.forEach((bettableLine) => {
-    const [matchingPinnacleLine] = findMatchingEvents(
-      bettableLine,
-      sourceLines,
-      {
-        wantSameChoice: true,
-        wantOppositeValue: false,
-      }
-    );
-    if (!matchingPinnacleLine || !bettableLine.price) {
-      // console.log("couldnt pinnacle line for", bettableLine);
-      return;
-    }
-    const pinnacleProbabilityFor = Odds.fromVigAmerican(
-      matchingPinnacleLine.price,
-      matchingPinnacleLine.otherOutcomePrice
-    ).toProbability();
-
-    const width = Odds.getWidth(
-      matchingPinnacleLine.price,
-      matchingPinnacleLine.otherOutcomePrice
-    );
-    const pinnacleProbabilityAgainst = 1 - pinnacleProbabilityFor;
-
-    const payoutMultiplier = Odds.fromFairLine(
-      bettableLine.price
-    ).toPayoutMultiplier();
-    const expectedValue =
-      payoutMultiplier * pinnacleProbabilityFor - pinnacleProbabilityAgainst;
-
-    if (expectedValue > -0.0001 && pinnacleProbabilityFor > 0.3) {
-      positiveEVPlays.push({
-        expectedValue,
-        likelihood: pinnacleProbabilityFor,
-        line: bettableLine,
-        matchingPinnacleLine,
-        width,
-      });
-    }
-  });
-  return positiveEVPlays;
-};
 
 const combineLines = (sources: SourcedOdds[]): SourcedOdds => {
   const combinedOdds: SourcedOdds = {
@@ -190,9 +136,36 @@ export const findPositiveEv = async (league: League) => {
     a.maxEV() > b.maxEV() ? 1 : -1
   );
   const filteredGroups = sortedGroups.filter(
-    (group) => group.getFairLine() < 200
+    (group) => group.getFairLine() < 600
   );
 
+  console.log(`${groups.length} groups exist`);
+
+  console.log("CLE @ BAL - home covers the 1.5 fullGame spread");
+  const matchingGroups = groups.filter(
+    (group) =>
+      group.game.awayTeam.abbreviation === "CLE" &&
+      group.lineType === Market.SPREAD &&
+      group.side === LineChoice.HOME &&
+      group.period === Period.FULL_GAME &&
+      group.value === 1.5
+  );
+  console.log(
+    matchingGroups.map((group) => {
+      return {
+        prices: group.prices,
+        away: group.game.awayTeam.abbreviation,
+        home: group.game.homeTeam.abbreviation,
+        value: group.value,
+        period: group.period,
+        side: group.side,
+        time: group.game.gameTime
+      };
+    }),
+    matchingGroups.map((g) => g.prices)
+  );
+
+  console.log(`${positiveEvGroups.length} groups have positive EV`);
   console.log(
     `${filteredGroups.length} positive EV groups have a fair line of +200 or less`
   );
@@ -206,7 +179,6 @@ export const formatResults = async (groups: GameGroup[]) => {
       groups.map((group) => group.prices.map((price) => price.book)).flat()
     ),
   ];
-  console.log(allBooks);
 
   const typeToString = (
     choice: LineChoice,
@@ -248,29 +220,20 @@ export const formatResults = async (groups: GameGroup[]) => {
       group.period,
       group.side
     )} (${fairline.toFixed(0)}, ${(group.getLikelihood() * 100).toFixed(1)}%)`;
-    if (
-      group.game.awayTeam.abbreviation === "WSH" &&
-      group.lineType === Market.SPREAD &&
-      group.side === LineChoice.HOME &&
-      group.period === Period.FIRST_HALF &&
-      group.value === -0.5
-    ) {
-      console.log(group);
-    }
     const bookPrices = allBooks.map((book) => {
       const thisBooksPrice = group.prices.find((price) => price.book === book);
       const thisBooksEV = group.findEV().find((EV) => EV.book === book);
       if (!thisBooksPrice) {
-        const otherGroup = group.oppositeGroup;
-        // console.log(group, otherGroup)
+        const otherGroup = group.relatedGroups.find((g) =>
+          g.prices.map((price) => price.book).includes(book)
+        );
+        const priceOnOutcome = otherGroup?.prices.find(
+          (price) => price.book === book
+        )?.price;
         if (!otherGroup || !otherGroup.value) {
           return "";
         }
-        return colors.gray(
-          `@${otherGroup.value}\n${
-            otherGroup.prices.find((price) => price.book === book)?.price
-          }`
-        );
+        return colors.gray(`@ ${otherGroup.value}\n${priceOnOutcome}`);
       }
 
       const priceString = thisBooksPrice.price.toString();

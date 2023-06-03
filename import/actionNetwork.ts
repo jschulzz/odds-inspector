@@ -117,7 +117,7 @@ export const getActionNetworkLines = async (
       homeTeam,
       awayTeam,
       league,
-      gameTime: gameRecord.start_time,
+      gameTime: new Date(gameRecord.start_time),
     });
 
     gameRecord.odds
