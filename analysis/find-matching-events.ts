@@ -24,7 +24,7 @@ export const findMatchingEvents = (
     const sameGame =
       line.game.awayTeam.name === targetLine.game.awayTeam.name &&
       line.game.homeTeam.name === targetLine.game.homeTeam.name &&
-      line.game.gameTime === targetLine.game.gameTime;
+      line.game.gameTime?.getTime() === targetLine.game.gameTime?.getTime();
     const sameLine = options.wantOppositeValue
       ? (line as Spread).value === -(targetLine as Spread).value
       : (line as Spread).value === (targetLine as Spread).value;
@@ -35,6 +35,11 @@ export const findMatchingEvents = (
     const sameSide =
       (line as TeamTotal).side === (targetLine as TeamTotal).side;
 
+    // console.log(
+    //   { sameChoice, sameGame, sameLine, samePeriod, sameSide },
+    //   // @ts-ignore
+    //   line.game.gameTime?.getTime() - targetLine.game.gameTime?.getTime()
+    // );
     // TODO: verify game times. Only an issue for double-header sports
     return sameGame && sameLine && samePeriod && sameChoice && sameSide;
   });

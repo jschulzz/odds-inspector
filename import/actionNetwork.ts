@@ -365,6 +365,9 @@ export const getActionNetworkProps = async (
       if (!OVER || !UNDER) {
         throw new Error(`Unknown options for ${propType}`);
       }
+      if(!odds.players){
+        continue
+      }
       odds.books.forEach((book: any) => {
         const book_id = book.book_id;
         let bookName = newYorkActionNetworkSportsBookMap.get(book_id);

@@ -4,38 +4,17 @@ import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
 import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
 import { findMatchingEvents } from "./find-matching-events";
-import { GameTotal, LineChoice, Moneyline, Spread } from "../types/lines";
+import {
+  GameTotal,
+  LineChoice,
+  Moneyline,
+  Spread,
+} from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
 import { Team } from "../database/team";
 import { Price } from "./group";
 import { GameGroup } from "./game-group";
 
-interface Play {
-  expectedValue: number;
-  likelihood: number;
-  line: Line;
-  fairLine?: number;
-  matchingPinnacleLine?: Line;
-  width?: number;
-}
-
-interface DisplayPlay {
-  line: Line;
-  EV: number;
-  likelihood: number;
-  homeTeam: Team;
-  awayTeam: Team;
-  choice: LineChoice;
-  value: number;
-  type: Market;
-  period: Period;
-  book: Book;
-  price: number;
-  side: "home" | "away";
-  fair: number;
-  key: string;
-  width: number;
-}
 
 const combineLines = (sources: SourcedOdds[]): SourcedOdds => {
   const combinedOdds: SourcedOdds = {
@@ -54,6 +33,33 @@ const buildGroups = (sources: SourcedOdds): GameGroup[] => {
     sources.spreads,
     // sources.teamTotals,
   ];
+
+  // const specialLines = sources.spreads.filter((line) => {
+  //   return (
+  //     line.game.awayTeam.abbreviation === "SF" &&
+  //     line.type === Market.SPREAD &&
+  //     line.choice === LineChoice.AWAY &&
+  //     line.period === Period.FULL_GAME &&
+  //     // @ts-ignore
+  //     line.value === -1.5
+  //   );
+  // });
+  // console.log(specialLines);
+
+  // const pinnacleLine = specialLines.find((x) => x.book === Book.PINNACLE);
+  // const matchingLines = findMatchingEvents(
+  //   pinnacleLine as Line,
+  //   {
+  //     moneylines: [],
+  //     spreads: specialLines,
+  //     gameTotals: [],
+  //     teamTotals: [],
+  //   },
+  //   { wantSameChoice: true, wantOppositeValue: false }
+  // );
+  // console.log(matchingLines)
+  // return []
+
   const groups: GameGroup[] = [];
   lineTypes.forEach((lineType) => {
     let remainingLines = [...lineType];
@@ -131,24 +137,34 @@ export const findPositiveEv = async (league: League) => {
     group.findRelatedGroups(groups);
   });
 
-  const positiveEvGroups = groups.filter((group) => group.maxEV() > 0);
+  console.log(`${groups.length} groups exist`);
+
+  const sizableGroups = groups.filter((group) => group.getFullSize() > 2);
+  console.log(`${sizableGroups.length} groups have at least 2 books`);
+
+  const positiveEvGroups = sizableGroups.filter(
+    (group) => group.maxEV() > -0.01
+  );
+  console.log(`${positiveEvGroups.length} groups have positive EV`);
+
   const sortedGroups = positiveEvGroups.sort((a, b) =>
     a.maxEV() > b.maxEV() ? 1 : -1
   );
   const filteredGroups = sortedGroups.filter(
     (group) => group.getFairLine() < 600
   );
+  console.log(
+    `${filteredGroups.length} positive EV groups have a fair line of +200 or less`
+  );
 
-  console.log(`${groups.length} groups exist`);
-
-  console.log("CLE @ BAL - home covers the 1.5 fullGame spread");
+  console.log("SF @ COL - away covers the -1.5 fullGame spread");
   const matchingGroups = groups.filter(
     (group) =>
-      group.game.awayTeam.abbreviation === "CLE" &&
+      group.game.awayTeam.abbreviation === "SF" &&
       group.lineType === Market.SPREAD &&
-      group.side === LineChoice.HOME &&
+      group.side === LineChoice.AWAY &&
       group.period === Period.FULL_GAME &&
-      group.value === 1.5
+      group.value === -1.5
   );
   console.log(
     matchingGroups.map((group) => {
@@ -159,15 +175,10 @@ export const findPositiveEv = async (league: League) => {
         value: group.value,
         period: group.period,
         side: group.side,
-        time: group.game.gameTime
+        time: group.game.gameTime,
       };
     }),
     matchingGroups.map((g) => g.prices)
-  );
-
-  console.log(`${positiveEvGroups.length} groups have positive EV`);
-  console.log(
-    `${filteredGroups.length} positive EV groups have a fair line of +200 or less`
   );
 
   return formatResults(filteredGroups);
