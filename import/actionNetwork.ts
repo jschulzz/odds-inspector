@@ -17,6 +17,9 @@ import { Game } from "../database/game";
 const newYorkActionNetworkSportsBookMap = new Map([
   [972, Book.BETRIVERS],
   [973, Book.POINTSBET],
+  [15, Book.POINTSBET],
+  [30, Book.POINTSBET],
+  [76, Book.POINTSBET],
   [1006, Book.FANDUEL],
   [974, Book.WYNNBET],
   [1005, Book.CAESARS],
@@ -26,7 +29,6 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [347, Book.BETMGM],
   [266, Book.TWINSPIRES],
 ]);
-const newYorkActionNetworkSportsbooks = [972, 973, 1006, 974, 939, 68, 266];
 
 const leagueMap = new Map([
   [League.NBA, "nba?"],
@@ -65,6 +67,7 @@ export const getActionNetworkLines = async (
   }
 
   const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
+  console.log(url)
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
     moneylines: [],
@@ -122,9 +125,9 @@ export const getActionNetworkLines = async (
 
     gameRecord.odds
       .filter((odds: any) => odds.meta)
-      .filter((odds: any) =>
-        newYorkActionNetworkSportsbooks.includes(odds.book_id)
-      )
+      // .filter((odds: any) =>
+      //   newYorkActionNetworkSportsbooks.includes(odds.book_id)
+      // )
       .forEach((odds: any) => {
         const period = periodMap.get(odds.type);
         const book = newYorkActionNetworkSportsBookMap.get(odds.book_id);

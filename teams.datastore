@@ -1,23 +1,32 @@
 {"name":"Washington Mystics","league":"wnba","aliases":[],"abbreviation":"WAS","_id":"0dThGmrQp2yjAQEq"}
+{"name":"G1 Detroit Tigers","league":"mlb","aliases":[],"abbreviation":"","_id":"3ER8xlslnZayLSfU"}
 {"name":"San Francisco Giants","league":"mlb","aliases":[],"abbreviation":"SF","_id":"5gefInm1QfbUGiB1"}
 {"name":"Dallas Wings","league":"wnba","aliases":[],"abbreviation":"DAL","_id":"6iZxNPCfTJ3E27rZ"}
 {"name":"Texas Rangers","league":"mlb","aliases":[],"abbreviation":"TEX","_id":"6sCFU6gSFc3CN4xs"}
 {"name":"Los Angeles Angels","league":"mlb","aliases":[],"abbreviation":"LAA","_id":"7vC9ms1jfk2j7has"}
 {"name":"Arizona Diamondbacks","league":"mlb","aliases":[],"abbreviation":"ARI","_id":"8kKKoP7OLodJWJjq"}
+{"name":"G1 Chicago White Sox","league":"mlb","aliases":[],"abbreviation":"","_id":"9oozvCBR3M5BqvOK"}
 {"name":"Florida Panthers","league":"nhl","aliases":[],"abbreviation":"FLA","_id":"BtPquKQo2VUnpxh2"}
 {"name":"Tampa Bay Rays","league":"mlb","aliases":[],"abbreviation":"TB","_id":"CbcCZNDCl2pI3hAO"}
 {"name":"Home Runs (15 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"DuFfbv8J7FbTtj9D"}
+{"name":"G2 Detroit Tigers","league":"mlb","aliases":[],"abbreviation":"","_id":"Ex9cQf9vz2sVjwMu"}
 {"name":"Heat","league":"nba","aliases":["Miami Heat"],"abbreviation":"MIA","_id":"F43T2O0s4PMh66IF"}
 {"name":"Kansas City Royals","league":"mlb","aliases":[],"abbreviation":"KC","_id":"FiyOoQlO0iRPcuBd"}
 {"name":"Away Runs (14 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"Flu3HSF4nlf3ZIg2"}
 {"name":"Home Runs (14 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"G8GGzJzcqvqb03sB"}
 {"name":"Away Runs (7 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"HBpkAmnwy3DJEuvC"}
 {"name":"Detroit Tigers","league":"mlb","aliases":[],"abbreviation":"DET","_id":"HHQmbnBlw4tsIgZJ"}
+{"name":"Away Runs (8 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"Hd13lunuNPQifBAX"}
 {"name":"Chicago Cubs","league":"mlb","aliases":[],"abbreviation":"CHC","_id":"J1Dar6tPnPi585Vf"}
+{"name":"Away Runs (6 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"LOqjTTc8NPsKMIpF"}
+{"name":"G1 Toronto Blue Jays","league":"mlb","aliases":[],"abbreviation":"","_id":"LsS98edW90qrupmw"}
 {"name":"Indiana Fever","league":"wnba","aliases":[],"abbreviation":"IND","_id":"N36YHhEhRyOyQFkQ"}
 {"name":"Washington Nationals","league":"mlb","aliases":[],"abbreviation":"WSH","_id":"NlnPKKO3wYRd0KtU"}
 {"name":"Atlanta Braves","league":"mlb","aliases":[],"abbreviation":"ATL","_id":"PVXZkQj6qtQ8wqPv"}
 {"name":"New York Liberty","league":"wnba","aliases":[],"abbreviation":"NYL","_id":"PotONqZGS3n63TQR"}
+{"name":"St Louis Cardinals","league":"mlb","aliases":[],"abbreviation":"","_id":"Q0JZvbVfM4oftqp9"}
+{"name":"Home Runs (8 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"S0y3xzKPQTmRClqn"}
+{"name":"G1 New York Yankees","league":"mlb","aliases":[],"abbreviation":"","_id":"SsmirV7mPtdQ2fgs"}
 {"name":"Miami Marlins","league":"mlb","aliases":[],"abbreviation":"MIA","_id":"UzpSEWeQ8SXUxlM6"}
 {"name":"Colorado Rockies","league":"mlb","aliases":[],"abbreviation":"COL","_id":"VCQtSAPaKsMgZsdU"}
 {"name":"Chicago Sky","league":"wnba","aliases":[],"abbreviation":"CHI","_id":"VgdCjlMSKKCtYbiE"}
@@ -36,10 +45,19 @@
 {"name":"Cleveland Guardians","league":"mlb","aliases":[],"abbreviation":"CLE","_id":"ipy8zyF2JtsIaGwI"}
 {"name":"Milwaukee Brewers","league":"mlb","aliases":[],"abbreviation":"MIL","_id":"kQLHN74SDGD2KRUW"}
 {"name":"Los Angeles Sparks","league":"wnba","aliases":[],"abbreviation":"LA","_id":"kgX3WROQ8ZYRmssA"}
+{"name":"G2 New York Yankees","league":"mlb","aliases":[],"abbreviation":"","_id":"kmOfGZdeetVtIOJZ"}
+{"name":"G2 Atlanta Braves","league":"mlb","aliases":[],"abbreviation":"","_id":"kqtKxNjSWGbEEsCh"}
+{"name":"Home Runs (16 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"lYXEdBQK9y2flxx0"}
+{"name":"G1 Atlanta Braves","league":"mlb","aliases":[],"abbreviation":"","_id":"mPF6kCzOYNVLbIKm"}
+{"name":"G2 Toronto Blue Jays","league":"mlb","aliases":[],"abbreviation":"","_id":"mTCTEzSr2K9qGufy"}
+{"name":"Away Runs (16 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"mXD7RVQRTBD9pBlI"}
 {"name":"Cincinnati Reds","league":"mlb","aliases":[],"abbreviation":"CIN","_id":"n2wimNLIwmpT0iTm"}
+{"name":"Away Runs (12 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"n5sOEYMtg9L5eSxa"}
 {"name":"Minnesota Twins","league":"mlb","aliases":[],"abbreviation":"MIN","_id":"ny4PKpoDEGIu8hiu"}
+{"name":"Home Runs (12 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"qvcCp60fDO8jRHT2"}
 {"name":"Home Runs (7 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"rrxtVAmsvn7p4fp9"}
 {"name":"New York Yankees","league":"mlb","aliases":[],"abbreviation":"NYY","_id":"rzPmf1TmgmqCM1m7"}
+{"name":"G2 Chicago White Sox","league":"mlb","aliases":[],"abbreviation":"","_id":"sLRc9AvFM6UanYMi"}
 {"name":"Phoenix Mercury","league":"wnba","aliases":[],"abbreviation":"PHX","_id":"siWgOZ3VA5Q8bNnd"}
 {"name":"Philadelphia Phillies","league":"mlb","aliases":[],"abbreviation":"PHI","_id":"t0Q7B3iU7nGBepby"}
 {"name":"Atlanta Dream","league":"wnba","aliases":[],"abbreviation":"ATL","_id":"t13gi9IJuGVCcgsA"}
@@ -49,4 +67,5 @@
 {"name":"Minnesota Lynx","league":"wnba","aliases":[],"abbreviation":"MIN","_id":"yCoeYom4x5wYRBlt"}
 {"name":"San Diego Padres","league":"mlb","aliases":[],"abbreviation":"SD","_id":"zPjTYEyNSSNLa2YC"}
 {"name":"Nuggets","league":"nba","aliases":["Denver Nuggets"],"abbreviation":"DEN","_id":"zTU5rYPZYim6DH9x"}
+{"name":"Home Runs (6 Games)","league":"mlb","aliases":[],"abbreviation":"","_id":"zoBehYEQmANHl1ol"}
 {"name":"Vegas Golden Knights","league":"nhl","aliases":[],"abbreviation":"VGK","_id":"zopeWvKuksuqSkZx"}
