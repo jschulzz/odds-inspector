@@ -1,5 +1,5 @@
 import { League } from "../types";
-import { Team } from "./team";
+import { Team } from "./mongo.team";
 
 export interface GameArgs {
   awayTeam: Team;

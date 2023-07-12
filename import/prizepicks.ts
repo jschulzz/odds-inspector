@@ -1,42 +1,23 @@
-import axios from "axios";
 import fs from "fs";
 import path from "path";
-import { PlayerRegistry } from "../analysis/player-registry";
 import { findStat } from "../props";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
-
-// const leagueMap = new Map([
-//   [League.NFL, 9],
-//   [League.MLB, 2],
-//   [League.NCAAF, 15],
-//   [League.WNBA, 3],
-//   [League.NHL, 8],
-//   [League.NBA, 7],
-// ]);
+import { PlayerManager } from "../database/mongo.player";
+import { GameManager } from "../database/mongo.game";
+import { PlayerPropManager } from "../database/mongo.player-prop";
+import { PriceManager } from "../database/mongo.price";
 
 export const getPrizePicksLines = async (
   league: League,
-  playerRegistry: PlayerRegistry
+  playerManager: PlayerManager
 ) => {
   const datastorePath = path.join(__dirname, "../backups/prizepicks");
   const linesFilename = `${datastorePath}/${league}.json`;
 
-  // const MARKET_ID = leagueMap.get(league);
-  // try {
-  //   const url = `https://cors-anywhere.herokuapp.com/https://api.prizepicks.com/projections?league_id=${MARKET_ID}`;
-  //   const { data } = await axios.get(url, {
-  //     headers: {
-  //       origin: "app.prizepicks.com",
-  //     },
-  //   });
-  //   fs.mkdirSync(datastorePath, { recursive: true });
-
-  //   fs.writeFileSync(linesFilename, JSON.stringify(data, null, 4));
-  // } catch (e) {
-  //   console.error(e);
-  //   console.log("Couldn't request new PP lines. Using saved lines");
-  // }
+  const gameManager = new GameManager();
+  const priceManager = new PriceManager();
+  const playerPropManager = new PlayerPropManager();
 
   const { data, included } = JSON.parse(
     fs.readFileSync(linesFilename).toString()
@@ -68,8 +49,12 @@ export const getPrizePicksLines = async (
     }
   });
   let props: Prop[] = [];
-
-  data.forEach((projection: any) => {
+  const projections = [...data];
+  projections.sort(
+    (a, b) =>
+      a.attributes.flash_sale_line_score - b.attributes.flash_sale_line_score
+  );
+  for (const projection of projections) {
     const player = fixtures.players.find(
       (p) => p.id === projection.relationships.new_player.data.id
     );
@@ -83,7 +68,7 @@ export const getPrizePicksLines = async (
       }
     }
     if (!stat) {
-      return;
+      continue;
     }
 
     let isFlashSale = !!projection.attributes.flash_sale_line_score;
@@ -99,21 +84,47 @@ export const getPrizePicksLines = async (
       value,
       book: PropsPlatform.PRIZEPICKS,
       price: -119,
+      league,
     };
-    const overProp = new Prop(
+    const overProp = await Prop.createProp(
       {
         ...standard,
         choice: LineChoice.OVER,
       },
-      playerRegistry
+      playerManager
     );
-    const underProp = new Prop(
+    const underProp = await Prop.createProp(
       {
         ...standard,
         choice: LineChoice.UNDER,
       },
-      playerRegistry
+      playerManager
     );
+    let game, dbPlayer;
+    try {
+      game = await gameManager.findByTeamAbbr(player.attributes.team, league);
+    } catch {
+      console.error("Could not find game");
+      continue;
+    }
+    try {
+      dbPlayer = await playerManager.findByName(player.attributes.name, league);
+    } catch {
+      console.error("Could not find player");
+      continue;
+    }
+    const dbProp = await playerPropManager.upsert(
+      dbPlayer,
+      game,
+      league,
+      stat,
+      value
+    );
+
+    await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.PRIZEPICKS, {
+      overPrice: -119,
+      underPrice: -119,
+    });
     const existingProps = props.filter((p) => {
       return (
         p.player === overProp.player &&
@@ -132,7 +143,7 @@ export const getPrizePicksLines = async (
       }
     }
     props.push(...newProps);
-  });
+  }
   return props;
 };
 

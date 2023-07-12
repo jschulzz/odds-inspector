@@ -11,7 +11,7 @@ import { getPrizePicksLines } from "../import/prizepicks";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
 import { getActionNetworkProps } from "../import/actionNetwork";
-import { PlayerRegistry } from "./player-registry";
+import { PlayerManager } from "../database/mongo.player";
 
 const findEquivalentPlays = (
   prop: Prop,
@@ -41,32 +41,19 @@ const findEquivalentPlays = (
   );
 
 export const findOutliers = async (league: League) => {
-  const playerRegistryPath = path.join(
-    __dirname,
-    "../backups/playerRegistry.json"
-  );
-  const playerRegistry = new PlayerRegistry(playerRegistryPath);
+  const playerManager = new PlayerManager();
 
-  // const betKarmaProps = await getBetKarma(league);
-  // const actionLabsProps = await getActionLabsProps(league);
-  const actionNetworkProps = await getActionNetworkProps(
-    league,
-    playerRegistry
-  );
-  const pinnacleProps = await getPinnacleProps(league, playerRegistry);
-  const underdogProps = await getUnderdogLines(league, playerRegistry);
-  const prizepicksProps = await getPrizePicksLines(league, playerRegistry);
-  const noHouseProps = await getNoHouse(league, playerRegistry);
-  // const thriveProps = await getThrive(league);
+  const pinnacleProps = await getPinnacleProps(league, playerManager);
+  const actionNetworkProps = await getActionNetworkProps(league, playerManager);
+  const underdogProps = await getUnderdogLines(league, playerManager);
+  const prizepicksProps = await getPrizePicksLines(league, playerManager);
+  const noHouseProps = await getNoHouse(league, playerManager);
   const allProps = [
-    // ...betKarmaProps,
-    // ...actionLabsProps,
     ...actionNetworkProps,
     ...pinnacleProps,
     ...underdogProps,
     ...prizepicksProps,
     ...noHouseProps,
-    // ...thriveProps,
   ];
   let remainingProps = [...allProps];
   const propGroups: Group[] = [];
@@ -146,7 +133,6 @@ export const findOutliers = async (league: League) => {
         ))
     );
   });
-  playerRegistry.saveRegistry();
   return formatOutliers(groups);
 };
 

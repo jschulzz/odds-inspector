@@ -1,8 +1,11 @@
 import axios from "axios";
-import { PlayerRegistry } from "../analysis/player-registry";
 import { findStat } from "../props";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
+import { PlayerManager } from "../database/mongo.player";
+import { GameManager } from "../database/mongo.game";
+import { PlayerPropManager } from "../database/mongo.player-prop";
+import { PriceManager } from "../database/mongo.price";
 
 const leagueMap = new Map([
   ["NFL", League.NFL],
@@ -10,13 +13,12 @@ const leagueMap = new Map([
   ["NHL", League.NHL],
   ["MLB", League.MLB],
   ["WNBA", League.WNBA],
-  // ["ESP:ORTY", League.NHL],
-  // ["NHL", League.NHL],
+  // ["ESPORTS", League.NHL],
 ]);
 
 export const getUnderdogLines = async (
   league: League,
-  playerRegistry: PlayerRegistry
+  playerManager: PlayerManager
 ): Promise<Prop[]> => {
   const { data: teamData } = await axios.get(
     "https://stats.underdogfantasy.com/v1/teams"
@@ -24,6 +26,10 @@ export const getUnderdogLines = async (
   const { data } = await axios.get(
     "https://api.underdogfantasy.com/beta/v3/over_under_lines"
   );
+
+  const gameManager = new GameManager();
+  const priceManager = new PriceManager();
+  const playerPropManager = new PlayerPropManager();
 
   // console.log(teamData);
 
@@ -44,10 +50,10 @@ export const getUnderdogLines = async (
     const game = data.games.find((g: any) => g.id === event.match_id);
     events.set(event.id, { ...event, player, game });
   });
-  data.over_under_lines.forEach((line: any) => {
+  for (const line of data.over_under_lines) {
     const event = events.get(line.over_under.appearance_stat.appearance_id);
     if (!event.game) {
-      return;
+      continue;
     }
     const player = event.player;
     const sport = leagueMap.get(player.sport_id);
@@ -55,7 +61,7 @@ export const getUnderdogLines = async (
       unknownLeages.add(player.sport_id);
     }
     if (sport !== league) {
-      return;
+      continue;
     }
     let stat = findStat(line.over_under.appearance_stat.display_stat);
     if (league === League.NHL) {
@@ -67,12 +73,10 @@ export const getUnderdogLines = async (
       }
     }
     if (!stat) {
-      return;
+      continue;
     }
 
-    // const gameTime = new Date(event.game.scheduled_at).toLocaleString();
-
-    const underProp = new Prop(
+    const underProp = await Prop.createProp(
       {
         playerName: player.first_name + " " + player.last_name,
         stat,
@@ -81,10 +85,11 @@ export const getUnderdogLines = async (
         book: PropsPlatform.UNDERDOG,
         choice: LineChoice.UNDER,
         price: -122,
+        league,
       },
-      playerRegistry
+      playerManager
     );
-    const overProp = new Prop(
+    const overProp = await Prop.createProp(
       {
         playerName: player.first_name + " " + player.last_name,
         stat,
@@ -93,12 +98,42 @@ export const getUnderdogLines = async (
         book: PropsPlatform.UNDERDOG,
         choice: LineChoice.OVER,
         price: -122,
+        league,
       },
-      playerRegistry
+      playerManager
+    );
+    let game, dbPlayer;
+    try {
+      game = await gameManager.findByTeamAbbr(player.team, league);
+    } catch {
+      console.error("Could not find game");
+      continue;
+    }
+    try {
+      dbPlayer = await playerManager.findByName(
+        player.first_name + " " + player.last_name,
+        league
+      );
+    } catch {
+      console.error("Could not find player");
+      continue;
+    }
+
+    const dbProp = await playerPropManager.upsert(
+      dbPlayer,
+      game,
+      league,
+      stat,
+      Number(line.stat_value)
     );
 
+    await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.UNDERDOG, {
+      overPrice: -122,
+      underPrice: -122,
+    });
+
     props.push(overProp, underProp);
-  });
+  }
   console.log("Unknown Leagues:", unknownLeages);
 
   return props;

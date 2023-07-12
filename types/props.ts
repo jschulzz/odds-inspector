@@ -1,7 +1,7 @@
-import { Player } from "../analysis/player";
-import { PlayerRegistry } from "../analysis/player-registry";
+import { PlayerManager, Player } from "../database/mongo.player";
 import { Book } from "./books";
 import { LineChoice } from "./lines";
+import { League } from "./sportData";
 
 export enum PropsPlatform {
   UNDERDOG = "Underdog (3p)",
@@ -87,6 +87,7 @@ export interface PropArgs {
   team: string;
   price: number;
   choice: LineChoice;
+  league: League;
 }
 export class Prop {
   public book: PropsPlatform | Book;
@@ -95,34 +96,39 @@ export class Prop {
   public player: Player;
   public price: number;
   public choice: LineChoice;
+  public league: League;
 
-  constructor(args: PropArgs, playerRegistry: PlayerRegistry) {
+  constructor(args: PropArgs, player: Player) {
     this.book = args.book;
     this.value = Number(args.value);
     this.stat = args.stat;
     this.price = args.price;
     this.choice = args.choice;
-
-    const tempPlayer = new Player(args.playerName, args.team);
-
-    const { players, exact } = playerRegistry.find(tempPlayer);
-
-    if (!players.length || args.playerName.includes("+")) {
-      this.player = tempPlayer;
-      playerRegistry.add(this.player);
-    } else if (exact) {
-      this.player = players[0];
-      if (!this.player.team) {
-        this.player.team = args.team;
-      }
-    } else {
-      console.log(
-        `Who is this? ${args.playerName}\n\t${players
-          .map((x) => x.name)
-          .join("\n\t")}`
-      );
-      this.player = players[0];
-      players[0].addAlias(args.playerName, args.team);
-    }
+    this.player = player;
+    this.league = args.league;
   }
+
+  static createProp = async (args: PropArgs, playerManager: PlayerManager) => {
+    if (args.playerName.includes("+")) {
+      throw new Error("Does not handle combos");
+    }
+    let player: Player;
+    try {
+      player = await playerManager.findByName(args.playerName, args.league);
+      return new Prop(args, player);
+    } catch {
+      console.log("Could not find player, now attempting to add");
+      try {
+        player = await playerManager.add(
+          args.playerName,
+          args.team,
+          args.league
+        );
+        return new Prop(args, player);
+      } catch {
+        console.error("Could not add player");
+        throw new Error("Could not add player");
+      }
+    }
+  };
 }

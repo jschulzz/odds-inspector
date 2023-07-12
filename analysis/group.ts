@@ -1,9 +1,7 @@
-import { compareTwoStrings } from "string-similarity";
+import { Player } from "../database/mongo.player";
 import { Odds } from "../odds/odds";
 import { Book, League, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";
-import { Player } from "./player";
-import { PlayerRegistry } from "./player-registry";
 
 const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
