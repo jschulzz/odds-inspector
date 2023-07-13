@@ -17,7 +17,7 @@ export class PlayerRegistry {
       ["Ryan Strome", "Dylan Strome"],
       ["Chandler Stephenson", "Tyler Stephenson"],
       ["Taylor Ward", "Taylor Walls"],
-      ["Zach Eflin + Spencer Turnbull", "Spencer Turnbull"],
+      ["Zach Eflin + Spencer Turnbull", "Spencer Turnbull"]
     ];
     this.filePath = filePath;
     this.players = [];
@@ -44,8 +44,7 @@ export class PlayerRegistry {
       .filter((p) => p.compare(player.name, player.team) > 0.7)
       .filter((p) => {
         const exception = this.exceptions.find(
-          (exception) =>
-            exception.includes(p.name) && exception.includes(player.name)
+          (exception) => exception.includes(p.name) && exception.includes(player.name)
         );
         exception && console.log(`Found exception for ${p.name}: ${exception}`);
 

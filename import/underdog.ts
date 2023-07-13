@@ -12,20 +12,13 @@ const leagueMap = new Map([
   ["NBA", League.NBA],
   ["NHL", League.NHL],
   ["MLB", League.MLB],
-  ["WNBA", League.WNBA],
+  ["WNBA", League.WNBA]
   // ["ESPORTS", League.NHL],
 ]);
 
-export const getUnderdogLines = async (
-  league: League,
-): Promise<Prop[]> => {
-
-  const { data: teamData } = await axios.get(
-    "https://stats.underdogfantasy.com/v1/teams"
-  );
-  const { data } = await axios.get(
-    "https://api.underdogfantasy.com/beta/v3/over_under_lines"
-  );
+export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
+  const { data: teamData } = await axios.get("https://stats.underdogfantasy.com/v1/teams");
+  const { data } = await axios.get("https://api.underdogfantasy.com/beta/v3/over_under_lines");
 
   const gameManager = new GameManager();
   const priceManager = new PriceManager();
@@ -86,7 +79,7 @@ export const getUnderdogLines = async (
         book: PropsPlatform.UNDERDOG,
         choice: LineChoice.UNDER,
         price: -122,
-        league,
+        league
       },
       playerManager
     );
@@ -99,7 +92,7 @@ export const getUnderdogLines = async (
         book: PropsPlatform.UNDERDOG,
         choice: LineChoice.OVER,
         price: -122,
-        league,
+        league
       },
       playerManager
     );
@@ -111,10 +104,7 @@ export const getUnderdogLines = async (
       continue;
     }
     try {
-      dbPlayer = await playerManager.findByName(
-        player.first_name + " " + player.last_name,
-        league
-      );
+      dbPlayer = await playerManager.findByName(player.first_name + " " + player.last_name, league);
     } catch {
       console.error("Could not find player");
       continue;
@@ -130,7 +120,7 @@ export const getUnderdogLines = async (
 
     await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.UNDERDOG, {
       overPrice: -122,
-      underPrice: -122,
+      underPrice: -122
     });
 
     props.push(overProp, underProp);

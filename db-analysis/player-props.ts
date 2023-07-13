@@ -2,11 +2,7 @@ import { getConnection } from "../database/mongo.connection";
 import { Game } from "../database/mongo.game";
 import { Player } from "../database/mongo.player";
 import { PlayerProp, PlayerPropManager } from "../database/mongo.player-prop";
-import {
-  PropsPriceAggregate,
-  PriceManager,
-  Price,
-} from "../database/mongo.price";
+import { PropsPriceAggregate, PriceManager, Price } from "../database/mongo.price";
 import { Team } from "../database/mongo.team";
 import { Odds } from "../odds/odds";
 import { Book, League, PropsPlatform } from "../types";
@@ -40,8 +36,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.NBA,
@@ -52,8 +48,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.NHL,
@@ -64,8 +60,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.MLB,
@@ -78,15 +74,12 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       // [Book.CAESARS, 1],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
-  ],
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
+  ]
 ]);
 
-const getLikelihood = (
-  playerProp: PropsPriceAggregate,
-  overOrUnder: "over" | "under"
-) => {
+const getLikelihood = (playerProp: PropsPriceAggregate, overOrUnder: "over" | "under") => {
   let sum = 0;
   const bookWeights = leagueWeights.get(playerProp.game.league as League);
   if (!bookWeights) {
@@ -124,7 +117,7 @@ export const findPlayerPropsEdge = async (league?: League) => {
     // check for +EV Overs
     for (const options of [
       { likelihood: overLikelihood, price: "overPrice", label: "over" },
-      { likelihood: underLikelihood, price: "underPrice", label: "under" },
+      { likelihood: underLikelihood, price: "underPrice", label: "under" }
     ]) {
       playerProp.prices.forEach((price) => {
         const EV =
@@ -152,7 +145,7 @@ export const findPlayerPropsEdge = async (league?: League) => {
             EV,
             book: price.book,
             team: playerProp.team,
-            game: playerProp.game,
+            game: playerProp.game
           });
         }
       });
@@ -161,10 +154,7 @@ export const findPlayerPropsEdge = async (league?: League) => {
   return plays;
 };
 
-export const findMisvaluedProps = async (
-  league: League,
-  book?: Book | PropsPlatform
-) => {
+export const findMisvaluedProps = async (league: League, book?: Book | PropsPlatform) => {
   await getConnection();
   const priceManager = new PriceManager();
   const playerPropManager = new PlayerPropManager();
@@ -183,14 +173,9 @@ export const findMisvaluedProps = async (
       }
 
       const alternateDirection =
-        alternate["linked-prop"].value < consensusValueProp["linked-prop"].value
-          ? "over"
-          : "under";
+        alternate["linked-prop"].value < consensusValueProp["linked-prop"].value ? "over" : "under";
 
-      const consensusLikelihood = getLikelihood(
-        consensusValueProp,
-        alternateDirection
-      );
+      const consensusLikelihood = getLikelihood(consensusValueProp, alternateDirection);
       if (
         consensusLikelihood > 0.495 &&
         (!!book ? alternate.prices.some((price) => price.book === book) : true)
@@ -214,7 +199,7 @@ export const findMisvaluedProps = async (
           prices: alternate.prices,
           consensusProp: consensusValueProp["linked-prop"],
           // @ts-ignore
-          consensusPrices: consensusValueProp.prices,
+          consensusPrices: consensusValueProp.prices
         });
         console.log(consensusValueProp.prices);
         alternate.prices.forEach((price) => {

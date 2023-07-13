@@ -77,8 +77,7 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
             stat,
             value: oddsSource.line,
             price: oddsSource.americanOdds,
-            choice:
-              outcome.label === "OVER" ? LineChoice.OVER : LineChoice.UNDER,
+            choice: outcome.label === "OVER" ? LineChoice.OVER : LineChoice.UNDER
           };
           props.push(prop);
         });

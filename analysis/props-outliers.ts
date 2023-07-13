@@ -17,7 +17,7 @@ const findEquivalentPlays = (
   {
     wantSameValue = false,
     wantSameChoice = true,
-    wantSameBook = false,
+    wantSameBook = false
   }: {
     wantSameValue?: boolean;
     wantSameChoice?: boolean;
@@ -26,12 +26,8 @@ const findEquivalentPlays = (
 ) =>
   corpus.filter(
     (samplePlay) =>
-      (wantSameBook
-        ? samplePlay.book === prop.book
-        : samplePlay.book !== prop.book) &&
-      (wantSameChoice
-        ? samplePlay.choice === prop.choice
-        : samplePlay.choice !== prop.choice) &&
+      (wantSameBook ? samplePlay.book === prop.book : samplePlay.book !== prop.book) &&
+      (wantSameChoice ? samplePlay.choice === prop.choice : samplePlay.choice !== prop.choice) &&
       samplePlay.player === prop.player &&
       samplePlay.stat === prop.stat &&
       //   samplePlay.team === prop.team &&
@@ -49,7 +45,7 @@ export const findOutliers = async (league: League) => {
     ...pinnacleProps,
     ...underdogProps,
     ...prizepicksProps,
-    ...noHouseProps,
+    ...noHouseProps
   ];
   let remainingProps = [...allProps];
   const propGroups: Group[] = [];
@@ -57,7 +53,7 @@ export const findOutliers = async (league: League) => {
     const prop = remainingProps[0];
     const equalProps = findEquivalentPlays(prop, remainingProps, {
       wantSameValue: true,
-      wantSameChoice: true,
+      wantSameChoice: true
     });
     const plays = [prop, ...equalProps];
 
@@ -76,18 +72,15 @@ export const findOutliers = async (league: League) => {
           return {
             book: play.book,
             price: play.price,
-            likelihood: Odds.fromFairLine(play.price).toProbability(),
+            likelihood: Odds.fromFairLine(play.price).toProbability()
           };
         }
-        const likelihood = Odds.fromVigAmerican(
-          play.price,
-          otherPlay.price
-        ).toProbability();
+        const likelihood = Odds.fromVigAmerican(play.price, otherPlay.price).toProbability();
 
         return {
           book: play.book,
           price: play.price,
-          likelihood,
+          likelihood
         };
       })
       .filter(Boolean);
@@ -97,7 +90,7 @@ export const findOutliers = async (league: League) => {
       side: prop.choice,
       prices,
       value: prop.value,
-      league,
+      league
     });
 
     remainingProps = remainingProps.filter((p) => !plays.includes(p));
@@ -121,11 +114,9 @@ export const findOutliers = async (league: League) => {
       group.getLikelihood() > 0.35 &&
       (group.getFullSize() >= 4 ||
         group.prices.some((price) =>
-          [
-            PropsPlatform.PRIZEPICKS,
-            PropsPlatform.UNDERDOG,
-            PropsPlatform.NO_HOUSE,
-          ].includes(price.book as PropsPlatform)
+          [PropsPlatform.PRIZEPICKS, PropsPlatform.UNDERDOG, PropsPlatform.NO_HOUSE].includes(
+            price.book as PropsPlatform
+          )
         ))
     );
   });
@@ -137,7 +128,7 @@ export const formatOutliers = (groups: Group[]) => {
     PropsPlatform.PRIZEPICKS,
     PropsPlatform.UNDERDOG,
     PropsPlatform.THRIVE,
-    PropsPlatform.NO_HOUSE,
+    PropsPlatform.NO_HOUSE
   ];
   const orderedBooks: (Book | PropsPlatform)[] = [
     Book.PINNACLE,
@@ -150,7 +141,7 @@ export const formatOutliers = (groups: Group[]) => {
     Book.WYNNBET,
     PropsPlatform.UNDERDOG,
     PropsPlatform.PRIZEPICKS,
-    PropsPlatform.NO_HOUSE,
+    PropsPlatform.NO_HOUSE
   ];
   const allBooks = new Set(groups.flatMap((g) => g.prices.map((p) => p.book)));
   allBooks.delete(Book.UNIBET);
@@ -198,9 +189,9 @@ export const formatOutliers = (groups: Group[]) => {
           Odds.fromFairLine(arb[0].price).toPayoutMultiplier() * stake1 -
           stake2
         ).toFixed(2)}`;
-        return `\t${arb[0].price} @ ${arb[0].book}: ${stake1.toFixed(2)}\n\t${
-          arb[1].price
-        } @ ${arb[1].book}: ${stake2.toFixed(2)}\n\t${profit}\n`;
+        return `\t${arb[0].price} @ ${arb[0].book}: ${stake1.toFixed(2)}\n\t${arb[1].price} @ ${
+          arb[1].book
+        }: ${stake2.toFixed(2)}\n\t${profit}\n`;
       });
       console.log(text + stakes.join("\n"));
     }
@@ -216,12 +207,9 @@ export const formatOutliers = (groups: Group[]) => {
   const tableData = sortedGroups
     .map((group) => {
       let isInteresting = false;
-      const buildRateString = (g: Group) =>
-        `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`;
+      const buildRateString = (g: Group) => `${g.value} @ ${(g.getLikelihood() * 100).toFixed(2)}%`;
 
-      const ratesOfEachPrice = [group, ...group.relatedGroups].map(
-        buildRateString
-      );
+      const ratesOfEachPrice = [group, ...group.relatedGroups].map(buildRateString);
 
       const eventString = `${group.player.name} (${group.player.team}): ${group.side} ${group.stat}`;
 
@@ -230,9 +218,7 @@ export const formatOutliers = (groups: Group[]) => {
       const isPositiveEV = group.maxEV() > 0;
       const allValues = new Stats().push([
         ...Array(group.prices.length).fill(group.value),
-        ...group.relatedGroups.flatMap((g) =>
-          Array(g.prices.length).fill(g.value)
-        ),
+        ...group.relatedGroups.flatMap((g) => Array(g.prices.length).fill(g.value))
       ]);
       const iqr = allValues.percentile(75) - allValues.percentile(25);
       const iqr_scale = 1.5;
@@ -255,10 +241,7 @@ export const formatOutliers = (groups: Group[]) => {
         })
         .join("\n");
       const label = `${eventString}\n${coloredLikelihood}`;
-      const allProps = [
-        group.prices,
-        ...group.relatedGroups.flatMap((g) => g.prices),
-      ].flat();
+      const allProps = [group.prices, ...group.relatedGroups.flatMap((g) => g.prices)].flat();
       let EVs = group.findEV();
       const decorateProp = (prop: Price, value?: number) => {
         let text = `@${value}\n${prop.price}`;
@@ -295,8 +278,8 @@ export const formatOutliers = (groups: Group[]) => {
           return "";
         }
         let propValue =
-          group.relatedGroups.find((g) => g.prices.some((x) => x.book === book))
-            ?.value || group.value;
+          group.relatedGroups.find((g) => g.prices.some((x) => x.book === book))?.value ||
+          group.value;
         const EV = EVs.find((ev) => ev.book === book);
 
         let EVLabel = "";
@@ -326,7 +309,7 @@ export const formatOutliers = (groups: Group[]) => {
 
   const config: TableUserConfig = {
     columns: [{ width: 40, wrapWord: true }],
-    columnDefault: { width: 10, wrapWord: true },
+    columnDefault: { width: 10, wrapWord: true }
   };
 
   return table(tableData, config);

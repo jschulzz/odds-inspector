@@ -8,7 +8,7 @@ const leagueMap = new Map([
   [League.NFL, "NFL"],
   [League.NHL, "HOCKEY"],
   [League.NBA, "NBA"],
-  [League.MLB, "MLB"],
+  [League.MLB, "MLB"]
 ]);
 
 export const getThrive = async (league: League): Promise<Prop[]> => {
@@ -19,12 +19,12 @@ export const getThrive = async (league: League): Promise<Prop[]> => {
       Longitude: "-73.946292",
       currentPage: 1,
       currentSize: 100,
-      half: 0,
+      half: 0
     },
     {
       headers: {
-        token: THRIVE_KEY,
-      },
+        token: THRIVE_KEY
+      }
     }
   );
 
@@ -46,9 +46,7 @@ export const getThrive = async (league: League): Promise<Prop[]> => {
 
     const value = responseProp.contestProp.propValue;
 
-    const stat = findStat(
-      responseProp.contestProp.player1.propParameters.join(", ")
-    );
+    const stat = findStat(responseProp.contestProp.player1.propParameters.join(", "));
     if (!stat) {
       return;
     }
@@ -59,16 +57,16 @@ export const getThrive = async (league: League): Promise<Prop[]> => {
       value,
       book: PropsPlatform.THRIVE,
       stat,
-      price: 0,
+      price: 0
     };
 
     const overProp: Prop = {
       ...standard,
-      choice: LineChoice.OVER,
+      choice: LineChoice.OVER
     };
     const underProp: Prop = {
       ...standard,
-      choice: LineChoice.UNDER,
+      choice: LineChoice.UNDER
     };
     props.push(overProp, underProp);
   });

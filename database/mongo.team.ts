@@ -8,7 +8,7 @@ import stringSimilarity from "string-similarity";
 export const teamSchema = new Schema({
   name: { type: String, required: true },
   league: { type: String, required: true },
-  abbreviation: { type: String, required: true },
+  abbreviation: { type: String, required: true }
 });
 
 teamSchema.plugin(mongoose_fuzzy_searching, { fields: ["name"] });
@@ -40,7 +40,7 @@ export class TeamManager {
     }
     if (filteredTeams.length > 1) {
       console.log(`Found several matching teams for ${name}`, {
-        filteredTeams,
+        filteredTeams
       });
     }
     return filteredTeams[0];
@@ -74,7 +74,7 @@ export class TeamManager {
       team = await TeamModel.findOneAndUpdate(
         {
           name: teamInput.name,
-          league: teamInput.league,
+          league: teamInput.league
         },
         { _id: new Types.ObjectId(), ...teamInput },
         { upsert: true, returnDocument: "after" }
@@ -83,7 +83,7 @@ export class TeamManager {
       team = await TeamModel.findOneAndUpdate(
         {
           name: teamInput.name,
-          league: teamInput.league,
+          league: teamInput.league
         },
         { ...teamInput },
         { upsert: true, returnDocument: "after" }

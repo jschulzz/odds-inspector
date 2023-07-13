@@ -17,9 +17,7 @@ export const getPrizePicksLines = async (league: League) => {
   const playerPropManager = new PlayerPropManager();
   const playerManager = new PlayerManager();
 
-  const { data, included } = JSON.parse(
-    fs.readFileSync(linesFilename).toString()
-  );
+  const { data, included } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
   const fixtureArray = included;
   const fixtures: {
@@ -31,7 +29,7 @@ export const getPrizePicksLines = async (league: League) => {
     stat_types: [],
     players: [],
     leagues: [],
-    projection_types: [],
+    projection_types: []
   };
   fixtureArray.forEach((fixture: any) => {
     if (fixture.type === "new_player") {
@@ -49,8 +47,7 @@ export const getPrizePicksLines = async (league: League) => {
   let props: Prop[] = [];
   const projections = [...data];
   projections.sort(
-    (a, b) =>
-      a.attributes.flash_sale_line_score - b.attributes.flash_sale_line_score
+    (a, b) => a.attributes.flash_sale_line_score - b.attributes.flash_sale_line_score
   );
   for (const projection of projections) {
     const player = fixtures.players.find(
@@ -71,9 +68,7 @@ export const getPrizePicksLines = async (league: League) => {
 
     let isFlashSale = !!projection.attributes.flash_sale_line_score;
 
-    const value =
-      projection.attributes.flash_sale_line_score ||
-      projection.attributes.line_score;
+    const value = projection.attributes.flash_sale_line_score || projection.attributes.line_score;
 
     const standard = {
       playerName: player.attributes.name,
@@ -82,19 +77,19 @@ export const getPrizePicksLines = async (league: League) => {
       value,
       book: PropsPlatform.PRIZEPICKS,
       price: -119,
-      league,
+      league
     };
     const overProp = await Prop.createProp(
       {
         ...standard,
-        choice: LineChoice.OVER,
+        choice: LineChoice.OVER
       },
       playerManager
     );
     const underProp = await Prop.createProp(
       {
         ...standard,
-        choice: LineChoice.UNDER,
+        choice: LineChoice.UNDER
       },
       playerManager
     );
@@ -111,24 +106,14 @@ export const getPrizePicksLines = async (league: League) => {
       console.error("Could not find player");
       continue;
     }
-    const dbProp = await playerPropManager.upsert(
-      dbPlayer,
-      game,
-      league,
-      stat,
-      value
-    );
+    const dbProp = await playerPropManager.upsert(dbPlayer, game, league, stat, value);
 
     await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.PRIZEPICKS, {
       overPrice: -119,
-      underPrice: -119,
+      underPrice: -119
     });
     const existingProps = props.filter((p) => {
-      return (
-        p.player === overProp.player &&
-        p.stat === standard.stat &&
-        p.value !== standard.value
-      );
+      return p.player === overProp.player && p.stat === standard.stat && p.value !== standard.value;
     });
     let newProps = [overProp, underProp];
     if (existingProps.length) {

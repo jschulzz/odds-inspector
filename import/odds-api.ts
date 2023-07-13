@@ -11,7 +11,7 @@ const leagueMap = new Map([
   [League.NFL, "americanfootball_nfl"],
   [League.NHL, "icehockey_nhl"],
   [League.NCAAB, "basketball_ncaab"],
-  [League.NCAAF, "americanfootball_ncaaf"],
+  [League.NCAAF, "americanfootball_ncaaf"]
 ]);
 
 const getFilename = (league: League) => {
@@ -56,7 +56,7 @@ export const readOddsAPI = (league: League): SourcedOdds => {
     ["foxbet", Book.FOXBET],
     ["superbook", Book.SUPERBOOK],
     ["circasports", Book.CIRCA],
-    ["betonlineag", Book.BETONLINE],
+    ["betonlineag", Book.BETONLINE]
   ]);
   const filename = getFilename(league);
   const games = JSON.parse(fs.readFileSync(filename).toString());
@@ -65,21 +65,21 @@ export const readOddsAPI = (league: League): SourcedOdds => {
     moneylines: [],
     spreads: [],
     teamTotals: [],
-    gameTotals: [],
+    gameTotals: []
   };
   games.forEach((game: any) => {
     const homeTeam = game.home_team;
     const awayTeam = game.away_team;
-    let homeTeamName = homeTeam
-    let awayTeamName = awayTeam
+    let homeTeamName = homeTeam;
+    let awayTeamName = awayTeam;
 
-    if(league == League.NBA) {
-        homeTeamName = homeTeam.split(" ").slice(1).join(" ").trim();
-        awayTeamName = awayTeam.split(" ").slice(1).join(" ").trim();
+    if (league == League.NBA) {
+      homeTeamName = homeTeam.split(" ").slice(1).join(" ").trim();
+      awayTeamName = awayTeam.split(" ").slice(1).join(" ").trim();
     }
-    if(league == League.NCAAB) {
-        homeTeamName = homeTeam.split(" ").slice(0, -1).join(" ").trim();
-        awayTeamName = awayTeam.split(" ").slice(0, -1).join(" ").trim();
+    if (league == League.NCAAB) {
+      homeTeamName = homeTeam.split(" ").slice(0, -1).join(" ").trim();
+      awayTeamName = awayTeam.split(" ").slice(0, -1).join(" ").trim();
     }
     game.bookmakers.forEach((bookmaker: any) => {
       const bookmakerKey = bookmaker.key;
@@ -92,27 +92,23 @@ export const readOddsAPI = (league: League): SourcedOdds => {
         awayTeam: awayTeamName,
         period: Period.FULL_GAME,
         gameTime: game.commence_time,
-        book: bookmakerName,
+        book: bookmakerName
       };
       bookmaker.markets.forEach((market: any) => {
         if (market.key === "h2h") {
-          const homePrice = market.outcomes.find(
-            (outcome: any) => outcome.name === homeTeam
-          ).price;
-          const awayPrice = market.outcomes.find(
-            (outcome: any) => outcome.name === awayTeam
-          ).price;
+          const homePrice = market.outcomes.find((outcome: any) => outcome.name === homeTeam).price;
+          const awayPrice = market.outcomes.find((outcome: any) => outcome.name === awayTeam).price;
           const homeMoneyline = new Moneyline({
             ...standard,
             choice: LineChoice.HOME,
             price: homePrice,
-            otherOutcomePrice: awayPrice,
+            otherOutcomePrice: awayPrice
           });
           const awayMoneyline = new Moneyline({
             ...standard,
             choice: LineChoice.AWAY,
             price: awayPrice,
-            otherOutcomePrice: homePrice,
+            otherOutcomePrice: homePrice
           });
           odds.moneylines.push(homeMoneyline, awayMoneyline);
         }
@@ -128,14 +124,14 @@ export const readOddsAPI = (league: League): SourcedOdds => {
             choice: LineChoice.HOME,
             price: homePrice,
             value: homePoint,
-            otherOutcomePrice: awayPrice,
+            otherOutcomePrice: awayPrice
           });
           const awaySpread = new Spread({
             ...standard,
             choice: LineChoice.AWAY,
             price: awayPrice,
             value: awayPoint,
-            otherOutcomePrice: homePrice,
+            otherOutcomePrice: homePrice
           });
           odds.spreads.push(homeSpread, awaySpread);
         }
@@ -151,14 +147,14 @@ export const readOddsAPI = (league: League): SourcedOdds => {
             choice: LineChoice.OVER,
             price: overPrice,
             value: overPoint,
-            otherOutcomePrice: underPrice,
+            otherOutcomePrice: underPrice
           });
           const underTotal = new GameTotal({
             ...standard,
             choice: LineChoice.UNDER,
             price: underPrice,
             value: underPoint,
-            otherOutcomePrice: overPrice,
+            otherOutcomePrice: overPrice
           });
           odds.gameTotals.push(overTotal, underTotal);
         }

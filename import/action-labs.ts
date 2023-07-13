@@ -8,14 +8,14 @@ const bookMap = new Map([
   [15, Book.DRAFTKINGS],
   [122, Book.BETRIVERS],
   [115, Book.POINTSBET],
-  [113, Book.UNIBET],
+  [113, Book.UNIBET]
 ]);
 
 const leagueMap = new Map([
   [League.NFL, "NFL"],
   [League.NHL, "NHL"],
   [League.MLB, "MLB"],
-  [League.NBA, "NBA"],
+  [League.NBA, "NBA"]
 ]);
 
 const statMap = new Map([
@@ -64,7 +64,7 @@ const statMap = new Map([
   [86, PropsStat.POINTS_PLUS_REBOUNDS],
   [87, PropsStat.POINTS_PLUS_ASSISTS],
   [88, PropsStat.REBOUNDS_PLUS_ASSISTS],
-  [89, PropsStat.STEALS_PLUS_BLOCKS],
+  [89, PropsStat.STEALS_PLUS_BLOCKS]
 ]);
 
 export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
@@ -108,7 +108,7 @@ export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
           );
           const choice = new Map([
             ["over", LineChoice.OVER],
-            ["under", LineChoice.UNDER],
+            ["under", LineChoice.UNDER]
           ]).get(keyValues.at(-1));
           if (!choice || !player) {
             return;
@@ -133,7 +133,7 @@ export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
             choice,
             book,
             player: player.name,
-            team: team.team.short_name,
+            team: team.team.short_name
           };
           // if (book === Book.DRAFTKINGS && player.name.includes("Segura")) {
           //   console.log(keyValues[2], prop);

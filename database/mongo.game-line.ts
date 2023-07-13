@@ -8,7 +8,7 @@ export const gameLineSchema = new Schema({
   type: { type: String, required: true },
   period: { type: String, required: true },
   value: { type: Number },
-  side: { type: String },
+  side: { type: String }
 });
 
 export type GameLine = InferSchemaType<typeof gameLineSchema>;
@@ -17,7 +17,7 @@ const GameLineModel = model("game-line", gameLineSchema);
 
 export enum HomeOrAway {
   HOME,
-  AWAY,
+  AWAY
 }
 
 interface GameTotalMetadata {
@@ -47,12 +47,7 @@ export type GameLineMetadata =
 export class GameLineManager {
   constructor() {}
 
-  private async tryToInsert(
-    game: Game,
-    period: Period,
-    type: Market,
-    metadata: GameLineMetadata
-  ) {
+  private async tryToInsert(game: Game, period: Period, type: Market, metadata: GameLineMetadata) {
     await getConnection();
     let gameLine;
     try {
@@ -61,14 +56,14 @@ export class GameLineManager {
           game,
           type,
           period,
-          ...metadata,
+          ...metadata
         },
         {
           _id: new Types.ObjectId(),
           game,
           type,
           period,
-          ...metadata,
+          ...metadata
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -77,12 +72,12 @@ export class GameLineManager {
         {
           game,
           type,
-          ...metadata,
+          ...metadata
         },
         {
           game,
           type,
-          ...metadata,
+          ...metadata
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -90,62 +85,30 @@ export class GameLineManager {
     return gameLine;
   }
 
-  async upsertGameTotal(
-    game: Game,
-    period: Period,
-    metadata: GameTotalMetadata
-  ) {
+  async upsertGameTotal(game: Game, period: Period, metadata: GameTotalMetadata) {
     await getConnection();
-    const gameLine = await this.tryToInsert(
-      game,
-      period,
-      Market.GAME_TOTAL,
-      metadata
-    );
+    const gameLine = await this.tryToInsert(game, period, Market.GAME_TOTAL, metadata);
 
     return gameLine;
   }
 
-  async upsertTeamTotal(
-    game: Game,
-    period: Period,
-    metadata: TeamTotalMetadata
-  ) {
+  async upsertTeamTotal(game: Game, period: Period, metadata: TeamTotalMetadata) {
     await getConnection();
-    const gameLine = await this.tryToInsert(
-      game,
-      period,
-      Market.TEAM_TOTAL,
-      metadata
-    );
+    const gameLine = await this.tryToInsert(game, period, Market.TEAM_TOTAL, metadata);
 
     return gameLine;
   }
 
   async upsertSpread(game: Game, period: Period, metadata: SpreadMetadata) {
     await getConnection();
-    const gameLine = await this.tryToInsert(
-      game,
-      period,
-      Market.SPREAD,
-      metadata
-    );
+    const gameLine = await this.tryToInsert(game, period, Market.SPREAD, metadata);
 
     return gameLine;
   }
 
-  async upsertMoneyline(
-    game: Game,
-    period: Period,
-    metadata: MoneylineMetadata
-  ) {
+  async upsertMoneyline(game: Game, period: Period, metadata: MoneylineMetadata) {
     await getConnection();
-    const gameLine = await this.tryToInsert(
-      game,
-      period,
-      Market.MONEYLINE,
-      metadata
-    );
+    const gameLine = await this.tryToInsert(game, period, Market.MONEYLINE, metadata);
 
     return gameLine;
   }
@@ -156,7 +119,7 @@ export class GameLineManager {
       game: line.game,
       side: line.side,
       type: line.type,
-      value: { $ne: line.value },
+      value: { $ne: line.value }
     })
       .populate("game")
       .exec();
@@ -166,7 +129,7 @@ export class GameLineManager {
   async findLinesForGames(games: Types.ObjectId[]) {
     await getConnection();
     const lines = await GameLineModel.find({
-      game: { $in: games },
+      game: { $in: games }
     }).exec();
     return lines;
   }

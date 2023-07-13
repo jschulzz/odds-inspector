@@ -25,8 +25,8 @@ export const getNoHouse = async (league: League) => {
       { timezone: "America/New_York", type: 1 },
       {
         headers: {
-          authorization: NO_HOUSE_KEY,
-        },
+          authorization: NO_HOUSE_KEY
+        }
       }
     );
     fs.mkdirSync(datastorePath, { recursive: true });
@@ -41,9 +41,7 @@ export const getNoHouse = async (league: League) => {
   const { data } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
   let props: Prop[] = [];
-  const filteredData = data.filter(
-    (x: any) => x.league.toLowerCase() === league
-  );
+  const filteredData = data.filter((x: any) => x.league.toLowerCase() === league);
   for (const prop of filteredData) {
     const playerName = prop.player1.name;
     let stat = findStat(prop.player_spreads);
@@ -74,13 +72,7 @@ export const getNoHouse = async (league: League) => {
       continue;
     }
 
-    const dbProp = await playerPropManager.upsert(
-      dbPlayer,
-      game,
-      league,
-      stat,
-      value
-    );
+    const dbProp = await playerPropManager.upsert(dbPlayer, game, league, stat, value);
     const standard = {
       playerName,
       team: prop.player1.team,
@@ -88,31 +80,29 @@ export const getNoHouse = async (league: League) => {
       value,
       book: PropsPlatform.NO_HOUSE,
       price: -114,
-      league,
+      league
     };
     await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.NO_HOUSE, {
       overPrice: -114,
-      underPrice: -114,
+      underPrice: -114
     });
     const overProp = await Prop.createProp(
       {
         ...standard,
-        choice: LineChoice.OVER,
+        choice: LineChoice.OVER
       },
       playerManager
     );
     const underProp = await Prop.createProp(
       {
         ...standard,
-        choice: LineChoice.UNDER,
+        choice: LineChoice.UNDER
       },
       playerManager
     );
     const existingProps = props.filter((p) => {
       return (
-        p.player === standard.playerName &&
-        p.stat === standard.stat &&
-        p.value !== standard.value
+        p.player === standard.playerName && p.stat === standard.stat && p.value !== standard.value
       );
     });
     let newProps = [overProp, underProp];

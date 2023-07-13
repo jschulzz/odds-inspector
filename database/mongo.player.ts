@@ -10,7 +10,7 @@ import { TeamManager } from "./mongo.team";
 export const playerSchema = new Schema({
   name: { type: String, required: true },
   team: { type: Schema.ObjectId, required: true },
-  league: { type: String, required: true },
+  league: { type: String, required: true }
 });
 
 playerSchema.plugin(mongoose_fuzzy_searching, { fields: ["name"] });

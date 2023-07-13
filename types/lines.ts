@@ -7,7 +7,7 @@ export enum LineChoice {
   HOME = "home",
   AWAY = "away",
   OVER = "over",
-  UNDER = "under",
+  UNDER = "under"
 }
 
 export interface LineConstructor {

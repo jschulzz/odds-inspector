@@ -11,8 +11,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.NBA,
@@ -20,8 +20,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.NHL,
@@ -29,8 +29,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.MLB,
@@ -40,9 +40,9 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1.5],
-      [Book.POINTSBET, 0.2],
-    ]),
-  ],
+      [Book.POINTSBET, 0.2]
+    ])
+  ]
 ]);
 
 export interface GameGroupArgs {
@@ -83,9 +83,8 @@ export class GameGroup {
       return {
         book: price.book,
         EV:
-          averageLikelihood *
-            Odds.fromFairLine(price.price).toPayoutMultiplier() -
-          (1 - averageLikelihood),
+          averageLikelihood * Odds.fromFairLine(price.price).toPayoutMultiplier() -
+          (1 - averageLikelihood)
       };
     });
   }
@@ -154,14 +153,10 @@ export class GameGroup {
         group.lineType == this.lineType &&
         group.period === this.period &&
         (wantSameSide ? group.side === this.side : group.side !== this.side) &&
-        (wantSameValue
-          ? group.value === this.value
-          : group.value !== this.value)
+        (wantSameValue ? group.value === this.value : group.value !== this.value)
     );
   }
   getFullSize() {
-    return (
-      this.prices.length + this.relatedGroups.flatMap((x) => x.prices).length
-    );
+    return this.prices.length + this.relatedGroups.flatMap((x) => x.prices).length;
   }
 }

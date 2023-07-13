@@ -7,7 +7,7 @@ import {
   Period,
   SourcedOdds,
   Spread,
-  TeamTotal,
+  TeamTotal
 } from "../types";
 import { LineChoice } from "../types/lines";
 
@@ -18,7 +18,7 @@ const leagueMap = new Map([
   [League.MLB, "MLB > MLB > MLB"],
   [League.NHL, "NHL > NHL"],
   [League.NBA, "NBA > NBA > GAMES"],
-  [League.SOCCER, "NBA > NBA > GAMES"],
+  [League.SOCCER, "NBA > NBA > GAMES"]
 ]);
 
 const periodMap = new Map([
@@ -31,7 +31,7 @@ const periodMap = new Map([
   ["1st Quarter", Period.FIRST_QUARTER],
   ["2nd Quarter", Period.SECOND_QUARTER],
   ["3rd Quarter", Period.THIRD_QUARTER],
-  ["4th Quarter", Period.FOURTH_QUARTER],
+  ["4th Quarter", Period.FOURTH_QUARTER]
 ]);
 
 const statMap = new Map([
@@ -44,8 +44,8 @@ const statMap = new Map([
         !line.markettypename.includes("HOME") &&
         !line.markettypename.includes("AWAY"),
       moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS"),
-      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS"),
-    },
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS")
+    }
   ],
   [
     League.NCAAF,
@@ -56,8 +56,8 @@ const statMap = new Map([
         !line.markettypename.includes("HOME") &&
         !line.markettypename.includes("AWAY"),
       moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS"),
-      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS"),
-    },
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS")
+    }
   ],
   [
     League.NFL,
@@ -67,10 +67,9 @@ const statMap = new Map([
         line.markettypename.includes("TOTAL") &&
         !line.markettypename.includes("HOME") &&
         !line.markettypename.includes("AWAY"),
-      moneyline: (line: any) =>
-        line.markettypename.includes("MONEY LINE (DPS)"),
-      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS)"),
-    },
+      moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS)")
+    }
   ],
   [
     League.MLB,
@@ -81,10 +80,9 @@ const statMap = new Map([
         !line.markettypename.includes("HOME") &&
         !line.markettypename.includes("AWAY") &&
         !line.markettypename.includes("INNING"),
-      moneyline: (line: any) =>
-        line.markettypename.includes("MONEY LINE (DPS)"),
-      spread: (line: any) => line.markettypename.includes("RUN LINE (DPS)"),
-    },
+      moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("RUN LINE (DPS)")
+    }
   ],
   [
     League.NHL,
@@ -94,27 +92,22 @@ const statMap = new Map([
         line.markettypename.includes("TOTAL GOALS") &&
         !line.markettypename.includes("HOME") &&
         !line.markettypename.includes("AWAY"),
-      moneyline: (line: any) =>
-        line.markettypename.includes("MONEY LINE (DPS)"),
-      spread: (line: any) => line.markettypename.includes("PUCK LINE (DPS)"),
-    },
+      moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("PUCK LINE (DPS)")
+    }
   ],
   [
     League.NBA,
     {
       teamTotal: (line: any) => line.markettypename.includes("Total Points"),
       gameTotal: (line: any) => line.markettypename.includes("TOTAL (DPS)"),
-      moneyline: (line: any) =>
-        line.markettypename.includes("MONEY LINE (DPS)"),
-      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS)"),
-    },
-  ],
+      moneyline: (line: any) => line.markettypename.includes("MONEY LINE (DPS)"),
+      spread: (line: any) => line.markettypename.includes("POINT SPREAD (DPS)")
+    }
+  ]
 ]);
 
-const getAllLinesFromEvent = async (
-  event: any,
-  league: League
-): Promise<SourcedOdds> => {
+const getAllLinesFromEvent = async (event: any, league: League): Promise<SourcedOdds> => {
   const url = `https://co.circasports.com/cache/psevent/UK/1/false/${event.idfoevent}.json`;
   const { data } = await axios.get(url);
 
@@ -126,9 +119,7 @@ const getAllLinesFromEvent = async (
     throw new Error(`No Circa markets for ${awayTeam} @ ${homeTeam}`);
   }
 
-  const allMarkets = data.eventmarketgroups.flatMap(
-    (group: any) => group.markets
-  );
+  const allMarkets = data.eventmarketgroups.flatMap((group: any) => group.markets);
 
   const upDownToPrice = (up: number, down: number) => {
     const multiplier = up < down ? -1 : +1;
@@ -155,34 +146,28 @@ const getAllLinesFromEvent = async (
       awayTeam,
       period,
       gameTime,
-      book: Book.CIRCA,
+      book: Book.CIRCA
     };
 
     if (stats.gameTotal(line)) {
       const over = line.selections.find((p: any) => p.hadvalue === "O");
       const under = line.selections.find((p: any) => p.hadvalue === "U");
-      const overPrice = upDownToPrice(
-        over.currentpriceup,
-        over.currentpricedown
-      );
-      const underPrice = upDownToPrice(
-        under.currentpriceup,
-        under.currentpricedown
-      );
+      const overPrice = upDownToPrice(over.currentpriceup, over.currentpricedown);
+      const underPrice = upDownToPrice(under.currentpriceup, under.currentpricedown);
       const value = line.currentmatchhandicap;
       const overGameTotal = new GameTotal({
         ...standard,
         price: overPrice,
         otherOutcomePrice: underPrice,
         choice: LineChoice.OVER,
-        value,
+        value
       });
       const underGameTotal = new GameTotal({
         ...standard,
         price: underPrice,
         otherOutcomePrice: overPrice,
         choice: LineChoice.UNDER,
-        value,
+        value
       });
       gameTotals.push(overGameTotal, underGameTotal);
     }
@@ -190,14 +175,8 @@ const getAllLinesFromEvent = async (
       const side = line.markettypename.includes("AWAY") ? "away" : "home";
       const over = line.selections.find((p: any) => p.hadvalue === "O");
       const under = line.selections.find((p: any) => p.hadvalue === "U");
-      const overPrice = upDownToPrice(
-        over.currentpriceup,
-        over.currentpricedown
-      );
-      const underPrice = upDownToPrice(
-        under.currentpriceup,
-        under.currentpricedown
-      );
+      const overPrice = upDownToPrice(over.currentpriceup, over.currentpricedown);
+      const underPrice = upDownToPrice(under.currentpriceup, under.currentpricedown);
       const value = line.currentmatchhandicap;
       const overTeamTotal = new TeamTotal({
         ...standard,
@@ -205,7 +184,7 @@ const getAllLinesFromEvent = async (
         otherOutcomePrice: underPrice,
         choice: LineChoice.OVER,
         value,
-        side,
+        side
       });
       const underTeamTotal = new TeamTotal({
         ...standard,
@@ -213,60 +192,48 @@ const getAllLinesFromEvent = async (
         otherOutcomePrice: overPrice,
         choice: LineChoice.UNDER,
         value,
-        side,
+        side
       });
       teamTotals.push(overTeamTotal, underTeamTotal);
     }
     if (stats.moneyline(line)) {
       const home = line.selections.find((p: any) => p.hadvalue === "H");
       const away = line.selections.find((p: any) => p.hadvalue === "A");
-      const homePrice = upDownToPrice(
-        home.currentpriceup,
-        home.currentpricedown
-      );
-      const awayPrice = upDownToPrice(
-        away.currentpriceup,
-        away.currentpricedown
-      );
+      const homePrice = upDownToPrice(home.currentpriceup, home.currentpricedown);
+      const awayPrice = upDownToPrice(away.currentpriceup, away.currentpricedown);
       const homeMoneyline = new Moneyline({
         ...standard,
         price: homePrice,
         otherOutcomePrice: awayPrice,
-        choice: LineChoice.HOME,
+        choice: LineChoice.HOME
       });
       const awayMoneyline = new Moneyline({
         ...standard,
         price: awayPrice,
         otherOutcomePrice: homePrice,
-        choice: LineChoice.AWAY,
+        choice: LineChoice.AWAY
       });
       moneylines.push(homeMoneyline, awayMoneyline);
     }
     if (stats.spread(line)) {
       const home = line.selections.find((p: any) => p.hadvalue === "H");
       const away = line.selections.find((p: any) => p.hadvalue === "A");
-      const homePrice = upDownToPrice(
-        home.currentpriceup,
-        home.currentpricedown
-      );
-      const awayPrice = upDownToPrice(
-        away.currentpriceup,
-        away.currentpricedown
-      );
+      const homePrice = upDownToPrice(home.currentpriceup, home.currentpricedown);
+      const awayPrice = upDownToPrice(away.currentpriceup, away.currentpricedown);
       const value = line.currentmatchhandicap;
       const homeSpread = new Spread({
         ...standard,
         price: homePrice,
         otherOutcomePrice: awayPrice,
         choice: LineChoice.HOME,
-        value,
+        value
       });
       const awaySpread = new Spread({
         ...standard,
         price: awayPrice,
         otherOutcomePrice: homePrice,
         choice: LineChoice.AWAY,
-        value: -value,
+        value: -value
       });
       spreads.push(homeSpread, awaySpread);
     }
@@ -276,7 +243,7 @@ const getAllLinesFromEvent = async (
     spreads,
     teamTotals,
     gameTotals,
-    moneylines,
+    moneylines
   };
 };
 
@@ -307,19 +274,15 @@ export const getCircaLines = async (league: League): Promise<SourcedOdds> => {
     return x.name.includes(leagueMap.get(league));
   });
 
-
   const endpoint = targetMatches.marketgroups[0].idfwmarketgroup;
 
-  const gameData = await axios.get(
-    `https://co.circasports.com/cache/psmg/UK/${endpoint}.json`
-  );
-
+  const gameData = await axios.get(`https://co.circasports.com/cache/psmg/UK/${endpoint}.json`);
 
   const odds: SourcedOdds = {
     moneylines: [],
     teamTotals: [],
     gameTotals: [],
-    spreads: [],
+    spreads: []
   };
 
   for (const e of gameData.data.events) {
