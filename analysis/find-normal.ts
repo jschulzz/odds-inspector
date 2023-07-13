@@ -25,11 +25,9 @@ export const findNormalDistro = (inputs: Input[]) => {
         outcomes,
         mean,
         sd,
-        error: totalError,
+        error: totalError
       });
     }
   }
-  console.log(
-    attempts.sort((a, b) => (a.error > b.error ? 1 : -1))[0]
-  );
+  console.log(attempts.sort((a, b) => (a.error > b.error ? 1 : -1))[0]);
 };

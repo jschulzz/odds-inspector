@@ -11,8 +11,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.NBA,
@@ -20,8 +20,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.NHL,
@@ -29,8 +29,8 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-    ]),
+      [Book.TWINSPIRES, 0]
+    ])
   ],
   [
     League.MLB,
@@ -40,15 +40,12 @@ const leagueWeights = new Map<League, Map<Book, number>>([
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1.5],
-      [Book.POINTSBET, 0.2],
-    ]),
-  ],
+      [Book.POINTSBET, 0.2]
+    ])
+  ]
 ]);
 
-const getLikelihood = (
-  gameLine: GameLinePriceAggregate,
-  overOrUnder: "over" | "under"
-) => {
+const getLikelihood = (gameLine: GameLinePriceAggregate, overOrUnder: "over" | "under") => {
   let sum = 0;
   const bookWeights = leagueWeights.get(gameLine.game.league as League);
   if (!bookWeights) {
@@ -83,7 +80,7 @@ export const findGameLineEdge = async (league: League) => {
     const underLikelihood = 1 - overLikelihood;
     for (const options of [
       { likelihood: overLikelihood, price: "overPrice", label: "over" },
-      { likelihood: underLikelihood, price: "underPrice", label: "under" },
+      { likelihood: underLikelihood, price: "underPrice", label: "under" }
     ]) {
       gameLine.prices.forEach((price) => {
         // @ts-ignore
@@ -97,11 +94,9 @@ export const findGameLineEdge = async (league: League) => {
           (1 - options.likelihood);
         if (EV > -0.01) {
           console.log(
-            `${(EV * 100).toFixed(2)}% EV for ${
-              gameLine.awayTeam.abbreviation
-            } @ ${gameLine.homeTeam.abbreviation} ${options.label} ${
-              gameLine["linked-line"].value
-            } ${gameLine["linked-line"].period} ${
+            `${(EV * 100).toFixed(2)}% EV for ${gameLine.awayTeam.abbreviation} @ ${
+              gameLine.homeTeam.abbreviation
+            } ${options.label} ${gameLine["linked-line"].value} ${gameLine["linked-line"].period} ${
               gameLine["linked-line"].type
             } on ${price.book}\n\tFair Line: ${new Odds(
               options.likelihood

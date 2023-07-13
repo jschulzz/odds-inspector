@@ -43,8 +43,7 @@ export class Odds {
   static fromVigDecimal(desiredOption: number, undesiredOption: number) {
     return new Odds(
       Odds.decimalToProbability(desiredOption) /
-        (Odds.decimalToProbability(desiredOption) +
-          Odds.decimalToProbability(undesiredOption))
+        (Odds.decimalToProbability(desiredOption) + Odds.decimalToProbability(undesiredOption))
     );
   }
   static fromVigFractional(desiredOption: number, undesiredOption: number) {
@@ -55,10 +54,7 @@ export class Odds {
     );
   }
   static fromFairLine(desiredOption: number) {
-    return new Odds(
-      Odds.americanOddsToProbability(desiredOption),
-      desiredOption
-    );
+    return new Odds(Odds.americanOddsToProbability(desiredOption), desiredOption);
   }
   static fromDecimal(decimalOdds: number) {
     return new Odds(Odds.decimalToProbability(decimalOdds));

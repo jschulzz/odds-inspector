@@ -4,10 +4,7 @@ import { findPositiveEv } from "../analysis/positive-ev";
 import { League } from "../types";
 import { findOutliers } from "../analysis/props-outliers";
 import { getPinnacle, getPinnacleProps } from "../import/pinnacle";
-import {
-  getActionNetworkLines,
-  getActionNetworkProps,
-} from "../import/actionNetwork";
+import { getActionNetworkLines, getActionNetworkProps } from "../import/actionNetwork";
 import { getNoHouse } from "../import/no-house";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getUnderdogLines } from "../import/underdog";
@@ -16,13 +13,11 @@ export const router = Router();
 
 router.post("/import", async (req, res, next) => {
   const importSchema = joi.object().keys({
-    leagues: joi.array().items(joi.string().valid(...Object.values(League))),
+    leagues: joi.array().items(joi.string().valid(...Object.values(League)))
   });
   const validation = importSchema.validate(req.body);
   if (validation.error) {
-    res
-      .status(400)
-      .send({ message: "Could not process request", error: validation.error });
+    res.status(400).send({ message: "Could not process request", error: validation.error });
     next(new Error("Could not process request"));
   }
   const leagues: League[] = req.body.leagues;

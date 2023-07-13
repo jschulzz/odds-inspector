@@ -13,7 +13,7 @@ import {
   Prop,
   PropsStat,
   SourcedOdds,
-  Spread,
+  Spread
 } from "../types";
 import { GameTotal, LineChoice, TeamTotal } from "../types/lines";
 import { Game } from "../database/game";
@@ -35,7 +35,7 @@ const leagueIDs = new Map([
   [League.UFC, 22],
   [League.SOCCER, 29],
   [League.NCAAB, 493],
-  [League.TENNIS, 33],
+  [League.TENNIS, 33]
 ]);
 
 const saveEventToDatabase = async (matchup: any, league: League) => {
@@ -49,16 +49,12 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
     }
     return {
       ...p,
-      name,
+      name
     };
   });
 
-  const homeTeamName = participants.find(
-    (x: any) => x.alignment === "home"
-  ).name;
-  const awayTeamName = participants.find(
-    (x: any) => x.alignment === "away"
-  ).name;
+  const homeTeamName = participants.find((x: any) => x.alignment === "home").name;
+  const awayTeamName = participants.find((x: any) => x.alignment === "away").name;
   let homeTeam;
   try {
     homeTeam = await teamManager.findByName(homeTeamName, league);
@@ -66,7 +62,7 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
     homeTeam = await teamManager.add({
       name: homeTeamName,
       league,
-      abbreviation: "-",
+      abbreviation: "-"
     });
   }
   let awayTeam;
@@ -76,7 +72,7 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
     awayTeam = await teamManager.add({
       name: awayTeamName,
       league,
-      abbreviation: "-",
+      abbreviation: "-"
     });
   }
   const gameTime = new Date(matchup.startTime);
@@ -101,14 +97,11 @@ const requestLines = async (league: League) => {
   const matchupsFilename = `${datastorePath}/${league}_matchups.json`;
 
   try {
-    const linesData = await axios.get(
-      "https://guest.api.arcadia.pinnacle.com/" + linesUrl,
-      {
-        headers: {
-          "x-api-key": PINNACLE_KEY,
-        },
+    const linesData = await axios.get("https://guest.api.arcadia.pinnacle.com/" + linesUrl, {
+      headers: {
+        "x-api-key": PINNACLE_KEY
       }
-    );
+    });
     fs.writeFileSync(linesFilename, JSON.stringify(linesData.data, null, 4));
   } catch (error) {
     console.error(error);
@@ -116,18 +109,12 @@ const requestLines = async (league: League) => {
   }
 
   try {
-    const matchupData = await axios.get(
-      "https://guest.api.arcadia.pinnacle.com/" + matchupUrl,
-      {
-        headers: {
-          "x-api-key": PINNACLE_KEY,
-        },
+    const matchupData = await axios.get("https://guest.api.arcadia.pinnacle.com/" + matchupUrl, {
+      headers: {
+        "x-api-key": PINNACLE_KEY
       }
-    );
-    fs.writeFileSync(
-      matchupsFilename,
-      JSON.stringify(matchupData.data, null, 4)
-    );
+    });
+    fs.writeFileSync(matchupsFilename, JSON.stringify(matchupData.data, null, 4));
   } catch {
     console.log("Couldn't request new matchups. Using saved matchups");
   }
@@ -172,14 +159,14 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
         homeTeam,
         awayTeam,
         gameTime,
-        game: mongoGame,
+        game: mongoGame
       } = await saveEventToDatabase(matchup, league);
 
       const game = new Game({
         homeTeam,
         awayTeam,
         gameTime,
-        league,
+        league
       });
 
       storedEvent = {
@@ -189,7 +176,7 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
         moneylines: [],
         spreads: [],
         gameTotals: [],
-        teamTotals: [],
+        teamTotals: []
       };
     }
 
@@ -213,7 +200,7 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
     moneylines: [],
     spreads: [],
     gameTotals: [],
-    teamTotals: [],
+    teamTotals: []
   };
 
   const getPeriod = (id: number) => {
@@ -250,22 +237,16 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const underPrice = under.price;
       const underLine = under.points;
 
-      const mongoLine = await gameLineManager.upsertGameTotal(
-        mongoGame,
-        period,
-        { value: overLine }
-      );
+      const mongoLine = await gameLineManager.upsertGameTotal(mongoGame, period, {
+        value: overLine
+      });
 
-      await priceManager.upsertGameLinePrice(
-        mongoLine,
-        Book.PINNACLE,
-        { overPrice, underPrice }
-      );
+      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, { overPrice, underPrice });
 
       const standard = {
         game: correspondingMatchup.game,
         period,
-        book: Book.PINNACLE,
+        book: Book.PINNACLE
       };
 
       const overTotal = new GameTotal({
@@ -273,14 +254,14 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
         price: overPrice,
         otherOutcomePrice: underPrice,
         value: overLine,
-        choice: LineChoice.OVER,
+        choice: LineChoice.OVER
       });
       const underTotal = new GameTotal({
         ...standard,
         price: underPrice,
         otherOutcomePrice: overPrice,
         value: underLine,
-        choice: LineChoice.UNDER,
+        choice: LineChoice.UNDER
       });
 
       odds.gameTotals.push(overTotal, underTotal);
@@ -293,37 +274,32 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const underPrice = under.price;
       const underLine = under.points;
 
-      const mongoLine = await gameLineManager.upsertTeamTotal(
-        mongoGame,
-        period,
-        { value: overLine, side: line.side }
-      );
+      const mongoLine = await gameLineManager.upsertTeamTotal(mongoGame, period, {
+        value: overLine,
+        side: line.side
+      });
 
-      await priceManager.upsertGameLinePrice(
-        mongoLine,
-        Book.PINNACLE,
-        { overPrice, underPrice }
-      );
+      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, { overPrice, underPrice });
 
       const standard = {
         game: correspondingMatchup.game,
         period,
         book: Book.PINNACLE,
-        side: line.side,
+        side: line.side
       };
       const overTotal = new TeamTotal({
         ...standard,
         price: overPrice,
         otherOutcomePrice: underPrice,
         value: overLine,
-        choice: LineChoice.OVER,
+        choice: LineChoice.OVER
       });
       const underTotal = new TeamTotal({
         ...standard,
         price: underPrice,
         otherOutcomePrice: overPrice,
         value: underLine,
-        choice: LineChoice.UNDER,
+        choice: LineChoice.UNDER
       });
       odds.teamTotals.push(overTotal, underTotal);
     }
@@ -333,34 +309,31 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const homePrice = home.price;
       const awayPrice = away.price;
 
-      const mongoLine = await gameLineManager.upsertMoneyline(
-        mongoGame,
-        period,
-        { side: HomeOrAway.HOME }
-      );
+      const mongoLine = await gameLineManager.upsertMoneyline(mongoGame, period, {
+        side: HomeOrAway.HOME
+      });
 
-      await priceManager.upsertGameLinePrice(
-        mongoLine,
-        Book.PINNACLE,
-        { overPrice: homePrice, underPrice: awayPrice }
-      );
+      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+        overPrice: homePrice,
+        underPrice: awayPrice
+      });
 
       const standard = {
         game: correspondingMatchup.game,
         period,
-        book: Book.PINNACLE,
+        book: Book.PINNACLE
       };
       const homeMoneyline = new Moneyline({
         ...standard,
         choice: LineChoice.HOME,
         price: homePrice,
-        otherOutcomePrice: awayPrice,
+        otherOutcomePrice: awayPrice
       });
       const awayMoneyline = new Moneyline({
         ...standard,
         choice: LineChoice.AWAY,
         price: awayPrice,
-        otherOutcomePrice: homePrice,
+        otherOutcomePrice: homePrice
       });
       odds.moneylines.push(homeMoneyline, awayMoneyline);
     }
@@ -372,17 +345,15 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const awayPrice = away.price;
       const awayLine = away.points;
 
-      const mongoLine = await gameLineManager.upsertSpread(
-        mongoGame,
-        period,
-        { side: HomeOrAway.HOME, value: homeLine }
-      );
+      const mongoLine = await gameLineManager.upsertSpread(mongoGame, period, {
+        side: HomeOrAway.HOME,
+        value: homeLine
+      });
 
-      await priceManager.upsertGameLinePrice(
-        mongoLine,
-        Book.PINNACLE,
-        { overPrice: homePrice, underPrice: awayPrice }
-      );
+      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+        overPrice: homePrice,
+        underPrice: awayPrice
+      });
 
       if (homeLine === undefined) {
         console.log(line, correspondingMatchup.game);
@@ -390,21 +361,21 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const standard = {
         period,
         book: Book.PINNACLE,
-        game: correspondingMatchup.game,
+        game: correspondingMatchup.game
       };
       const homeSpread = new Spread({
         ...standard,
         choice: LineChoice.HOME,
         value: homeLine,
         price: homePrice,
-        otherOutcomePrice: awayPrice,
+        otherOutcomePrice: awayPrice
       });
       const awaySpread = new Spread({
         ...standard,
         choice: LineChoice.AWAY,
         value: awayLine,
         price: awayPrice,
-        otherOutcomePrice: homePrice,
+        otherOutcomePrice: homePrice
       });
       odds.spreads.push(homeSpread, awaySpread);
     }
@@ -412,9 +383,7 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   return odds;
 };
 
-export const getPinnacleProps = async (
-  league: League,
-): Promise<Prop[]> => {
+export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
   const { lines, matchups } = await requestLines(league);
   const playerPropManager = new PlayerPropManager();
   const priceManager = new PriceManager();
@@ -427,16 +396,13 @@ export const getPinnacleProps = async (
         `https://guest.api.arcadia.pinnacle.com/0.1/matchups/${matchup.id}/related`,
         {
           headers: {
-            "x-api-key": PINNACLE_KEY,
-          },
+            "x-api-key": PINNACLE_KEY
+          }
         }
       );
       const { game } = await saveEventToDatabase(matchup, league);
       propLoop: for (const prop of pinnacleProps) {
-        if (
-          prop.type !== "special" ||
-          prop.special.category !== "Player Props"
-        ) {
+        if (prop.type !== "special" || prop.special.category !== "Player Props") {
           continue propLoop;
         }
         const propName = prop.special.description;
@@ -460,20 +426,14 @@ export const getPinnacleProps = async (
         }
         const value = line.prices[0].points;
 
-        const overId = prop.participants.find(
-          (participant: any) => participant.name === "Over"
-        ).id;
+        const overId = prop.participants.find((participant: any) => participant.name === "Over").id;
         const underId = prop.participants.find(
           (participant: any) => participant.name === "Under"
         ).id;
 
-        const overPrice = line.prices.find(
-          (price: any) => price.participantId === overId
-        )?.price;
+        const overPrice = line.prices.find((price: any) => price.participantId === overId)?.price;
 
-        const underPrice = line.prices.find(
-          (price: any) => price.participantId === underId
-        )?.price;
+        const underPrice = line.prices.find((price: any) => price.participantId === underId)?.price;
         if (!overPrice || !underPrice) {
           continue propLoop;
         }
@@ -487,7 +447,7 @@ export const getPinnacleProps = async (
             stat,
             value,
             price: overPrice,
-            league,
+            league
           },
           playerManager
         );
@@ -500,22 +460,16 @@ export const getPinnacleProps = async (
             stat,
             value,
             price: underPrice,
-            league,
+            league
           },
           playerManager
         );
         props.push(overProp, underProp);
         const player = await playerManager.findByName(playerName, league);
-        const dbProp = await playerPropManager.upsert(
-          player,
-          game,
-          league,
-          stat,
-          value
-        );
+        const dbProp = await playerPropManager.upsert(player, game, league, stat, value);
         await priceManager.upsertPlayerPropPrice(dbProp, Book.PINNACLE, {
           overPrice,
-          underPrice,
+          underPrice
         });
       }
     } catch (e) {

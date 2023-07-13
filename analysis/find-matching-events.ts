@@ -5,14 +5,14 @@ export const findMatchingEvents = (
   lineCorpus: SourcedOdds,
   options: { wantSameChoice: boolean; wantOppositeValue: boolean } = {
     wantSameChoice: false,
-    wantOppositeValue: false,
+    wantOppositeValue: false
   }
 ) => {
   const typeMap = new Map([
     [Market.MONEYLINE, lineCorpus.moneylines],
     [Market.SPREAD, lineCorpus.spreads],
     [Market.GAME_TOTAL, lineCorpus.gameTotals],
-    [Market.TEAM_TOTAL, lineCorpus.teamTotals],
+    [Market.TEAM_TOTAL, lineCorpus.teamTotals]
   ]);
 
   const marketLines = typeMap.get(targetLine.type);
@@ -32,8 +32,7 @@ export const findMatchingEvents = (
     const sameChoice = options.wantSameChoice
       ? line.choice === targetLine.choice
       : line.choice !== targetLine.choice;
-    const sameSide =
-      (line as TeamTotal).side === (targetLine as TeamTotal).side;
+    const sameSide = (line as TeamTotal).side === (targetLine as TeamTotal).side;
 
     // console.log(
     //   { sameChoice, sameGame, sameLine, samePeriod, sameSide },

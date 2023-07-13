@@ -5,9 +5,7 @@ import { LineChoice } from "../types/lines";
 
 const findLines = () => {
   const data = JSON.parse(
-    fs
-      .readFileSync(path.join(__dirname, "../backups/oddspedia/nfl.json"))
-      .toString()
+    fs.readFileSync(path.join(__dirname, "../backups/oddspedia/nfl.json")).toString()
   );
   console.log(new Set(data.teamTotals.map((x: any) => x.awayTeam)));
   console.log(

@@ -11,7 +11,7 @@ export const priceSchema = new Schema({
   prop: { type: Schema.ObjectId, required: true },
   book: { type: String, required: true },
   overPrice: { type: Number, required: true },
-  underPrice: { type: Number, required: true },
+  underPrice: { type: Number, required: true }
 });
 
 export type Price = InferSchemaType<typeof priceSchema>;
@@ -51,10 +51,7 @@ export class PriceManager {
     await getConnection();
     const gameLineManager = new GameLineManager();
     const gameManager = new GameManager();
-    const futureGamesForLeague = await gameManager.findByLeague(
-      league,
-      new Date()
-    );
+    const futureGamesForLeague = await gameManager.findByLeague(league, new Date());
     const linesForFutureGames: Types.ObjectId[] = (
       await gameLineManager
         // @ts-ignore
@@ -64,11 +61,11 @@ export class PriceManager {
       .map((x) => x._id);
     const stalePrices = await PriceModel.find({
       prop: { $in: linesForFutureGames },
-      book,
+      book
     });
     console.log(`Deleting prices on ${book}`);
     await PriceModel.deleteMany({
-      _id: { $in: stalePrices.map((s) => s._id) },
+      _id: { $in: stalePrices.map((s) => s._id) }
     });
 
     // for (const stalePrice of stalePrices) {
@@ -88,14 +85,14 @@ export class PriceManager {
       price = await PriceModel.findOneAndUpdate(
         {
           prop: line,
-          book,
+          book
         },
         {
           _id: new Types.ObjectId(),
           prop: line,
           book,
           overPrice: prices?.overPrice,
-          underPrice: prices?.underPrice,
+          underPrice: prices?.underPrice
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -103,13 +100,13 @@ export class PriceManager {
       price = await PriceModel.findOneAndUpdate(
         {
           prop: line,
-          book,
+          book
         },
         {
           prop: line,
           book,
           overPrice: prices?.overPrice,
-          underPrice: prices?.underPrice,
+          underPrice: prices?.underPrice
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -130,7 +127,7 @@ export class PriceManager {
     const alternateProps = await playerPropManager.findAlternateLines(prop);
     const stalePrices = await PriceModel.find({
       prop: { $in: alternateProps.map((prop) => prop._id) },
-      book,
+      book
     });
 
     for (const stalePrice of stalePrices) {
@@ -145,14 +142,14 @@ export class PriceManager {
       price = await PriceModel.findOneAndUpdate(
         {
           prop,
-          book,
+          book
         },
         {
           _id: new Types.ObjectId(),
           prop,
           book,
           overPrice: prices?.overPrice,
-          underPrice: prices?.underPrice,
+          underPrice: prices?.underPrice
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -160,13 +157,13 @@ export class PriceManager {
       price = await PriceModel.findOneAndUpdate(
         {
           prop,
-          book,
+          book
         },
         {
           prop,
           book,
           overPrice: prices?.overPrice,
-          underPrice: prices?.underPrice,
+          underPrice: prices?.underPrice
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -181,94 +178,94 @@ export class PriceManager {
       {
         $match: {
           overPrice: { $ne: null },
-          underPrice: { $ne: null },
-        },
+          underPrice: { $ne: null }
+        }
       },
       {
         $group: {
           _id: {
-            prop: "$prop",
+            prop: "$prop"
           },
           count: {
-            $sum: 1,
+            $sum: 1
           },
           prices: {
             $push: {
               book: "$book",
               overPrice: "$overPrice",
-              underPrice: "$underPrice",
-            },
-          },
-        },
+              underPrice: "$underPrice"
+            }
+          }
+        }
       },
       {
         $lookup: {
           from: "game-lines",
           localField: "_id.prop",
           foreignField: "_id",
-          as: "linked-line",
-        },
+          as: "linked-line"
+        }
       },
       {
         $unwind: {
-          path: "$linked-line",
-        },
+          path: "$linked-line"
+        }
       },
       {
         $lookup: {
           from: "games",
           localField: "linked-line.game",
           foreignField: "_id",
-          as: "game",
-        },
+          as: "game"
+        }
       },
       {
         $unwind: {
-          path: "$game",
-        },
+          path: "$game"
+        }
       },
       {
         $lookup: {
           from: "teams",
           localField: "game.homeTeam",
           foreignField: "_id",
-          as: "homeTeam",
-        },
+          as: "homeTeam"
+        }
       },
       {
         $unwind: {
-          path: "$homeTeam",
-        },
+          path: "$homeTeam"
+        }
       },
       {
         $lookup: {
           from: "teams",
           localField: "game.awayTeam",
           foreignField: "_id",
-          as: "awayTeam",
-        },
+          as: "awayTeam"
+        }
       },
       {
         $unwind: {
-          path: "$awayTeam",
-        },
+          path: "$awayTeam"
+        }
       },
       {
         $match: {
           count: {
-            $gte: 3,
+            $gte: 3
           },
           "game.league": league ? league : undefined,
           "game.gameTime": {
-            $gte: new Date(),
-          },
-        },
+            $gte: new Date()
+          }
+        }
       },
       {
         $sort: {
-          count: -1,
-        },
-      },
+          count: -1
+        }
+      }
     ]);
     //@ts-ignore
     return aggs;
@@ -279,88 +276,88 @@ export class PriceManager {
       {
         $group: {
           _id: {
-            prop: "$prop",
+            prop: "$prop"
           },
           count: {
-            $sum: 1,
+            $sum: 1
           },
           prices: {
             $push: {
               book: "$book",
               overPrice: "$overPrice",
-              underPrice: "$underPrice",
-            },
-          },
-        },
+              underPrice: "$underPrice"
+            }
+          }
+        }
       },
       {
         $lookup: {
           from: "player-props",
           localField: "_id.prop",
           foreignField: "_id",
-          as: "linked-prop",
-        },
+          as: "linked-prop"
+        }
       },
       {
         $unwind: {
-          path: "$linked-prop",
-        },
+          path: "$linked-prop"
+        }
       },
       {
         $lookup: {
           from: "games",
           localField: "linked-prop.game",
           foreignField: "_id",
-          as: "game",
-        },
+          as: "game"
+        }
       },
       {
         $unwind: {
-          path: "$game",
-        },
+          path: "$game"
+        }
       },
       {
         $lookup: {
           from: "players",
           localField: "linked-prop.player",
           foreignField: "_id",
-          as: "player",
-        },
+          as: "player"
+        }
       },
       {
         $unwind: {
-          path: "$player",
-        },
+          path: "$player"
+        }
       },
       {
         $lookup: {
           from: "teams",
           localField: "player.team",
           foreignField: "_id",
-          as: "team",
-        },
+          as: "team"
+        }
       },
       {
         $unwind: {
-          path: "$team",
-        },
+          path: "$team"
+        }
       },
       {
         $match: {
           count: {
-            $gte: 3,
+            $gte: 3
           },
           "linked-prop.league": league ? league : undefined,
           "game.gameTime": {
-            $gte: new Date(),
-          },
-        },
+            $gte: new Date()
+          }
+        }
       },
       {
         $sort: {
-          count: -1,
-        },
-      },
+          count: -1
+        }
+      }
     ]);
     //@ts-ignore
     return aggs;
@@ -371,90 +368,90 @@ export class PriceManager {
       {
         $group: {
           _id: {
-            prop: "$prop",
+            prop: "$prop"
           },
           count: {
-            $sum: 1,
+            $sum: 1
           },
           prices: {
             $push: {
               book: "$book",
               overPrice: "$overPrice",
-              underPrice: "$underPrice",
-            },
-          },
-        },
+              underPrice: "$underPrice"
+            }
+          }
+        }
       },
       {
         $lookup: {
           from: "player-props",
           localField: "_id.prop",
           foreignField: "_id",
-          as: "linked-prop",
-        },
+          as: "linked-prop"
+        }
       },
       {
         $unwind: {
-          path: "$linked-prop",
-        },
+          path: "$linked-prop"
+        }
       },
       {
         $lookup: {
           from: "games",
           localField: "linked-prop.game",
           foreignField: "_id",
-          as: "game",
-        },
+          as: "game"
+        }
       },
       {
         $unwind: {
-          path: "$game",
-        },
+          path: "$game"
+        }
       },
       {
         $lookup: {
           from: "players",
           localField: "linked-prop.player",
           foreignField: "_id",
-          as: "player",
-        },
+          as: "player"
+        }
       },
       {
         $unwind: {
-          path: "$player",
-        },
+          path: "$player"
+        }
       },
       {
         $lookup: {
           from: "teams",
           localField: "player.team",
           foreignField: "_id",
-          as: "team",
-        },
+          as: "team"
+        }
       },
       {
         $unwind: {
-          path: "$team",
-        },
+          path: "$team"
+        }
       },
       {
         $match: {
           count: {
             $lte: 3,
-            $gt: 0,
+            $gt: 0
           },
           // @ts-ignore
           "linked-prop._id": new Types.ObjectId(prop._id),
           "game.gameTime": {
-            $gte: new Date(),
-          },
-        },
+            $gte: new Date()
+          }
+        }
       },
       {
         $sort: {
-          count: -1,
-        },
-      },
+          count: -1
+        }
+      }
     ]);
     //@ts-ignore
     return aggs;

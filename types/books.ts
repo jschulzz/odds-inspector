@@ -19,5 +19,5 @@ export enum Book {
   FOXBET = "FoxBet",
   BOVADA = "Bovada",
   LOWVIG = "LowVig",
-  BETONLINE = "BetOnline",
+  BETONLINE = "BetOnline"
 }

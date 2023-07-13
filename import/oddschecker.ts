@@ -19,16 +19,12 @@ export const getOddschecker = async (league: League) => {
   const gametimeGroups = await page.$$("div > ul > div");
   const gameLinks = [];
   for (const gametimeGroup of gametimeGroups) {
-    const gameDateElement = await gametimeGroup.$(
-      'div[data-testid="bet-date"]'
-    );
+    const gameDateElement = await gametimeGroup.$('div[data-testid="bet-date"]');
     const gameDate = await gameDateElement?.evaluate((el) => el.textContent);
     if (gameDate !== "Today") {
       continue;
     }
-    const linkElements = await gametimeGroup.$$(
-      'ul > li[data-testid="match"] > a'
-    );
+    const linkElements = await gametimeGroup.$$('ul > li[data-testid="match"] > a');
     for (const linkElement of linkElements) {
       const link = await linkElement?.evaluate((el) => el.getAttribute("to"));
       gameLinks.push(link);
@@ -39,9 +35,7 @@ export const getOddschecker = async (league: League) => {
   for (const gameLink of gameLinks) {
     // const markets = ['Points']
     await page.goto(`https://www.oddschecker.com/us/${gameLink}`);
-    const marketOptions = await page.$$(
-      'div[data-testid="markets-container"] > button'
-    );
+    const marketOptions = await page.$$('div[data-testid="markets-container"] > button');
     for (const marketOption of marketOptions) {
       const text = await marketOption?.evaluate((el) => el.textContent);
       console.log(text);

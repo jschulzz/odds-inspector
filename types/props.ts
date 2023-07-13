@@ -8,7 +8,7 @@ export enum PropsPlatform {
   PRIZEPICKS = "PrizePicks (5p)",
   THRIVE = "Thrive",
   NO_HOUSE = "No House Advantage (5p flx)",
-  MONKEY_KNIFE_FIGHT = "Monkey Knife Fight",
+  MONKEY_KNIFE_FIGHT = "Monkey Knife Fight"
 }
 
 export enum PropsStat {
@@ -76,7 +76,7 @@ export enum PropsStat {
   REBOUNDS_PLUS_ASSISTS = "reboundsPlusAssists",
   STEALS = "steals",
   POINTS = "points",
-  FREE_THROWS_MADE = "freeThrowsMade",
+  FREE_THROWS_MADE = "freeThrowsMade"
 }
 
 export interface PropArgs {
@@ -119,11 +119,7 @@ export class Prop {
     } catch {
       console.log("Could not find player, now attempting to add");
       try {
-        player = await playerManager.add(
-          args.playerName,
-          args.team,
-          args.league
-        );
+        player = await playerManager.add(args.playerName, args.team, args.league);
         return new Prop(args, player);
       } catch {
         console.error("Could not add player");

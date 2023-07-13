@@ -7,7 +7,7 @@ export const gameSchema = new Schema({
   homeTeam: { type: Schema.ObjectId, required: true },
   awayTeam: { type: Schema.ObjectId, required: true },
   league: { type: String, required: true },
-  gameTime: { type: Date, required: true },
+  gameTime: { type: Date, required: true }
 });
 
 export type Game = InferSchemaType<typeof gameSchema>;
@@ -29,14 +29,14 @@ export class GameManager {
           homeTeam,
           awayTeam,
           league,
-          gameTime,
+          gameTime
         },
         {
           _id: new Types.ObjectId(),
           homeTeam,
           awayTeam,
           league,
-          gameTime,
+          gameTime
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -46,13 +46,13 @@ export class GameManager {
           homeTeam,
           awayTeam,
           league,
-          gameTime,
+          gameTime
         },
         {
           homeTeam,
           awayTeam,
           league,
-          gameTime,
+          gameTime
         },
         { upsert: true, returnDocument: "after" }
       );
@@ -76,7 +76,7 @@ export class GameManager {
 
     const findByLeague: Game[] | null = await GameModel.find({
       league,
-      ...(after ? { gameTime: { $gte: after } } : {}),
+      ...(after ? { gameTime: { $gte: after } } : {})
     });
     if (findByLeague) {
       return findByLeague;
@@ -90,11 +90,11 @@ export class GameManager {
     const team = await teamManager.findByAbbreviation(abbreviation, league);
     const todayWhereHome = await GameModel.find({
       homeTeam: team,
-      gameTime: { $gte: new Date() },
+      gameTime: { $gte: new Date() }
     });
     const todayWhereAway = await GameModel.find({
       awayTeam: team,
-      gameTime: { $gte: new Date() },
+      gameTime: { $gte: new Date() }
     });
     if (todayWhereHome.length === 1) {
       return todayWhereHome[0];

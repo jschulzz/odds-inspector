@@ -16,23 +16,20 @@ const nflFantasyScoring = new Map([
   [PropsStat.RECEIVING_TDS, 6],
   [PropsStat.RECEPTIONS, 0.5],
   [PropsStat.EXTRA_POINTS_MADE, 1],
-  [PropsStat.FIELD_GOALS_MADE, 4],
+  [PropsStat.FIELD_GOALS_MADE, 4]
 ]);
 
 const scoringTable = new Map([[League.NFL, nflFantasyScoring]]);
 
 const findPlayerAverageLines = (player: string, corpus: Prop[]) => {
-  const allPropsForPlayer = corpus.filter(
-    (prop) => compareTwoStrings(player, prop.player) > 0.85
-  );
+  const allPropsForPlayer = corpus.filter((prop) => compareTwoStrings(player, prop.player) > 0.85);
 
   const stats = new Set(allPropsForPlayer.map((x) => x.stat));
   const result: { [key in PropsStat]?: number } = {};
   stats.forEach((stat) => {
     const matchingPlays = allPropsForPlayer.filter((x) => x.stat === stat);
     const averageValue =
-      matchingPlays.reduce((prev, curr) => prev + curr.value, 0) /
-      matchingPlays.length;
+      matchingPlays.reduce((prev, curr) => prev + curr.value, 0) / matchingPlays.length;
     result[stat] = averageValue;
   });
   return result;
@@ -49,7 +46,7 @@ export const evaluateFantasyPoints = async (league: League) => {
   const allProps = [
     // ...props,
     ...actionLabsProps,
-    ...pinnacleProps,
+    ...pinnacleProps
     // ...underdogProps,
     // ...prizepicksProps,
     // ...thriveProps,
@@ -76,8 +73,7 @@ export const evaluateFantasyPoints = async (league: League) => {
     }, 0);
     const prizePicksFantasy = underdogProps.find(
       (prop) =>
-        compareTwoStrings(prop.player, player) > 0.85 &&
-        prop.stat === PropsStat.FANTASY_POINTS
+        compareTwoStrings(prop.player, player) > 0.85 && prop.stat === PropsStat.FANTASY_POINTS
     );
     if (!prizePicksFantasy) {
       return;
@@ -95,9 +91,7 @@ export const evaluateFantasyPoints = async (league: League) => {
 
   console.log(
     plays.sort((a, b) =>
-      a.expectedFantasy - a.givenScore > b.expectedFantasy - b.givenScore
-        ? 1
-        : -1
+      a.expectedFantasy - a.givenScore > b.expectedFantasy - b.givenScore ? 1 : -1
     )
   );
 

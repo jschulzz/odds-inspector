@@ -7,7 +7,7 @@ export class TeamManager {
   constructor() {
     this.teamsDB = new AsyncDatastore({
       filename: "./teams.datastore",
-      autoload: true,
+      autoload: true
     });
   }
 
@@ -29,9 +29,6 @@ export class TeamManager {
 
   async addAlias(team: Team, alias: string) {
     team.aliases.push(alias);
-    await this.teamsDB.asyncUpdate(
-      { name: team.name },
-      { aliases: team.aliases }
-    );
+    await this.teamsDB.asyncUpdate({ name: team.name }, { aliases: team.aliases });
   }
 }

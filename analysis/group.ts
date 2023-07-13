@@ -13,8 +13,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.NBA,
@@ -25,8 +25,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.NHL,
@@ -37,8 +37,8 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [Book.TWINSPIRES, 0],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ],
   [
     League.MLB,
@@ -51,9 +51,9 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       // [Book.CAESARS, 1],
       [PropsPlatform.PRIZEPICKS, 0],
       [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0],
-    ]),
-  ],
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
+  ]
 ]);
 
 export interface Price {
@@ -97,9 +97,8 @@ export class Group {
       return {
         book: price.book,
         EV:
-          averageLikelihood *
-            Odds.fromFairLine(price.price).toPayoutMultiplier() -
-          (1 - averageLikelihood),
+          averageLikelihood * Odds.fromFairLine(price.price).toPayoutMultiplier() -
+          (1 - averageLikelihood)
       };
     });
   };
@@ -148,9 +147,7 @@ export class Group {
     );
   };
   getFullSize = () => {
-    return (
-      this.prices.length + this.relatedGroups.flatMap((x) => x.prices).length
-    );
+    return this.prices.length + this.relatedGroups.flatMap((x) => x.prices).length;
   };
   maxEV = () => {
     const EVs = this.findEV();
@@ -170,10 +167,7 @@ export class Group {
     }
     this.prices.forEach((price1) => {
       this.oppositeGroup?.prices.forEach((price2) => {
-        if (
-          price1 !== price2 &&
-          ![price1.book, price2.book].includes(Book.PINNACLE)
-        ) {
+        if (price1 !== price2 && ![price1.book, price2.book].includes(Book.PINNACLE)) {
           const sum =
             Odds.fromFairLine(price1.price).toProbability() +
             Odds.fromFairLine(price2.price).toProbability();

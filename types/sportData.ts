@@ -6,9 +6,9 @@ export enum League {
   NBA = "nba",
   WNBA = "wnba",
   NHL = "nhl",
-  UFC = 'ufc',
-  SOCCER = 'soccer',
-  TENNIS = 'tennis',
+  UFC = "ufc",
+  SOCCER = "soccer",
+  TENNIS = "tennis"
 }
 
 export enum Period {
@@ -21,5 +21,5 @@ export enum Period {
   FOURTH_QUARTER = "fourthQuarter",
   FIRST_PERIOD = "firstPeriod",
   SECOND_PERIOD = "secondPeriod",
-  THIRD_PERIOD = "thirdPeriod",
+  THIRD_PERIOD = "thirdPeriod"
 }

@@ -8,34 +8,13 @@ import { League, Period, Moneyline, Spread, Market } from "../types";
 import { GameTotal, LineChoice, SourcedOdds } from "../types/lines";
 
 const marketMap = new Map([
-  [
-    League.NFL,
-    { sport: "football", category: "usa", seasonId: "160389", league: "nfl" },
-  ],
-  [
-    League.NCAAF,
-    { sport: "football", category: "usa", seasonId: "160664", league: "ncaa" },
-  ],
-  [
-    League.NCAAB,
-    { sport: "basketball", category: "usa", seasonId: "98001", league: "ncaa" },
-  ],
-  [
-    League.MLB,
-    { sport: "baseball", category: "usa", seasonId: "88607", league: "mlb" },
-  ],
-  [
-    League.NBA,
-    { sport: "basketball", category: "usa", seasonId: "94573", league: "nba" },
-  ],
-  [
-    League.NHL,
-    { sport: "ice-hockey", category: "usa", seasonId: "94839", league: "nhl" },
-  ],
-  [
-    League.SOCCER,
-    { sport: "soccer", category: "usa", seasonId: "94839", league: "nhl" },
-  ],
+  [League.NFL, { sport: "football", category: "usa", seasonId: "160389", league: "nfl" }],
+  [League.NCAAF, { sport: "football", category: "usa", seasonId: "160664", league: "ncaa" }],
+  [League.NCAAB, { sport: "basketball", category: "usa", seasonId: "98001", league: "ncaa" }],
+  [League.MLB, { sport: "baseball", category: "usa", seasonId: "88607", league: "mlb" }],
+  [League.NBA, { sport: "basketball", category: "usa", seasonId: "94573", league: "nba" }],
+  [League.NHL, { sport: "ice-hockey", category: "usa", seasonId: "94839", league: "nhl" }],
+  [League.SOCCER, { sport: "soccer", category: "usa", seasonId: "94839", league: "nhl" }]
 ]);
 
 const periodMap = new Map([
@@ -45,7 +24,7 @@ const periodMap = new Map([
   ["1Q", Period.FIRST_QUARTER],
   ["1st Period", Period.FIRST_PERIOD],
   ["2nd Period", Period.SECOND_PERIOD],
-  ["3rd Period", Period.THIRD_PERIOD],
+  ["3rd Period", Period.THIRD_PERIOD]
 ]);
 
 export const getOddspedia = async (
@@ -82,7 +61,7 @@ export const getOddspedia = async (
     moneylines: [],
     spreads: [],
     gameTotals: [],
-    teamTotals: [],
+    teamTotals: []
   };
   if (pullNew) {
     try {
@@ -97,7 +76,7 @@ export const getOddspedia = async (
           id: match.uri.split("-").at(-1).split("?")[0],
           homeTeam: match.ht,
           awayTeam: match.at,
-          gameTime: match.md,
+          gameTime: match.md
         }));
     } catch (e: any) {
       console.error(e.response.data);
@@ -105,14 +84,14 @@ export const getOddspedia = async (
     const markets = [
       { marketID: 4, type: "total" },
       { marketID: 2, type: "moneyline" },
-      { marketID: 3, type: "spread" },
+      { marketID: 3, type: "spread" }
     ];
     checkMatch: for (const match of matches) {
       const gameData = {
         gameId: match.id,
         homeTeam: match.homeTeam,
         awayTeam: match.awayTeam,
-        gameTime: new Date(match.gameTime),
+        gameTime: new Date(match.gameTime)
       };
       for (const { marketID, type } of markets) {
         let data;
@@ -135,9 +114,7 @@ export const getOddspedia = async (
         if (!data || !data.data || !data.data.prematch) {
           continue;
         }
-        const thisMarket = data.data.prematch.find(
-          (lines: any) => lines.id === marketID
-        );
+        const thisMarket = data.data.prematch.find((lines: any) => lines.id === marketID);
         if (!thisMarket) {
           continue;
         }
@@ -169,7 +146,7 @@ export const getOddspedia = async (
                 otherOutcomePrice: awayOdds,
                 book,
                 period: periodName,
-                gameTime: gameData.gameTime,
+                gameTime: gameData.gameTime
               });
               const awayMoneyline = new Moneyline({
                 homeTeam: gameData.homeTeam,
@@ -179,7 +156,7 @@ export const getOddspedia = async (
                 otherOutcomePrice: homeOdds,
                 book,
                 period: periodName,
-                gameTime: gameData.gameTime,
+                gameTime: gameData.gameTime
               });
               odds.moneylines.push(homeMoneyline, awayMoneyline);
             });
@@ -215,7 +192,7 @@ export const getOddspedia = async (
                   otherOutcomePrice: awayOdds,
                   book,
                   period: periodName,
-                  choice: LineChoice.HOME,
+                  choice: LineChoice.HOME
                 });
                 const awaySpread = new Spread({
                   homeTeam: gameData.homeTeam,
@@ -226,7 +203,7 @@ export const getOddspedia = async (
                   otherOutcomePrice: homeOdds,
                   book,
                   period: periodName,
-                  choice: LineChoice.AWAY,
+                  choice: LineChoice.AWAY
                 });
                 odds.spreads.push(homeSpread, awaySpread);
               });
@@ -248,9 +225,7 @@ export const getOddspedia = async (
                   return;
                 }
                 const overOdds = Odds.fromDecimal(bookLine.o1).toAmericanOdds();
-                const underOdds = Odds.fromDecimal(
-                  bookLine.o2
-                ).toAmericanOdds();
+                const underOdds = Odds.fromDecimal(bookLine.o2).toAmericanOdds();
                 const book = findBook(bookLine.bookie_name);
                 if (!book) {
                   return;
@@ -265,7 +240,7 @@ export const getOddspedia = async (
                   otherOutcomePrice: underOdds,
                   period: periodName,
                   value,
-                  choice: LineChoice.OVER,
+                  choice: LineChoice.OVER
                 });
                 const underTotal = new GameTotal({
                   homeTeam: gameData.homeTeam,
@@ -276,7 +251,7 @@ export const getOddspedia = async (
                   otherOutcomePrice: overOdds,
                   period: periodName,
                   value,
-                  choice: LineChoice.UNDER,
+                  choice: LineChoice.UNDER
                 });
                 odds.gameTotals.push(overTotal, underTotal);
               });
@@ -284,18 +259,14 @@ export const getOddspedia = async (
           });
         }
       }
-      console.log(
-        `Retrieved Oddspedia lines for ${gameData.awayTeam} @ ${gameData.homeTeam}`
-      );
+      console.log(`Retrieved Oddspedia lines for ${gameData.awayTeam} @ ${gameData.homeTeam}`);
     }
     fs.mkdirSync(datastorePath, { recursive: true });
 
     fs.writeFileSync(linesFilename, JSON.stringify(odds, null, 4));
   }
 
-  const readOdds = JSON.parse(
-    fs.readFileSync(linesFilename).toString()
-  ) as SourcedOdds;
+  const readOdds = JSON.parse(fs.readFileSync(linesFilename).toString()) as SourcedOdds;
   return readOdds;
 };
 
