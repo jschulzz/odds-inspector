@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 import { findStat } from "../props";
 import { League, Prop, PropsPlatform, PropsStat } from "../types";
 import { LineChoice } from "../types/lines";

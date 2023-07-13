@@ -1,12 +1,11 @@
 import { table, TableUserConfig } from "table";
-import colors from "colors";
+import * as colors from "colors";
 import { getPinnacle } from "../import/pinnacle";
 import { Odds } from "../odds/odds";
-import { Book, League, Line, Market, Period, SourcedOdds } from "../types";
+import { League, Line, Market, Period, SourcedOdds } from "../types";
 import { findMatchingEvents } from "./find-matching-events";
 import { GameTotal, LineChoice, Moneyline, Spread } from "../types/lines";
 import { getActionNetworkLines } from "../import/actionNetwork";
-import { Team } from "../database/team";
 import { Price } from "./group";
 import { GameGroup } from "./game-group";
 

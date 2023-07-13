@@ -1,5 +1,5 @@
 import { table, TableUserConfig } from "table";
-import colors from "colors";
+import * as colors from "colors";
 import { Stats } from "fast-stats";
 import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
 import { Odds } from "../odds/odds";

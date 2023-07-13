@@ -1,8 +1,6 @@
 import { Router } from "express";
-import joi from "joi";
-import { findPositiveEv } from "../analysis/positive-ev";
+import * as joi from "joi";
 import { League } from "../types";
-import { findOutliers } from "../analysis/props-outliers";
 import { getPinnacle, getPinnacleProps } from "../import/pinnacle";
 import { getActionNetworkLines, getActionNetworkProps } from "../import/actionNetwork";
 import { getNoHouse } from "../import/no-house";
