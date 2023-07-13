@@ -39,20 +39,28 @@
     "v8-compile-cache-lib": "^3.0.1",
     "yn": "^3.1.1",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
-		"@typescript-eslint/parser": "^5.45.0",
-		"eslint": "^8.28.0",
-		"eslint-config-prettier": "^8.5.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.8.0",
     "tslib": "^2.4.1",
-		"typescript": "^5.0.0"
-
+    "@sveltejs/adapter-auto": "^2.0.0",
+    "@sveltejs/kit": "^1.20.4",
+    "eslint-plugin-svelte": "^2.30.0",
+    "prettier-plugin-svelte": "^2.10.1",
+    "svelte": "^4.0.5",
+    "svelte-check": "^3.4.3",
+    "vite": "^4.4.2"
   },
   "scripts": {
-    "dev:start": "nodemon backend/server.ts",
-    "start": "ts-node backend/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:server": "nodemon backend/server.ts",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
+    "format": "prettier --plugin-search-dir . --write .",
+    "dev:ui": "vite dev",
+    "dev:build-ui": "vite build",
+    "dev:preview-ui": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "repository": {
     "type": "git",
@@ -63,5 +71,6 @@
   "bugs": {
     "url": "https://github.com/jschulzz/odds-inspector/issues"
   },
+  "type": "module",
   "homepage": "https://github.com/jschulzz/odds-inspector#readme"
 }
