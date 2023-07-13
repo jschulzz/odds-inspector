@@ -37,12 +37,22 @@
     "string-similarity": "^4.0.4",
     "table": "^6.8.0",
     "v8-compile-cache-lib": "^3.0.1",
-    "yn": "^3.1.1"
+    "yn": "^3.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+		"@typescript-eslint/parser": "^5.45.0",
+		"eslint": "^8.28.0",
+		"eslint-config-prettier": "^8.5.0",
+    "prettier": "^2.8.0",
+    "tslib": "^2.4.1",
+		"typescript": "^5.0.0"
+
   },
   "scripts": {
     "dev:start": "nodemon backend/server.ts",
     "start": "ts-node backend/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "prettier --plugin-search-dir . --check . && eslint .",
+		"format": "prettier --plugin-search-dir . --write ."
   },
   "repository": {
     "type": "git",
