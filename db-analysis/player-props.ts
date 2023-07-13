@@ -1,11 +1,25 @@
 import { getConnection } from "../database/mongo.connection";
 import { Game } from "../database/mongo.game";
 import { Player } from "../database/mongo.player";
-import { PlayerPropManager } from "../database/mongo.player-prop";
-import { PropsPriceAggregate, PriceManager } from "../database/mongo.price";
+import { PlayerProp, PlayerPropManager } from "../database/mongo.player-prop";
+import {
+  PropsPriceAggregate,
+  PriceManager,
+  Price,
+} from "../database/mongo.price";
 import { Team } from "../database/mongo.team";
 import { Odds } from "../odds/odds";
 import { Book, League, PropsPlatform } from "../types";
+
+export type MisvaluedPlay = {
+  propId: string;
+  player: Player;
+  team: Team;
+  game: Game;
+  prices: Price[];
+  consensusProp: PlayerProp;
+  consensusPrices: Price[];
+};
 
 export type Play = {
   propId: string;
@@ -97,7 +111,7 @@ const getLikelihood = (
   return total / sum;
 };
 
-export const findPlayerPropsEdge = async (league: League) => {
+export const findPlayerPropsEdge = async (league?: League) => {
   await getConnection();
   const priceManager = new PriceManager();
   const playerPropGroups = await priceManager.groupByProp(league);
@@ -144,6 +158,7 @@ export const findPlayerPropsEdge = async (league: League) => {
       });
     }
   });
+  return plays;
 };
 
 export const findMisvaluedProps = async (
@@ -155,16 +170,16 @@ export const findMisvaluedProps = async (
   const playerPropManager = new PlayerPropManager();
   const consensusGroups = await priceManager.groupByProp(league);
 
-  //   const plays: Play[] = [];
+  const plays: MisvaluedPlay[] = [];
 
-  consensusGroups.forEach(async (consensusValueProp) => {
+  for (const consensusValueProp of consensusGroups) {
     const otherValues = await playerPropManager.findAlternateLines(
       consensusValueProp["linked-prop"]
     );
-    otherValues.forEach(async (value) => {
+    for (const value of otherValues) {
       const [alternate] = await priceManager.getPricesByProp(value);
       if (!alternate) {
-        return;
+        continue;
       }
 
       const alternateDirection =
@@ -189,6 +204,18 @@ export const findMisvaluedProps = async (
             consensusLikelihood * 100
           ).toFixed(2)}%`
         );
+        plays.push({
+          // @ts-ignore
+          propId: alternate["linked-prop"]._id,
+          player: consensusValueProp.player,
+          team: consensusValueProp.team,
+          game: consensusValueProp.game,
+          // @ts-ignore
+          prices: alternate.prices,
+          consensusProp: consensusValueProp["linked-prop"],
+          // @ts-ignore
+          consensusPrices: consensusValueProp.prices,
+        });
         console.log(consensusValueProp.prices);
         alternate.prices.forEach((price) => {
           console.log(
@@ -199,6 +226,7 @@ export const findMisvaluedProps = async (
           );
         });
       }
-    });
-  });
+    }
+  }
+  return plays;
 };

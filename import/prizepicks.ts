@@ -8,16 +8,14 @@ import { GameManager } from "../database/mongo.game";
 import { PlayerPropManager } from "../database/mongo.player-prop";
 import { PriceManager } from "../database/mongo.price";
 
-export const getPrizePicksLines = async (
-  league: League,
-  playerManager: PlayerManager
-) => {
+export const getPrizePicksLines = async (league: League) => {
   const datastorePath = path.join(__dirname, "../backups/prizepicks");
   const linesFilename = `${datastorePath}/${league}.json`;
 
   const gameManager = new GameManager();
   const priceManager = new PriceManager();
   const playerPropManager = new PlayerPropManager();
+  const playerManager = new PlayerManager();
 
   const { data, included } = JSON.parse(
     fs.readFileSync(linesFilename).toString()

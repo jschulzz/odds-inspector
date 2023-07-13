@@ -10,15 +10,13 @@ import { GameManager } from "../database/mongo.game";
 import { PriceManager } from "../database/mongo.price";
 import { PlayerPropManager } from "../database/mongo.player-prop";
 
-export const getNoHouse = async (
-  league: League,
-  playerManager: PlayerManager
-) => {
+export const getNoHouse = async (league: League) => {
   const datastorePath = path.join(__dirname, "../backups/no-house");
   const linesFilename = `${datastorePath}/data.json`;
   const gameManager = new GameManager();
   const priceManager = new PriceManager();
   const playerPropManager = new PlayerPropManager();
+  const playerManager = new PlayerManager();
 
   try {
     const url = `https://webadmin.nohouseadvantage.com/api/thehousecontest/get-contest`;

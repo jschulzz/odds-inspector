@@ -18,8 +18,8 @@ const leagueMap = new Map([
 
 export const getUnderdogLines = async (
   league: League,
-  playerManager: PlayerManager
 ): Promise<Prop[]> => {
+
   const { data: teamData } = await axios.get(
     "https://stats.underdogfantasy.com/v1/teams"
   );
@@ -30,6 +30,7 @@ export const getUnderdogLines = async (
   const gameManager = new GameManager();
   const priceManager = new PriceManager();
   const playerPropManager = new PlayerPropManager();
+  const playerManager = new PlayerManager();
 
   // console.log(teamData);
 

@@ -414,11 +414,11 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
 
 export const getPinnacleProps = async (
   league: League,
-  playerManager: PlayerManager
 ): Promise<Prop[]> => {
   const { lines, matchups } = await requestLines(league);
   const playerPropManager = new PlayerPropManager();
   const priceManager = new PriceManager();
+  const playerManager = new PlayerManager();
 
   const props: Prop[] = [];
   matchupLoop: for (const matchup of matchups) {

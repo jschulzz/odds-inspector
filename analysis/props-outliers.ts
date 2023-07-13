@@ -1,5 +1,4 @@
 import { table, TableUserConfig } from "table";
-import path from "path";
 import colors from "colors";
 import { Stats } from "fast-stats";
 import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
@@ -11,7 +10,6 @@ import { getPrizePicksLines } from "../import/prizepicks";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";
 import { getActionNetworkProps } from "../import/actionNetwork";
-import { PlayerManager } from "../database/mongo.player";
 
 const findEquivalentPlays = (
   prop: Prop,
@@ -41,13 +39,11 @@ const findEquivalentPlays = (
   );
 
 export const findOutliers = async (league: League) => {
-  const playerManager = new PlayerManager();
-
-  const pinnacleProps = await getPinnacleProps(league, playerManager);
-  const actionNetworkProps = await getActionNetworkProps(league, playerManager);
-  const underdogProps = await getUnderdogLines(league, playerManager);
-  const prizepicksProps = await getPrizePicksLines(league, playerManager);
-  const noHouseProps = await getNoHouse(league, playerManager);
+  const pinnacleProps = await getPinnacleProps(league);
+  const actionNetworkProps = await getActionNetworkProps(league);
+  const underdogProps = await getUnderdogLines(league);
+  const prizepicksProps = await getPrizePicksLines(league);
+  const noHouseProps = await getNoHouse(league);
   const allProps = [
     ...actionNetworkProps,
     ...pinnacleProps,

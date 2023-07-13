@@ -353,12 +353,12 @@ export const getActionNetworkLines = async (
 
 export const getActionNetworkProps = async (
   league: League,
-  playerManager: PlayerManager
 ) => {
   const leagueKey = leagueMap.get(league);
   const playerPropManager = new PlayerPropManager();
   const priceManager = new PriceManager();
   const gameManager = new GameManager();
+  const playerManager = new PlayerManager();
 
   if (!leagueKey) {
     throw new Error("Unknown league");
