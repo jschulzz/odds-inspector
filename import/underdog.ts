@@ -31,6 +31,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
   const events = new Map();
   const unknownLeages = new Set();
   const props: Prop[] = [];
+
   data.players.forEach((player: any) => {
     const teamObject = teamData.teams.find((t: any) => t.id === player.team_id);
     // if (!teamObject) {

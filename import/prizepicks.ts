@@ -17,6 +17,8 @@ export const getPrizePicksLines = async (league: League) => {
   const playerPropManager = new PlayerPropManager();
   const playerManager = new PlayerManager();
 
+  await priceManager.deletePropPricesForLeague
+
   const { data, included } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
   const fixtureArray = included;
@@ -45,6 +47,7 @@ export const getPrizePicksLines = async (league: League) => {
     }
   });
   let props: Prop[] = [];
+
   const projections = [...data];
   projections.sort(
     (a, b) => a.attributes.flash_sale_line_score - b.attributes.flash_sale_line_score

@@ -1,29 +1,39 @@
 import { getConnection } from "../database/mongo.connection";
 import { Game } from "../database/mongo.game";
 import { Player } from "../database/mongo.player";
-import { PlayerProp, PlayerPropManager } from "../database/mongo.player-prop";
+import { PlayerProp } from "../database/mongo.player-prop";
 import { PropsPriceAggregate, PriceManager, Price } from "../database/mongo.price";
 import { Team } from "../database/mongo.team";
+import { WithId } from "../database/types";
 import { Odds } from "../odds/odds";
 import { Book, League, PropsPlatform } from "../types";
 
 export type MisvaluedPlay = {
   propId: string;
-  player: Player;
-  team: Team;
-  game: Game;
-  prices: Price[];
-  consensusProp: PlayerProp;
-  consensusPrices: Price[];
+  player: WithId<Player>;
+  homeTeam: WithId<Team>;
+  awayTeam: WithId<Team>;
+  playerTeam: WithId<Team>;
+  game: WithId<Game>;
+  prices: WithId<Price>[];
+  offValue: number;
+  side: "over" | "under";
+  consensusLikelihood: number;
+  consensusProp: WithId<PlayerProp>;
+  consensusPrices: WithId<Price>[];
 };
 
 export type Play = {
-  propId: string;
-  player: Player;
-  team: Team;
-  game: Game;
+  player: WithId<Player>;
+  playerTeam: WithId<Team>;
+  homeTeam: WithId<Team>;
+  awayTeam: WithId<Team>;
+  game: WithId<Game>;
   EV: number;
+  side: string;
   book: Book | PropsPlatform;
+  prices: WithId<Price>[];
+  prop: WithId<PlayerProp>;
 };
 
 const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
@@ -108,6 +118,7 @@ export const findPlayerPropsEdge = async (league?: League) => {
   await getConnection();
   const priceManager = new PriceManager();
   const playerPropGroups = await priceManager.groupByProp(league);
+  console.log(playerPropGroups.length);
 
   const plays: Play[] = [];
 
@@ -120,31 +131,38 @@ export const findPlayerPropsEdge = async (league?: League) => {
       { likelihood: underLikelihood, price: "underPrice", label: "under" }
     ]) {
       playerProp.prices.forEach((price) => {
+        // @ts-ignore
+        if (!price[options.price]) {
+          return;
+        }
         const EV =
           options.likelihood *
             // @ts-ignore
             Odds.fromFairLine(price[options.price]).toPayoutMultiplier() -
           (1 - options.likelihood);
         if (EV > 0) {
-          console.log(
-            `${(EV * 100).toFixed(2)}% EV for ${playerProp.player.name} (${
-              playerProp.team.abbreviation
-            }) ${options.label} ${playerProp["linked-prop"].value} ${
-              playerProp["linked-prop"].propStat
-            } on ${price.book}\n\tFair Line: ${new Odds(
-              options.likelihood
-              // @ts-ignore
-            ).toAmericanOdds()}. Line on ${price.book}: ${price[options.price]}`
-          );
-          console.log(playerProp.prices);
+          // console.log(
+          //   `${(EV * 100).toFixed(2)}% EV for ${playerProp.player.name} (${
+          //     playerProp.team.abbreviation
+          //   }) ${options.label} ${playerProp["linked-prop"].value} ${
+          //     playerProp["linked-prop"].propStat
+          //   } on ${price.book}\n\tFair Line: ${new Odds(
+          //     options.likelihood
+          //     // @ts-ignore
+          //   ).toAmericanOdds()}. Line on ${price.book}: ${price[options.price]}`
+          // );
+          // console.log(playerProp.prices);
 
           plays.push({
             player: playerProp.player,
-            // @ts-ignore
-            propId: playerProp["linked-prop"]._id,
+            prop: playerProp["linked-prop"],
+            prices: playerProp.prices,
             EV,
+            side: options.label,
             book: price.book,
-            team: playerProp.team,
+            playerTeam: playerProp.team,
+            homeTeam: playerProp.homeTeam,
+            awayTeam: playerProp.awayTeam,
             game: playerProp.game
           });
         }
@@ -154,61 +172,68 @@ export const findPlayerPropsEdge = async (league?: League) => {
   return plays;
 };
 
-export const findMisvaluedProps = async (league: League, book?: Book | PropsPlatform) => {
+export const findMisvaluedProps = async (league?: League, book?: Book | PropsPlatform) => {
   await getConnection();
   const priceManager = new PriceManager();
-  const playerPropManager = new PlayerPropManager();
+  console.log("Acquiring groups");
+  console.time("getGroups");
   const consensusGroups = await priceManager.groupByProp(league);
+  console.log(consensusGroups.length, "Total unique prop/values");
+
+  const groupsWithAlternates = consensusGroups.filter(
+    (group) =>
+      group.alternates.length && group.alternates.some((alternate) => alternate.prices.length)
+  );
+  console.timeEnd("getGroups");
+  console.log(groupsWithAlternates.length, "Have alternate values");
 
   const plays: MisvaluedPlay[] = [];
 
-  for (const consensusValueProp of consensusGroups) {
-    const otherValues = await playerPropManager.findAlternateLines(
-      consensusValueProp["linked-prop"]
-    );
-    for (const value of otherValues) {
-      const [alternate] = await priceManager.getPricesByProp(value);
-      if (!alternate) {
-        continue;
-      }
-
+  for (const consensusValueProp of groupsWithAlternates) {
+    const { alternates } = consensusValueProp;
+    for (const alternate of alternates) {
       const alternateDirection =
-        alternate["linked-prop"].value < consensusValueProp["linked-prop"].value ? "over" : "under";
+        alternate.value < consensusValueProp["linked-prop"].value ? "over" : "under";
 
       const consensusLikelihood = getLikelihood(consensusValueProp, alternateDirection);
       if (
         consensusLikelihood > 0.495 &&
-        (!!book ? alternate.prices.some((price) => price.book === book) : true)
+        (!!book ? alternate.prices.some((price) => price.book === book) : true) &&
+        // @ts-ignore
+        alternate.prices.some((price) => !!price[alternateDirection + "Price"])
       ) {
-        console.log(
-          `Alternate for ${consensusValueProp.player.name} (${
-            consensusValueProp.team.abbreviation
-          }) ${consensusValueProp["linked-prop"].value} ${
-            consensusValueProp["linked-prop"].propStat
-          } (${consensusValueProp.prices.map((p) => p.book).join(", ")}): ${(
-            consensusLikelihood * 100
-          ).toFixed(2)}%`
-        );
+        // console.log(
+        //   `Alternate for ${consensusValueProp.player.name} (${
+        //     consensusValueProp.team.abbreviation
+        //   }) ${consensusValueProp["linked-prop"].value} ${
+        //     consensusValueProp["linked-prop"].propStat
+        //   } (${consensusValueProp.prices.map((p) => p.book).join(", ")}): ${(
+        //     consensusLikelihood * 100
+        //   ).toFixed(2)}%`
+        // );
         plays.push({
-          // @ts-ignore
-          propId: alternate["linked-prop"]._id,
+          propId: alternate._id.toString(),
           player: consensusValueProp.player,
-          team: consensusValueProp.team,
+          playerTeam: consensusValueProp.team,
+          homeTeam: consensusValueProp.homeTeam,
+          awayTeam: consensusValueProp.awayTeam,
           game: consensusValueProp.game,
-          // @ts-ignore
           prices: alternate.prices,
+          offValue: alternate.value,
+          side: alternateDirection,
           consensusProp: consensusValueProp["linked-prop"],
-          // @ts-ignore
-          consensusPrices: consensusValueProp.prices
+          consensusPrices: consensusValueProp.prices,
+          consensusLikelihood
         });
-        console.log(consensusValueProp.prices);
+        // console.log(consensusValueProp.prices);
         alternate.prices.forEach((price) => {
-          console.log(
-            // @ts-ignore
-            `${price[alternateDirection + "Price"]} ${alternateDirection} ${
-              alternate["linked-prop"].value
-            } @ ${price.book}`
-          );
+          // console.log(price);
+          // console.log(
+          //   // @ts-ignore
+          //   `${price[alternateDirection + "Price"]} ${alternateDirection} ${alternate.value} @ ${
+          //     price.book
+          //   }`
+          // );
         });
       }
     }

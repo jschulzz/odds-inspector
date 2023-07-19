@@ -2,6 +2,7 @@ import { Schema, model, InferSchemaType, Types } from "mongoose";
 import { League } from "../types";
 import { getConnection } from "./mongo.connection";
 import { Team, TeamManager } from "./mongo.team";
+import { WithId } from "./types";
 
 export const gameSchema = new Schema({
   homeTeam: { type: Schema.ObjectId, required: true },
@@ -19,9 +20,6 @@ export class GameManager {
 
   async upsert(homeTeam: Team, awayTeam: Team, gameTime: Date, league: League) {
     await getConnection();
-    console.log(
-      `Adding game: ${awayTeam.abbreviation} @ ${homeTeam.abbreviation} ${league} ${gameTime}`
-    );
     let game;
     try {
       game = await GameModel.findOneAndUpdate(
@@ -39,6 +37,9 @@ export class GameManager {
           gameTime
         },
         { upsert: true, returnDocument: "after" }
+      );
+      console.log(
+        `Added game: ${awayTeam.abbreviation} @ ${homeTeam.abbreviation} ${league} ${gameTime}`
       );
     } catch {
       game = await GameModel.findOneAndUpdate(
@@ -61,6 +62,24 @@ export class GameManager {
     return populated.toObject();
   }
 
+  async deleteByLeague(league: League) {
+    await getConnection();
+
+    const results = await GameModel.deleteMany({
+      league
+    }).exec();
+
+    console.log(`Deleted ${results.deletedCount} games`);
+  }
+  async deleteMany(ids: Types.ObjectId[]) {
+    await getConnection();
+
+    const results = await GameModel.deleteMany({
+      _id: { $in: ids }
+    }).exec();
+    console.log(`Deleted ${results.deletedCount} games`);
+  }
+
   async findById(id: Types.ObjectId) {
     await getConnection();
 
@@ -74,7 +93,7 @@ export class GameManager {
   async findByLeague(league: League, after?: Date) {
     await getConnection();
 
-    const findByLeague: Game[] | null = await GameModel.find({
+    const findByLeague: WithId<Game>[] | null = await GameModel.find({
       league,
       ...(after ? { gameTime: { $gte: after } } : {})
     });

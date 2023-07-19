@@ -29,3 +29,17 @@ export const findBook = (book: string) => {
   }
   console.log(`No known book ${book}`);
 };
+
+export const sortedBooks = [
+  Book.PINNACLE,
+  Book.FANDUEL,
+  Book.DRAFTKINGS,
+  Book.POINTSBET,
+  Book.BETMGM,
+  Book.CAESARS,
+  Book.BETRIVERS,
+  Book.WYNNBET,
+  PropsPlatform.PRIZEPICKS,
+  PropsPlatform.UNDERDOG,
+  PropsPlatform.NO_HOUSE
+];

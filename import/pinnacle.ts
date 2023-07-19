@@ -78,7 +78,6 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
   const gameTime = new Date(matchup.startTime);
 
   const game = await gameManager.upsert(homeTeam, awayTeam, gameTime, league);
-  console.log("Added new game");
   return { homeTeam, awayTeam, gameTime, game };
 };
 
@@ -188,11 +187,10 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
 export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
   await getConnection();
   const { lines, matchups } = await requestLines(league);
-  const gameManager = new GameManager();
   const gameLineManager = new GameLineManager();
   const priceManager = new PriceManager();
 
-  await priceManager.deletePricesForLeagueOnBook(league, Book.PINNACLE);
+  await priceManager.deleteGamePricesForLeagueOnBook(league, Book.PINNACLE);
 
   const events = await getPinnacleEvents(matchups, league);
 
@@ -303,15 +301,17 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       });
       odds.teamTotals.push(overTotal, underTotal);
     }
-    if (market === Market.MONEYLINE) {
+    if (
+      market === Market.MONEYLINE &&
+      // pinnacle only offers 3-way lines which mess with this
+      !(league === League.MLB && period === Period.FIRST_QUARTER)
+    ) {
       const home = line.prices.find((p: any) => p.designation === "home");
       const away = line.prices.find((p: any) => p.designation === "away");
       const homePrice = home.price;
       const awayPrice = away.price;
 
-      const mongoLine = await gameLineManager.upsertMoneyline(mongoGame, period, {
-        side: HomeOrAway.HOME
-      });
+      const mongoLine = await gameLineManager.upsertMoneyline(mongoGame, period);
 
       await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
         overPrice: homePrice,
@@ -345,14 +345,23 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
       const awayPrice = away.price;
       const awayLine = away.points;
 
-      const mongoLine = await gameLineManager.upsertSpread(mongoGame, period, {
+      const mongoHomeLine = await gameLineManager.upsertSpread(mongoGame, period, {
         side: HomeOrAway.HOME,
         value: homeLine
       });
+      const mongoAwayLine = await gameLineManager.upsertSpread(mongoGame, period, {
+        side: HomeOrAway.AWAY,
+        value: awayLine
+      });
 
-      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+      await priceManager.upsertGameLinePrice(mongoHomeLine, Book.PINNACLE, {
         overPrice: homePrice,
         underPrice: awayPrice
+      });
+
+      await priceManager.upsertGameLinePrice(mongoAwayLine, Book.PINNACLE, {
+        overPrice: awayPrice,
+        underPrice: homePrice
       });
 
       if (homeLine === undefined) {
@@ -388,6 +397,7 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
   const playerPropManager = new PlayerPropManager();
   const priceManager = new PriceManager();
   const playerManager = new PlayerManager();
+
 
   const props: Prop[] = [];
   matchupLoop: for (const matchup of matchups) {

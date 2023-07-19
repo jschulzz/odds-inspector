@@ -62,8 +62,33 @@ export class PlayerPropManager {
         { upsert: true, returnDocument: "after" }
       );
     }
-    const populated = await playerProp!.populate(["player", "game"]);
-    return populated.toObject();
+    return playerProp.toObject();
+  }
+
+  async deleteMany(ids: Types.ObjectId[]) {
+    await getConnection();
+
+    const results = await PlayerPropModel.deleteMany({
+      _id: { $in: ids }
+    }).exec();
+    console.log(`Deleted ${results.deletedCount} player props`);
+  }
+
+  async findByLeague(league: League) {
+    await getConnection();
+
+    const results = await PlayerPropModel.find({
+      league
+    });
+    return results;
+  }
+
+  async findPropsForGame(id: Types.ObjectId) {
+    await getConnection();
+    const props = await PlayerPropModel.find({
+      game: id
+    });
+    return props;
   }
 
   async findAlternateLines(prop: PlayerProp) {

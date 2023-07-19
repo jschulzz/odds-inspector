@@ -3,7 +3,7 @@ import { Book, League, Moneyline, Period, Prop, PropsStat, SourcedOdds } from ".
 import { GameTotal, LineChoice, Spread, TeamTotal } from "../types/lines";
 import { TeamManager, Team } from "../database/mongo.team";
 import { Game } from "../database/game";
-import { PlayerManager } from "../database/mongo.player";
+import { Player, PlayerManager } from "../database/mongo.player";
 import { PlayerPropManager } from "../database/mongo.player-prop";
 import { PriceManager } from "../database/mongo.price";
 import { GameManager, Game as MongoGame } from "../database/mongo.game";
@@ -139,7 +139,7 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
         continue;
       }
       if (!cleanedBooks.has(book)) {
-        await priceManager.deletePricesForLeagueOnBook(league, book);
+        await priceManager.deleteGamePricesForLeagueOnBook(league, book);
         cleanedBooks.add(book);
       }
       const gameData = {
@@ -155,19 +155,13 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
         continue;
       }
       if (odds.ml_home && odds.ml_away) {
-        const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period, {
-          side: HomeOrAway.HOME
-        });
-        const mongoAwayMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period, {
-          side: HomeOrAway.AWAY
-        });
+        if (homeTeam.abbreviation === "ATL" && book === Book.POINTSBET) {
+          console.log(odds);
+        }
+        const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period);
         await priceManager.upsertGameLinePrice(mongoHomeMoneyline, book, {
           overPrice: odds.ml_home,
           underPrice: odds.ml_away
-        });
-        await priceManager.upsertGameLinePrice(mongoAwayMoneyline, book, {
-          overPrice: odds.ml_away,
-          underPrice: odds.ml_home
         });
       }
 
@@ -404,9 +398,9 @@ export const getActionNetworkProps = async (league: League) => {
   const props: Prop[] = [];
   let now = new Date();
   let endDate = new Date(now);
-  if (league === League.NBA) {
-    endDate.setDate(endDate.getDate() + 1);
-  }
+  // if (league === League.) {
+  //   endDate.setDate(endDate.getDate() + 1);
+  // }
 
   for (let date = now; date <= endDate; date.setDate(date.getDate() + 1)) {
     let yyyy = date.getFullYear();
@@ -419,7 +413,7 @@ export const getActionNetworkProps = async (league: League) => {
         throw new Error(`Unknown prop ${propType}`);
       }
       const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
-
+      console.log(`Recording ${propType}`);
       let data;
       try {
         ({ data } = await axios.get(url));
@@ -442,7 +436,7 @@ export const getActionNetworkProps = async (league: League) => {
       if (!odds.players) {
         continue;
       }
-      const activeTeams = [];
+      const activeTeams: any[] = [];
       for (const team of odds.teams) {
         try {
           await gameManager.findByTeamAbbr(team.abbr, league);
@@ -458,46 +452,57 @@ export const getActionNetworkProps = async (league: League) => {
           // console.log(`unknown book: ${player} ${choice} ${prop} @ ${price} on book ${book_id}`);
           continue;
         }
-        for (const listing of book.odds) {
-          const value = listing.value;
-          const player = odds.players.find((p: any) => p.id === listing.player_id).full_name;
-          const team = activeTeams.find((t: any) => t.id === listing.team_id);
-          if (!team) {
-            continue;
-          }
-          const game: MongoGame = await gameManager.findByTeamAbbr(team.abbr, league);
-          const choice =
-            listing.option_type_id.toString() === OVER ? LineChoice.OVER : LineChoice.UNDER;
-          const price = listing.money;
 
-          const prop = await Prop.createProp(
-            {
-              value,
-              choice,
-              book: bookName,
-              stat: propType,
-              playerName: player,
-              team: team.abbr,
-              price,
-              league
-            },
-            playerManager
-          );
-          const dbPlayer = await playerManager.findByName(player, league);
-          const playerProp = await playerPropManager.upsert(
-            dbPlayer,
-            // @ts-ignore
-            game,
-            league,
-            propType,
-            value
-          );
-          await priceManager.upsertPlayerPropPrice(playerProp, bookName, {
-            overPrice: choice === LineChoice.OVER ? price : undefined,
-            underPrice: choice === LineChoice.UNDER ? price : undefined
-          });
-          props.push(prop);
-        }
+        await Promise.all(
+          (book.odds as any[]).map((listing: any) =>
+            (async function () {
+              const value = listing.value;
+              const player = odds.players.find((p: any) => p.id === listing.player_id).full_name;
+              const team = activeTeams.find((t: any) => t.id === listing.team_id);
+              if (!team) {
+                // console.log("Skipping prop, could not find team");
+                return;
+              }
+              let game: MongoGame;
+              try {
+                game = await gameManager.findByTeamAbbr(team.abbr, league);
+              } catch {
+                console.log("Skipping prop, could not find game");
+                return;
+              }
+              const choice =
+                listing.option_type_id.toString() === OVER ? LineChoice.OVER : LineChoice.UNDER;
+              const price = listing.money;
+
+              let mongoPlayer: Player;
+              try {
+                mongoPlayer = await playerManager.findByName(player, league);
+              } catch {
+                console.log("Could not find player, now attempting to add");
+                try {
+                  mongoPlayer = await playerManager.add(player, team.abbr, league);
+                } catch {
+                  console.error("Could not add player", player);
+                }
+              }
+              const playerProp = await playerPropManager.upsert(
+                // @ts-ignore
+                mongoPlayer as Player,
+                // @ts-ignore
+                game,
+                league,
+                propType,
+                value
+              );
+              await priceManager.upsertPlayerPropPrice(playerProp, bookName as Book, {
+                overPrice: choice === LineChoice.OVER ? price : undefined,
+                underPrice: choice === LineChoice.UNDER ? price : undefined
+              });
+              // @ts-ignore
+              console.log(`Added prop ${mongoPlayer.name} ${value} ${propType} on ${bookName}`);
+            })()
+          )
+        );
       }
     }
   }

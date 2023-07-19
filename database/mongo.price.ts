@@ -1,4 +1,4 @@
-import { Schema, model, InferSchemaType, Types } from "mongoose";
+import mongoose, { Schema, model, InferSchemaType, Types, ObjectId } from "mongoose";
 import { Book, League, PropsPlatform } from "../types";
 import { getConnection } from "./mongo.connection";
 import { PlayerProp, PlayerPropManager } from "./mongo.player-prop";
@@ -6,6 +6,8 @@ import { Game, GameManager } from "./mongo.game";
 import { Player, PlayerManager } from "./mongo.player";
 import { Team, TeamManager } from "./mongo.team";
 import { GameLine, GameLineManager } from "./mongo.game-line";
+import { WithId } from "./types";
+import { DBRef } from "bson";
 
 export const priceSchema = new Schema({
   prop: { type: Schema.ObjectId, required: true },
@@ -18,15 +20,19 @@ export type Price = InferSchemaType<typeof priceSchema>;
 
 export type PropsPriceAggregate = {
   count: number;
-  prices: {
+  prices: WithId<{
+    prop: Types.ObjectId;
     book: Book | PropsPlatform;
     overPrice: number;
     underPrice: number;
-  }[];
-  "linked-prop": PlayerProp;
-  game: Game;
-  team: Team;
-  player: Player;
+  }>[];
+  "linked-prop": WithId<PlayerProp>;
+  game: WithId<Game>;
+  team: WithId<Team>;
+  homeTeam: WithId<Team>;
+  awayTeam: WithId<Team>;
+  player: WithId<Player>;
+  alternates: WithId<PlayerProp & { prices: WithId<Price>[] }>[];
 };
 
 export type GameLinePriceAggregate = {
@@ -36,10 +42,10 @@ export type GameLinePriceAggregate = {
     overPrice: number;
     underPrice: number;
   }[];
-  "linked-line": GameLine;
-  game: Game;
-  homeTeam: Team;
-  awayTeam: Team;
+  "linked-line": WithId<GameLine>;
+  game: WithId<Game>;
+  homeTeam: WithId<Team>;
+  awayTeam: WithId<Team>;
 };
 
 const PriceModel = model("price", priceSchema);
@@ -47,30 +53,88 @@ const PriceModel = model("price", priceSchema);
 export class PriceManager {
   constructor() {}
 
-  async deletePricesForLeagueOnBook(league: League, book: Book) {
+  async deletePropPricesForLeague(league: League, book?: Book | PropsPlatform) {
     await getConnection();
-    const gameLineManager = new GameLineManager();
-    const gameManager = new GameManager();
-    const futureGamesForLeague = await gameManager.findByLeague(league, new Date());
-    const linesForFutureGames: Types.ObjectId[] = (
-      await gameLineManager
-        // @ts-ignore
-        .findLinesForGames(futureGamesForLeague)
-    )
-      // @ts-ignore
-      .map((x) => x._id);
-    const stalePrices = await PriceModel.find({
-      prop: { $in: linesForFutureGames },
-      book
-    });
-    console.log(`Deleting prices on ${book}`);
-    await PriceModel.deleteMany({
-      _id: { $in: stalePrices.map((s) => s._id) }
-    });
+    const playerPropManager = new PlayerPropManager();
 
-    // for (const stalePrice of stalePrices) {
-    //   await PriceModel.deleteOne({ _id: stalePrice._id });
-    // }
+    const priceAgg = await PriceModel.aggregate([
+      {
+        $lookup: {
+          from: "player-props",
+          localField: "prop",
+          foreignField: "_id",
+          as: "linked-prop"
+        }
+      },
+      {
+        $unwind: {
+          path: "$linked-prop"
+        }
+      },
+      {
+        $match: {
+          "linked-prop.league": league,
+          book
+        }
+      }
+    ]);
+    const pricesToDelete = priceAgg.map((x) => x._id);
+    const propIds = [...new Set(priceAgg.map((x) => x["linked-prop"]._id))];
+
+    await playerPropManager.deleteMany(propIds);
+
+    const results = await PriceModel.deleteMany({
+      _id: { $in: pricesToDelete }
+    }).exec();
+    console.log(`Deleted ${results.deletedCount} prop prices`);
+  }
+
+  async deleteGamePricesForLeagueOnBook(league: League, book: Book | PropsPlatform) {
+    await getConnection();
+
+    const priceAgg = await PriceModel.aggregate([
+      {
+        $lookup: {
+          from: "game-lines",
+          localField: "prop",
+          foreignField: "_id",
+          as: "linked-line"
+        }
+      },
+      {
+        $unwind: {
+          path: "$linked-line"
+        }
+      },
+      {
+        $lookup: {
+          from: "games",
+          localField: "linked-line.game",
+          foreignField: "_id",
+          as: "game"
+        }
+      },
+      {
+        $unwind: {
+          path: "$game"
+        }
+      },
+      {
+        $match: {
+          "game.gameTime": {
+            $gte: new Date()
+          },
+          "game.league": league,
+          book
+        }
+      }
+    ]);
+    const pricesToDelete = priceAgg.map((x) => x._id);
+
+    const results = await PriceModel.deleteMany({
+      _id: { $in: pricesToDelete }
+    }).exec();
+    console.log(`Deleted ${results.deletedCount} game prices on ${book}`);
   }
 
   async upsertGameLinePrice(
@@ -79,7 +143,6 @@ export class PriceManager {
     prices?: { overPrice?: number; underPrice?: number }
   ) {
     await getConnection();
-    console.log(`Adding pricing on ${book}`);
     let price;
     try {
       price = await PriceModel.findOneAndUpdate(
@@ -96,6 +159,7 @@ export class PriceManager {
         },
         { upsert: true, returnDocument: "after" }
       );
+      console.log(`Added pricing on ${book}`);
     } catch {
       price = await PriceModel.findOneAndUpdate(
         {
@@ -121,22 +185,7 @@ export class PriceManager {
     prices?: { overPrice?: number; underPrice?: number }
   ) {
     await getConnection();
-    const playerPropManager = new PlayerPropManager();
-    const playerManager = new PlayerManager();
-    console.log(`Adding pricing on ${book}`);
-    const alternateProps = await playerPropManager.findAlternateLines(prop);
-    const stalePrices = await PriceModel.find({
-      prop: { $in: alternateProps.map((prop) => prop._id) },
-      book
-    });
 
-    for (const stalePrice of stalePrices) {
-      const player = await playerManager.findById(prop.player);
-      console.log(
-        `Found stale price for ${player.name} ${prop.value} ${prop.propStat} on ${book}. Deleting now.`
-      );
-      await PriceModel.deleteOne({ _id: stalePrice._id });
-    }
     let price;
     try {
       price = await PriceModel.findOneAndUpdate(
@@ -168,9 +217,7 @@ export class PriceManager {
         { upsert: true, returnDocument: "after" }
       );
     }
-
-    const populated = await price!.populate(["prop"]);
-    return populated.toObject();
+    return price.toObject();
   }
 
   async groupByGameLine(league?: League) {
@@ -255,7 +302,7 @@ export class PriceManager {
           count: {
             $gte: 3
           },
-          "game.league": league ? league : undefined,
+          ...(league ? { "game.league": league } : {}),
           "game.gameTime": {
             $gte: new Date()
           }
@@ -272,187 +319,303 @@ export class PriceManager {
   }
 
   async groupByProp(league?: League) {
-    const aggs = await PriceModel.aggregate<PropsPriceAggregate>([
-      {
-        $group: {
-          _id: {
-            prop: "$prop"
-          },
-          count: {
-            $sum: 1
-          },
-          prices: {
-            $push: {
-              book: "$book",
-              overPrice: "$overPrice",
-              underPrice: "$underPrice"
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    console.log({ today: now.toLocaleDateString(), yesterday: yesterday.toLocaleDateString() });
+    const aggs = await PriceModel.aggregate<PropsPriceAggregate>(
+      [
+        {
+          $group: {
+            _id: {
+              prop: "$prop"
+            },
+            count: {
+              $sum: 1
+            },
+            prices: {
+              $push: {
+                book: "$book",
+                overPrice: "$overPrice",
+                underPrice: "$underPrice"
+              }
             }
           }
-        }
-      },
-      {
-        $lookup: {
-          from: "player-props",
-          localField: "_id.prop",
-          foreignField: "_id",
-          as: "linked-prop"
-        }
-      },
-      {
-        $unwind: {
-          path: "$linked-prop"
-        }
-      },
-      {
-        $lookup: {
-          from: "games",
-          localField: "linked-prop.game",
-          foreignField: "_id",
-          as: "game"
-        }
-      },
-      {
-        $unwind: {
-          path: "$game"
-        }
-      },
-      {
-        $lookup: {
-          from: "players",
-          localField: "linked-prop.player",
-          foreignField: "_id",
-          as: "player"
-        }
-      },
-      {
-        $unwind: {
-          path: "$player"
-        }
-      },
-      {
-        $lookup: {
-          from: "teams",
-          localField: "player.team",
-          foreignField: "_id",
-          as: "team"
-        }
-      },
-      {
-        $unwind: {
-          path: "$team"
-        }
-      },
-      {
-        $match: {
-          count: {
-            $gte: 3
-          },
-          "linked-prop.league": league ? league : undefined,
-          "game.gameTime": {
-            $gte: new Date()
+        },
+        {
+          $lookup: {
+            from: "player-props",
+            localField: "_id.prop",
+            foreignField: "_id",
+            as: "linked-prop"
+          }
+        },
+        {
+          $unwind: {
+            path: "$linked-prop"
+          }
+        },
+        ...(league
+          ? [
+              {
+                $match: {
+                  "linked-prop.league": league
+                }
+              }
+            ]
+          : []),
+        {
+          $lookup: {
+            from: "games",
+            localField: "linked-prop.game",
+            foreignField: "_id",
+            as: "game"
+          }
+        },
+        {
+          $unwind: {
+            path: "$game"
+          }
+        },
+        {
+          $match: {
+            count: {
+              $gte: 3
+            },
+            "game.gameTime": {
+              $gte: now
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: "player-props",
+            let: {
+              pricePlayer: "$linked-prop.player",
+              priceGame: "$linked-prop.game",
+              priceValue: "$linked-prop.value",
+              pricePropStat: "$linked-prop.propStat"
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$player", "$$pricePlayer"]
+                      },
+                      {
+                        $eq: ["$game", "$$priceGame"]
+                      },
+                      {
+                        $eq: ["$propStat", "$$pricePropStat"]
+                      },
+                      {
+                        $ne: ["$value", "$$priceValue"]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                $lookup: {
+                  from: "prices",
+                  localField: "_id",
+                  foreignField: "prop",
+                  as: "prices"
+                }
+              }
+            ],
+            as: "alternates"
+          }
+        },
+
+        {
+          $lookup: {
+            from: "teams",
+            localField: "game.homeTeam",
+            foreignField: "_id",
+            as: "homeTeam"
+          }
+        },
+        {
+          $unwind: {
+            path: "$homeTeam"
+          }
+        },
+        {
+          $lookup: {
+            from: "teams",
+            localField: "game.awayTeam",
+            foreignField: "_id",
+            as: "awayTeam"
+          }
+        },
+        {
+          $unwind: {
+            path: "$awayTeam"
+          }
+        },
+        {
+          $lookup: {
+            from: "players",
+            localField: "linked-prop.player",
+            foreignField: "_id",
+            as: "player"
+          }
+        },
+        {
+          $unwind: {
+            path: "$player"
+          }
+        },
+        {
+          $lookup: {
+            from: "teams",
+            localField: "player.team",
+            foreignField: "_id",
+            as: "team"
+          }
+        },
+        {
+          $unwind: {
+            path: "$team"
           }
         }
-      },
-      {
-        $sort: {
-          count: -1
-        }
-      }
-    ]);
+
+        // {
+        //   $sort: {
+        //     count: -1
+        //   }
+        // }
+      ],
+      { maxTimeMS: 60000 }
+    );
     //@ts-ignore
     return aggs;
   }
 
-  async getPricesByProp(prop: PlayerProp) {
-    const aggs = await PriceModel.aggregate<PropsPriceAggregate>([
-      {
-        $group: {
-          _id: {
-            prop: "$prop"
-          },
-          count: {
-            $sum: 1
-          },
-          prices: {
-            $push: {
-              book: "$book",
-              overPrice: "$overPrice",
-              underPrice: "$underPrice"
+  async getPricesByProp(prop: WithId<PlayerProp>) {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const aggs = await PriceModel.aggregate<PropsPriceAggregate>(
+      [
+        {
+          $group: {
+            _id: {
+              prop: "$prop"
+            },
+            count: {
+              $sum: 1
+            },
+            prices: {
+              $push: {
+                book: "$book",
+                overPrice: "$overPrice",
+                underPrice: "$underPrice"
+              }
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: "player-props",
+            localField: "_id.prop",
+            foreignField: "_id",
+            as: "linked-prop"
+          }
+        },
+        {
+          $unwind: {
+            path: "$linked-prop"
+          }
+        },
+        {
+          $lookup: {
+            from: "games",
+            localField: "linked-prop.game",
+            foreignField: "_id",
+            as: "game"
+          }
+        },
+        {
+          $unwind: {
+            path: "$game"
+          }
+        },
+        {
+          $lookup: {
+            from: "teams",
+            localField: "game.homeTeam",
+            foreignField: "_id",
+            as: "homeTeam"
+          }
+        },
+        {
+          $unwind: {
+            path: "$homeTeam"
+          }
+        },
+        {
+          $lookup: {
+            from: "teams",
+            localField: "game.awayTeam",
+            foreignField: "_id",
+            as: "awayTeam"
+          }
+        },
+        {
+          $unwind: {
+            path: "$awayTeam"
+          }
+        },
+        {
+          $lookup: {
+            from: "players",
+            localField: "linked-prop.player",
+            foreignField: "_id",
+            as: "player"
+          }
+        },
+        {
+          $unwind: {
+            path: "$player"
+          }
+        },
+        {
+          $lookup: {
+            from: "teams",
+            localField: "player.team",
+            foreignField: "_id",
+            as: "team"
+          }
+        },
+        {
+          $unwind: {
+            path: "$team"
+          }
+        },
+        {
+          $match: {
+            count: {
+              $lte: 3,
+              $gt: 0
+            },
+            "linked-prop._id": new Types.ObjectId(prop._id),
+            "game.gameTime": {
+              $gte: today
             }
           }
         }
-      },
-      {
-        $lookup: {
-          from: "player-props",
-          localField: "_id.prop",
-          foreignField: "_id",
-          as: "linked-prop"
-        }
-      },
-      {
-        $unwind: {
-          path: "$linked-prop"
-        }
-      },
-      {
-        $lookup: {
-          from: "games",
-          localField: "linked-prop.game",
-          foreignField: "_id",
-          as: "game"
-        }
-      },
-      {
-        $unwind: {
-          path: "$game"
-        }
-      },
-      {
-        $lookup: {
-          from: "players",
-          localField: "linked-prop.player",
-          foreignField: "_id",
-          as: "player"
-        }
-      },
-      {
-        $unwind: {
-          path: "$player"
-        }
-      },
-      {
-        $lookup: {
-          from: "teams",
-          localField: "player.team",
-          foreignField: "_id",
-          as: "team"
-        }
-      },
-      {
-        $unwind: {
-          path: "$team"
-        }
-      },
-      {
-        $match: {
-          count: {
-            $lte: 3,
-            $gt: 0
-          },
-          // @ts-ignore
-          "linked-prop._id": new Types.ObjectId(prop._id),
-          "game.gameTime": {
-            $gte: new Date()
-          }
-        }
-      },
-      {
-        $sort: {
-          count: -1
-        }
-      }
-    ]);
+        // {
+        //   $sort: {
+        //     count: -1
+        //   }
+        // }
+      ],
+      { maxTimeMS: 60000 }
+    );
     //@ts-ignore
     return aggs;
   }

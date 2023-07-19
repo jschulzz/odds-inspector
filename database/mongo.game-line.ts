@@ -16,8 +16,8 @@ export type GameLine = InferSchemaType<typeof gameLineSchema>;
 const GameLineModel = model("game-line", gameLineSchema);
 
 export enum HomeOrAway {
-  HOME,
-  AWAY
+  HOME = "Home",
+  AWAY = "Away"
 }
 
 interface GameTotalMetadata {
@@ -34,20 +34,12 @@ interface SpreadMetadata {
   side: HomeOrAway;
 }
 
-interface MoneylineMetadata {
-  side: HomeOrAway;
-}
-
-export type GameLineMetadata =
-  | GameTotalMetadata
-  | TeamTotalMetadata
-  | SpreadMetadata
-  | MoneylineMetadata;
+export type GameLineMetadata = GameTotalMetadata | TeamTotalMetadata | SpreadMetadata;
 
 export class GameLineManager {
   constructor() {}
 
-  private async tryToInsert(game: Game, period: Period, type: Market, metadata: GameLineMetadata) {
+  private async tryToInsert(game: Game, period: Period, type: Market, metadata?: GameLineMetadata) {
     await getConnection();
     let gameLine;
     try {
@@ -106,9 +98,9 @@ export class GameLineManager {
     return gameLine;
   }
 
-  async upsertMoneyline(game: Game, period: Period, metadata: MoneylineMetadata) {
+  async upsertMoneyline(game: Game, period: Period) {
     await getConnection();
-    const gameLine = await this.tryToInsert(game, period, Market.MONEYLINE, metadata);
+    const gameLine = await this.tryToInsert(game, period, Market.MONEYLINE);
 
     return gameLine;
   }

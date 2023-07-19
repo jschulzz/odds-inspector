@@ -1,8 +1,8 @@
 import { getConnection } from "../database/mongo.connection";
-import { GameLinePriceAggregate, PriceManager } from "../database/mongo.price";
+import { GameLinePriceAggregate, Price, PriceManager } from "../database/mongo.price";
+import { WithId } from "../database/types";
 import { Odds } from "../odds/odds";
 import { Book, League } from "../types";
-import { Play } from "./player-props";
 
 const leagueWeights = new Map<League, Map<Book, number>>([
   [
@@ -45,6 +45,20 @@ const leagueWeights = new Map<League, Map<Book, number>>([
   ]
 ]);
 
+export interface GameLinePlay {
+  EV: number;
+  gameLabel: string;
+  type: string;
+  period: string;
+  metadata: {
+    side?: string;
+    value?: number;
+  };
+  fairLine: number;
+  book: string;
+  prices: WithId<Price>[];
+}
+
 const getLikelihood = (gameLine: GameLinePriceAggregate, overOrUnder: "over" | "under") => {
   let sum = 0;
   const bookWeights = leagueWeights.get(gameLine.game.league as League);
@@ -70,10 +84,11 @@ const getLikelihood = (gameLine: GameLinePriceAggregate, overOrUnder: "over" | "
   return total / sum;
 };
 
-export const findGameLineEdge = async (league: League) => {
+export const findGameLineEdge = async (league?: League) => {
   await getConnection();
   const priceManager = new PriceManager();
   const gameLineGroups = await priceManager.groupByGameLine(league);
+  const plays: GameLinePlay[] = [];
 
   gameLineGroups.forEach((gameLine) => {
     const overLikelihood = getLikelihood(gameLine, "over");
@@ -92,7 +107,7 @@ export const findGameLineEdge = async (league: League) => {
             // @ts-ignore
             Odds.fromFairLine(price[options.price]).toPayoutMultiplier() -
           (1 - options.likelihood);
-        if (EV > -0.01) {
+        if (EV > -0) {
           console.log(
             `${(EV * 100).toFixed(2)}% EV for ${gameLine.awayTeam.abbreviation} @ ${
               gameLine.homeTeam.abbreviation
@@ -103,9 +118,37 @@ export const findGameLineEdge = async (league: League) => {
               // @ts-ignore
             ).toAmericanOdds()}. Line on ${price.book}: ${price[options.price]}`
           );
-          console.log(gameLine.prices);
+          // console.log({
+          //   EV,
+          //   gameLabel: `${gameLine.awayTeam.abbreviation} @ ${gameLine.homeTeam.abbreviation}`,
+          //   type: gameLine["linked-line"].type,
+          //   period: gameLine["linked-line"].period,
+          //   metadata: {
+          //     side: gameLine["linked-line"].side,
+          //     value: gameLine["linked-line"].value
+          //   },
+          //   fairLine: new Odds(options.likelihood).toAmericanOdds(),
+          //   book: price.book,
+          //   // @ts-ignore
+          //   prices: gameLine.prices
+          // });
+          plays.push({
+            EV,
+            gameLabel: `${gameLine.awayTeam.abbreviation} @ ${gameLine.homeTeam.abbreviation}`,
+            type: gameLine["linked-line"].type,
+            period: gameLine["linked-line"].period,
+            metadata: {
+              side: gameLine["linked-line"].side,
+              value: gameLine["linked-line"].value
+            },
+            fairLine: new Odds(options.likelihood).toAmericanOdds(),
+            book: price.book,
+            // @ts-ignore
+            prices: gameLine.prices
+          });
         }
       });
     }
   });
+  return plays;
 };

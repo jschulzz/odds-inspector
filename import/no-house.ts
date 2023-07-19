@@ -41,6 +41,7 @@ export const getNoHouse = async (league: League) => {
   const { data } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
   let props: Prop[] = [];
+
   const filteredData = data.filter((x: any) => x.league.toLowerCase() === league);
   for (const prop of filteredData) {
     const playerName = prop.player1.name;
