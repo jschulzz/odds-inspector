@@ -74,11 +74,12 @@ export class PriceManager {
       {
         $match: {
           "linked-prop.league": league,
-          book
+          ...(book ? { book } : {})
         }
       }
     ]);
     const pricesToDelete = priceAgg.map((x) => x._id);
+    console.log(`Attempting to delete ${pricesToDelete.length} prices`);
     const propIds = [...new Set(priceAgg.map((x) => x["linked-prop"]._id))];
 
     await playerPropManager.deleteMany(propIds);
@@ -380,7 +381,7 @@ export class PriceManager {
         {
           $match: {
             count: {
-              $gte: 3
+              $gte: 2
             },
             "game.gameTime": {
               $gte: now

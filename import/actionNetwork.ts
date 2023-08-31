@@ -46,6 +46,7 @@ const periodMap = new Map([
   ["secondperiod", Period.SECOND_PERIOD],
   ["thirdperiod", Period.THIRD_PERIOD]
 ]);
+const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS"]]);
 
 export const getActionNetworkLines = async (league: League): Promise<SourcedOdds> => {
   const teamManager = new TeamManager();
@@ -64,7 +65,9 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
     throw new Error("Unknown league");
   }
 
-  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}`;
+  const leagueParams = leagueParamsMap.get(league) || "";
+
+  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}${leagueParams}`;
   console.log(url);
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
@@ -76,9 +79,11 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
 
   const useFullName = ["nfl", "mlb", "wnba", "nhl"].includes(league);
 
-  const dataSet = data.games || data.competitions;
-  for (let i = 0; i < dataSet.length; i++) {
-    const gameRecord = dataSet[i];
+  const dataSet: any[] = data.games || data.competitions;
+  for (const gameRecord of dataSet) {
+    if (gameRecord.status !== "scheduled") {
+      continue;
+    }
     const opponents = gameRecord.competitors || gameRecord.teams;
     const homeTeamObj = opponents.find(
       (team: any) => team.id === gameRecord.home_team_id || team.side === "home"
@@ -98,22 +103,22 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
     let homeTeam;
 
     try {
-      homeTeam = await teamManager.findByName(homeTeamName, league);
+      homeTeam = await teamManager.findByAbbreviation(homeTeamObj.abbr, league);
     } catch {
       homeTeam = await teamManager.add({
         name: homeTeamName,
         league,
-        abbreviation: "-"
+        abbreviation: homeTeamObj.abbr
       });
     }
     let awayTeam;
     try {
-      awayTeam = await teamManager.findByName(awayTeamName, league);
+      awayTeam = await teamManager.findByAbbreviation(awayTeamObj.abbr, league);
     } catch {
       awayTeam = await teamManager.add({
         name: awayTeamName,
         league,
-        abbreviation: "-"
+        abbreviation: awayTeamObj.abbr
       });
     }
 
@@ -128,169 +133,172 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
       gameTime: new Date(gameRecord.start_time)
     });
 
+    console.log(`Recording ${awayTeam.abbreviation}@${homeTeam.abbreviation}`);
     const filteredOdds = gameRecord.odds.filter((odds: any) => odds.meta);
-    // .filter((odds: any) =>
-    //   newYorkActionNetworkSportsbooks.includes(odds.book_id)
-    // )
-    for (const odds of filteredOdds) {
-      const period = periodMap.get(odds.type);
-      const book = newYorkActionNetworkSportsBookMap.get(odds.book_id);
-      if (!book || !period) {
-        continue;
-      }
-      if (!cleanedBooks.has(book)) {
-        await priceManager.deleteGamePricesForLeagueOnBook(league, book);
-        cleanedBooks.add(book);
-      }
-      const gameData = {
-        game,
-        period,
-        book
-      };
-      let mongoGame: MongoGame;
+    await Promise.allSettled(
+      filteredOdds.map((odds: any) => {
+        return (async () => {
+          const period = periodMap.get(odds.type);
+          const book = newYorkActionNetworkSportsBookMap.get(odds.book_id);
+          if (!book || !period) {
+            throw new Error("Unknown book or period");
+          }
+          if (!cleanedBooks.has(book)) {
+            await priceManager.deleteGamePricesForLeagueOnBook(league, book);
+            cleanedBooks.add(book);
+          }
+          let mongoGame: MongoGame;
 
-      try {
-        mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation, league);
-      } catch {
-        continue;
-      }
-      if (odds.ml_home && odds.ml_away) {
-        if (homeTeam.abbreviation === "ATL" && book === Book.POINTSBET) {
-          console.log(odds);
-        }
-        const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period);
-        await priceManager.upsertGameLinePrice(mongoHomeMoneyline, book, {
-          overPrice: odds.ml_home,
-          underPrice: odds.ml_away
-        });
-      }
+          try {
+            mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation, league);
+          } catch {
+            throw new Error("Unknown book or period");
+          }
+          if (odds.ml_home && odds.ml_away) {
+            const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period);
+            // if (awayTeam.abbreviation === "ATL" && book === Book.POINTSBET) {
+            //   console.log(mongoHomeMoneyline, book, {
+            //     overPrice: odds.ml_home,
+            //     underPrice: odds.ml_away
+            //   });
+            // }
+            await priceManager.upsertGameLinePrice(mongoHomeMoneyline, book, {
+              overPrice: odds.ml_home,
+              underPrice: odds.ml_away
+            });
+          }
 
-      if (odds.spread_home_line && odds.spread_away_line) {
-        const mongoHomeSpread = await gameLineManager.upsertSpread(mongoGame, period, {
-          side: HomeOrAway.HOME,
-          value: odds.spread_home
-        });
-        const mongoAwaySpread = await gameLineManager.upsertSpread(mongoGame, period, {
-          side: HomeOrAway.AWAY,
-          value: odds.spread_away
-        });
-        await priceManager.upsertGameLinePrice(mongoHomeSpread, book, {
-          overPrice: odds.spread_home_line,
-          underPrice: odds.spread_away_line
-        });
-        await priceManager.upsertGameLinePrice(mongoAwaySpread, book, {
-          overPrice: odds.spread_away_line,
-          underPrice: odds.spread_home_line
-        });
-      }
-      if (odds.home_over && odds.home_under) {
-        const mongoAwayTeamTotal = await gameLineManager.upsertTeamTotal(mongoGame, period, {
-          side: HomeOrAway.AWAY,
-          value: odds.away_total
-        });
+          if (odds.spread_home_line && odds.spread_away_line) {
+            if (game.awayTeam.abbreviation === "LT" && period === Period.FIRST_HALF) {
+              console.log(odds);
+            }
+            const mongoHomeSpread = await gameLineManager.upsertSpread(mongoGame, period, {
+              side: HomeOrAway.HOME,
+              value: odds.spread_home
+            });
+            const mongoAwaySpread = await gameLineManager.upsertSpread(mongoGame, period, {
+              side: HomeOrAway.AWAY,
+              value: odds.spread_away
+            });
+            await priceManager.upsertGameLinePrice(mongoHomeSpread, book, {
+              overPrice: odds.spread_home_line,
+              underPrice: odds.spread_away_line
+            });
+            await priceManager.upsertGameLinePrice(mongoAwaySpread, book, {
+              overPrice: odds.spread_away_line,
+              underPrice: odds.spread_home_line
+            });
+          }
+          if (odds.home_over && odds.home_under) {
+            const mongoAwayTeamTotal = await gameLineManager.upsertTeamTotal(mongoGame, period, {
+              side: HomeOrAway.AWAY,
+              value: odds.away_total
+            });
 
-        const mongoHomeTeamTotal = await gameLineManager.upsertTeamTotal(mongoGame, period, {
-          side: HomeOrAway.HOME,
-          value: odds.home_total
-        });
-        await priceManager.upsertGameLinePrice(mongoHomeTeamTotal, book, {
-          overPrice: odds.home_over,
-          underPrice: odds.home_under
-        });
-        await priceManager.upsertGameLinePrice(mongoAwayTeamTotal, book, {
-          overPrice: odds.away_over,
-          underPrice: odds.away_under
-        });
-      }
-      if (odds.over && odds.under) {
-        const mongoGameTotal = await gameLineManager.upsertGameTotal(mongoGame, period, {
-          value: odds.total
-        });
+            const mongoHomeTeamTotal = await gameLineManager.upsertTeamTotal(mongoGame, period, {
+              side: HomeOrAway.HOME,
+              value: odds.home_total
+            });
+            await priceManager.upsertGameLinePrice(mongoHomeTeamTotal, book, {
+              overPrice: odds.home_over,
+              underPrice: odds.home_under
+            });
+            await priceManager.upsertGameLinePrice(mongoAwayTeamTotal, book, {
+              overPrice: odds.away_over,
+              underPrice: odds.away_under
+            });
+          }
+          if (odds.over && odds.under) {
+            const mongoGameTotal = await gameLineManager.upsertGameTotal(mongoGame, period, {
+              value: odds.total
+            });
 
-        await priceManager.upsertGameLinePrice(mongoGameTotal, book, {
-          overPrice: odds.over,
-          underPrice: odds.under
-        });
-      }
+            await priceManager.upsertGameLinePrice(mongoGameTotal, book, {
+              overPrice: odds.over,
+              underPrice: odds.under
+            });
+          }
 
-      const homeMoneyline = new Moneyline({
-        ...gameData,
-        price: odds.ml_home,
-        otherOutcomePrice: odds.ml_away,
-        choice: LineChoice.HOME
-      });
-      const awayMoneyline = new Moneyline({
-        ...gameData,
-        price: odds.ml_away,
-        otherOutcomePrice: odds.ml_home,
-        choice: LineChoice.AWAY
-      });
-      const homeSpread = new Spread({
-        ...gameData,
-        price: odds.spread_home_line,
-        otherOutcomePrice: odds.spread_away_line,
-        choice: LineChoice.HOME,
-        value: odds.spread_home
-      });
-      const awaySpread = new Spread({
-        ...gameData,
-        price: odds.spread_away_line,
-        otherOutcomePrice: odds.spread_home_line,
-        choice: LineChoice.AWAY,
-        value: odds.spread_away
-      });
-      const overGameTotal = new GameTotal({
-        ...gameData,
-        price: odds.over,
-        otherOutcomePrice: odds.under,
-        choice: LineChoice.OVER,
-        value: odds.total
-      });
-      const underGameTotal = new GameTotal({
-        ...gameData,
-        price: odds.under,
-        otherOutcomePrice: odds.over,
-        choice: LineChoice.UNDER,
-        value: odds.total
-      });
-      const overHomeTotal = new TeamTotal({
-        ...gameData,
-        price: odds.home_over,
-        otherOutcomePrice: odds.home_under,
-        choice: LineChoice.OVER,
-        side: "home",
-        value: odds.home_total
-      });
-      const underHomeTotal = new TeamTotal({
-        ...gameData,
-        price: odds.home_under,
-        otherOutcomePrice: odds.home_over,
-        choice: LineChoice.UNDER,
-        side: "home",
-        value: odds.home_total
-      });
-      const overAwayTotal = new TeamTotal({
-        ...gameData,
-        price: odds.away_over,
-        otherOutcomePrice: odds.home_under,
-        choice: LineChoice.OVER,
-        side: "away",
-        value: odds.away_total
-      });
-      const underAwayTotal = new TeamTotal({
-        ...gameData,
-        price: odds.away_under,
-        otherOutcomePrice: odds.home_over,
-        choice: LineChoice.UNDER,
-        side: "away",
-        value: odds.home_total
-      });
+          // const homeMoneyline = new Moneyline({
+          //   ...gameData,
+          //   price: odds.ml_home,
+          //   otherOutcomePrice: odds.ml_away,
+          //   choice: LineChoice.HOME
+          // });
+          // const awayMoneyline = new Moneyline({
+          //   ...gameData,
+          //   price: odds.ml_away,
+          //   otherOutcomePrice: odds.ml_home,
+          //   choice: LineChoice.AWAY
+          // });
+          // const homeSpread = new Spread({
+          //   ...gameData,
+          //   price: odds.spread_home_line,
+          //   otherOutcomePrice: odds.spread_away_line,
+          //   choice: LineChoice.HOME,
+          //   value: odds.spread_home
+          // });
+          // const awaySpread = new Spread({
+          //   ...gameData,
+          //   price: odds.spread_away_line,
+          //   otherOutcomePrice: odds.spread_home_line,
+          //   choice: LineChoice.AWAY,
+          //   value: odds.spread_away
+          // });
+          // const overGameTotal = new GameTotal({
+          //   ...gameData,
+          //   price: odds.over,
+          //   otherOutcomePrice: odds.under,
+          //   choice: LineChoice.OVER,
+          //   value: odds.total
+          // });
+          // const underGameTotal = new GameTotal({
+          //   ...gameData,
+          //   price: odds.under,
+          //   otherOutcomePrice: odds.over,
+          //   choice: LineChoice.UNDER,
+          //   value: odds.total
+          // });
+          // const overHomeTotal = new TeamTotal({
+          //   ...gameData,
+          //   price: odds.home_over,
+          //   otherOutcomePrice: odds.home_under,
+          //   choice: LineChoice.OVER,
+          //   side: "home",
+          //   value: odds.home_total
+          // });
+          // const underHomeTotal = new TeamTotal({
+          //   ...gameData,
+          //   price: odds.home_under,
+          //   otherOutcomePrice: odds.home_over,
+          //   choice: LineChoice.UNDER,
+          //   side: "home",
+          //   value: odds.home_total
+          // });
+          // const overAwayTotal = new TeamTotal({
+          //   ...gameData,
+          //   price: odds.away_over,
+          //   otherOutcomePrice: odds.home_under,
+          //   choice: LineChoice.OVER,
+          //   side: "away",
+          //   value: odds.away_total
+          // });
+          // const underAwayTotal = new TeamTotal({
+          //   ...gameData,
+          //   price: odds.away_under,
+          //   otherOutcomePrice: odds.home_over,
+          //   choice: LineChoice.UNDER,
+          //   side: "away",
+          //   value: odds.home_total
+          // });
 
-      lines.moneylines.push(homeMoneyline, awayMoneyline);
-      lines.spreads.push(homeSpread, awaySpread);
-      lines.gameTotals.push(overGameTotal, underGameTotal);
-      lines.teamTotals.push(overHomeTotal, overAwayTotal, underHomeTotal, underAwayTotal);
-    }
+          // lines.moneylines.push(homeMoneyline, awayMoneyline);
+          // lines.spreads.push(homeSpread, awaySpread);
+          // lines.gameTotals.push(overGameTotal, underGameTotal);
+          // lines.teamTotals.push(overHomeTotal, overAwayTotal, underHomeTotal, underAwayTotal);
+        })();
+      })
+    );
   }
   return lines;
 };
@@ -374,17 +382,17 @@ export const getActionNetworkProps = async (league: League) => {
       League.MLB,
       [
         PropsStat.WALKS,
-        PropsStat.DOUBLES,
+        // PropsStat.DOUBLES,
         PropsStat.EARNED_RUNS,
         PropsStat.HITS,
-        PropsStat.HOME_RUNS,
+        // PropsStat.HOME_RUNS,
         PropsStat.STRIKEOUTS,
-        PropsStat.PITCHING_OUTS,
-        PropsStat.RBIS,
-        PropsStat.RUNS,
-        PropsStat.STOLEN_BASES,
-        PropsStat.SINGLES,
-        PropsStat.TOTAL_BASES
+        PropsStat.PITCHING_OUTS
+        // PropsStat.RBIS,
+        // PropsStat.RUNS,
+        // PropsStat.STOLEN_BASES,
+        // PropsStat.SINGLES,
+        // PropsStat.TOTAL_BASES
       ]
     ]
   ]);
@@ -453,7 +461,7 @@ export const getActionNetworkProps = async (league: League) => {
           continue;
         }
 
-        await Promise.all(
+        await Promise.allSettled(
           (book.odds as any[]).map((listing: any) =>
             (async function () {
               const value = listing.value;
@@ -483,6 +491,7 @@ export const getActionNetworkProps = async (league: League) => {
                   mongoPlayer = await playerManager.add(player, team.abbr, league);
                 } catch {
                   console.error("Could not add player", player);
+                  return
                 }
               }
               const playerProp = await playerPropManager.upsert(

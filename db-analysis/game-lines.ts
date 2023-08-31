@@ -33,6 +33,28 @@ const leagueWeights = new Map<League, Map<Book, number>>([
     ])
   ],
   [
+    League.NCAAF,
+    new Map<Book, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.BETRIVERS, 0.5],
+      [Book.CAESARS, 0.75],
+      [Book.TWINSPIRES, 0]
+    ])
+  ],
+  [
+    League.NFL,
+    new Map<Book, number>([
+      [Book.PINNACLE, 2.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 2],
+      [Book.BETRIVERS, 0.5],
+      [Book.CAESARS, 0.75],
+      [Book.TWINSPIRES, 0]
+    ])
+  ],
+  [
     League.MLB,
     new Map<Book, number>([
       [Book.PINNACLE, 2.5],
@@ -58,6 +80,8 @@ export interface GameLinePlay {
   book: string;
   prices: WithId<Price>[];
 }
+
+const excludedBooks = new Set([Book.PINNACLE])
 
 const getLikelihood = (gameLine: GameLinePriceAggregate, overOrUnder: "over" | "under") => {
   let sum = 0;
@@ -98,6 +122,15 @@ export const findGameLineEdge = async (league?: League) => {
       { likelihood: underLikelihood, price: "underPrice", label: "under" }
     ]) {
       gameLine.prices.forEach((price) => {
+        const awayTeamName =
+          gameLine.awayTeam.abbreviation === "-"
+            ? gameLine.awayTeam.name
+            : gameLine.awayTeam.abbreviation;
+        const homeTeamName =
+          gameLine.homeTeam.abbreviation === "-"
+            ? gameLine.homeTeam.name
+            : gameLine.homeTeam.abbreviation;
+
         // @ts-ignore
         if (!price[options.price]) {
           console.log(options, price);
@@ -107,34 +140,20 @@ export const findGameLineEdge = async (league?: League) => {
             // @ts-ignore
             Odds.fromFairLine(price[options.price]).toPayoutMultiplier() -
           (1 - options.likelihood);
-        if (EV > -0) {
+        if (EV > -0 && options.likelihood > 0.35 && options.likelihood < 0.65 && !excludedBooks.has(price.book)) {
           console.log(
-            `${(EV * 100).toFixed(2)}% EV for ${gameLine.awayTeam.abbreviation} @ ${
-              gameLine.homeTeam.abbreviation
-            } ${options.label} ${gameLine["linked-line"].value} ${gameLine["linked-line"].period} ${
-              gameLine["linked-line"].type
-            } on ${price.book}\n\tFair Line: ${new Odds(
+            `${(EV * 100).toFixed(2)}% EV for ${awayTeamName} @ ${homeTeamName} ${options.label} ${
+              gameLine["linked-line"].value
+            } ${gameLine["linked-line"].period} ${gameLine["linked-line"].type} on ${
+              price.book
+            }\n\tFair Line: ${new Odds(
               options.likelihood
               // @ts-ignore
             ).toAmericanOdds()}. Line on ${price.book}: ${price[options.price]}`
           );
-          // console.log({
-          //   EV,
-          //   gameLabel: `${gameLine.awayTeam.abbreviation} @ ${gameLine.homeTeam.abbreviation}`,
-          //   type: gameLine["linked-line"].type,
-          //   period: gameLine["linked-line"].period,
-          //   metadata: {
-          //     side: gameLine["linked-line"].side,
-          //     value: gameLine["linked-line"].value
-          //   },
-          //   fairLine: new Odds(options.likelihood).toAmericanOdds(),
-          //   book: price.book,
-          //   // @ts-ignore
-          //   prices: gameLine.prices
-          // });
           plays.push({
             EV,
-            gameLabel: `${gameLine.awayTeam.abbreviation} @ ${gameLine.homeTeam.abbreviation}`,
+            gameLabel: `${awayTeamName} @ ${homeTeamName} (${gameLine.game.league})`,
             type: gameLine["linked-line"].type,
             period: gameLine["linked-line"].period,
             metadata: {

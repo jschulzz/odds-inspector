@@ -64,11 +64,13 @@ export class GameLineManager {
         {
           game,
           type,
+          period,
           ...metadata
         },
         {
           game,
           type,
+          period,
           ...metadata
         },
         { upsert: true, returnDocument: "after" }

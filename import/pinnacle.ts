@@ -18,12 +18,13 @@ import {
 import { GameTotal, LineChoice, TeamTotal } from "../types/lines";
 import { Game } from "../database/game";
 import { TeamManager } from "../database/mongo.team";
-import { PlayerManager } from "../database/mongo.player";
+import { Player, PlayerManager } from "../database/mongo.player";
 import { GameManager, Game as MongoGame } from "../database/mongo.game";
 import { PlayerPropManager } from "../database/mongo.player-prop";
 import { PriceManager } from "../database/mongo.price";
 import { GameLineManager, HomeOrAway } from "../database/mongo.game-line";
 import { getConnection } from "../database/mongo.connection";
+import groupBy from "lodash/groupBy";
 
 const leagueIDs = new Map([
   [League.NCAAF, 880],
@@ -119,10 +120,22 @@ const requestLines = async (league: League) => {
   }
 
   fs.mkdirSync(datastorePath, { recursive: true });
-  const lines = JSON.parse(fs.readFileSync(linesFilename).toString());
+  const lines: any[] = JSON.parse(fs.readFileSync(linesFilename).toString());
   const matchups = JSON.parse(fs.readFileSync(matchupsFilename).toString());
+  const filteredMatchups = matchups
+    .filter((matchup: any) => matchup.type === "matchup")
+    .filter((matchup: any) => {
+      if (league === League.TENNIS) {
+        // ignore tennis sets
+        return matchup.units !== "Sets";
+      }
+      if ([League.MLB, League.NBA, League.WNBA].includes(league)) {
+        return matchup.units === "Regular";
+      }
+      return !matchup.parentId;
+    });
 
-  return { lines, matchups };
+  return { lines, matchups: filteredMatchups };
 };
 
 interface Event {
@@ -149,6 +162,7 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
       }
       return !matchup.parentId;
     });
+  console.log(filteredMatchups.length);
   for (let i = 0; i < filteredMatchups.length; i++) {
     const matchup: any = filteredMatchups[i];
     let storedEvent = events.get(matchup.id);
@@ -184,7 +198,7 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
   return events;
 };
 
-export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
+export const getPinnacle = async (league: League): Promise<void> => {
   await getConnection();
   const { lines, matchups } = await requestLines(league);
   const gameLineManager = new GameLineManager();
@@ -216,180 +230,195 @@ export const getPinnacle = async (league: League): Promise<SourcedOdds> => {
     }
   };
 
-  for (const line of lines) {
-    const correspondingMatchup = events.get(line.matchupId);
+  const groupedByMatchup = groupBy(lines, "matchupId");
+
+  for (const groupOfLines of Object.values(groupedByMatchup)) {
+    const correspondingMatchup = events.get(groupOfLines[0].matchupId);
     if (!correspondingMatchup) {
       continue;
     }
-    const period = getPeriod(line.period);
-    if (!period) {
-      continue;
-    }
     const mongoGame = correspondingMatchup.mongoGame;
-    const market = findMarket(line.type);
-    if (market === Market.GAME_TOTAL) {
-      const over = line.prices.find((p: any) => p.designation === "over");
-      const under = line.prices.find((p: any) => p.designation === "under");
-      const overPrice = over.price;
-      const overLine = over.points;
-      const underPrice = under.price;
-      const underLine = under.points;
+    console.log(
+      `Recording ${correspondingMatchup.game.awayTeam.abbreviation}@${correspondingMatchup.game.homeTeam.abbreviation}`
+    );
+    await Promise.allSettled(
+      groupOfLines.map((line) => {
+        return (async () => {
+          const period = getPeriod(line.period);
+          if (!period) {
+            throw new Error("Unknown Period");
+          }
+          const market = findMarket(line.type);
+          if (market === Market.GAME_TOTAL) {
+            const over = line.prices.find((p: any) => p.designation === "over");
+            const under = line.prices.find((p: any) => p.designation === "under");
+            const overPrice = over.price;
+            const overLine = over.points;
+            const underPrice = under.price;
+            const underLine = under.points;
 
-      const mongoLine = await gameLineManager.upsertGameTotal(mongoGame, period, {
-        value: overLine
-      });
+            const mongoLine = await gameLineManager.upsertGameTotal(mongoGame, period, {
+              value: overLine
+            });
 
-      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, { overPrice, underPrice });
+            await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+              overPrice,
+              underPrice
+            });
 
-      const standard = {
-        game: correspondingMatchup.game,
-        period,
-        book: Book.PINNACLE
-      };
+            const standard = {
+              game: correspondingMatchup.game,
+              period,
+              book: Book.PINNACLE
+            };
 
-      const overTotal = new GameTotal({
-        ...standard,
-        price: overPrice,
-        otherOutcomePrice: underPrice,
-        value: overLine,
-        choice: LineChoice.OVER
-      });
-      const underTotal = new GameTotal({
-        ...standard,
-        price: underPrice,
-        otherOutcomePrice: overPrice,
-        value: underLine,
-        choice: LineChoice.UNDER
-      });
+            const overTotal = new GameTotal({
+              ...standard,
+              price: overPrice,
+              otherOutcomePrice: underPrice,
+              value: overLine,
+              choice: LineChoice.OVER
+            });
+            const underTotal = new GameTotal({
+              ...standard,
+              price: underPrice,
+              otherOutcomePrice: overPrice,
+              value: underLine,
+              choice: LineChoice.UNDER
+            });
 
-      odds.gameTotals.push(overTotal, underTotal);
-    }
-    if (market === Market.TEAM_TOTAL) {
-      const over = line.prices.find((p: any) => p.designation === "over");
-      const under = line.prices.find((p: any) => p.designation === "under");
-      const overPrice = over.price;
-      const overLine = over.points;
-      const underPrice = under.price;
-      const underLine = under.points;
+            odds.gameTotals.push(overTotal, underTotal);
+          }
+          if (market === Market.TEAM_TOTAL) {
+            const over = line.prices.find((p: any) => p.designation === "over");
+            const under = line.prices.find((p: any) => p.designation === "under");
+            const overPrice = over.price;
+            const overLine = over.points;
+            const underPrice = under.price;
+            const underLine = under.points;
 
-      const mongoLine = await gameLineManager.upsertTeamTotal(mongoGame, period, {
-        value: overLine,
-        side: line.side
-      });
+            const mongoLine = await gameLineManager.upsertTeamTotal(mongoGame, period, {
+              value: overLine,
+              side: line.side
+            });
+            await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+              overPrice,
+              underPrice
+            });
 
-      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, { overPrice, underPrice });
+            const standard = {
+              game: correspondingMatchup.game,
+              period,
+              book: Book.PINNACLE,
+              side: line.side
+            };
+            const overTotal = new TeamTotal({
+              ...standard,
+              price: overPrice,
+              otherOutcomePrice: underPrice,
+              value: overLine,
+              choice: LineChoice.OVER
+            });
+            const underTotal = new TeamTotal({
+              ...standard,
+              price: underPrice,
+              otherOutcomePrice: overPrice,
+              value: underLine,
+              choice: LineChoice.UNDER
+            });
+            odds.teamTotals.push(overTotal, underTotal);
+          }
+          if (
+            market === Market.MONEYLINE &&
+            // pinnacle only offers 3-way lines which mess with this
+            !(league === League.MLB && period === Period.FIRST_QUARTER)
+          ) {
+            const home = line.prices.find((p: any) => p.designation === "home");
+            const away = line.prices.find((p: any) => p.designation === "away");
+            const homePrice = home.price;
+            const awayPrice = away.price;
 
-      const standard = {
-        game: correspondingMatchup.game,
-        period,
-        book: Book.PINNACLE,
-        side: line.side
-      };
-      const overTotal = new TeamTotal({
-        ...standard,
-        price: overPrice,
-        otherOutcomePrice: underPrice,
-        value: overLine,
-        choice: LineChoice.OVER
-      });
-      const underTotal = new TeamTotal({
-        ...standard,
-        price: underPrice,
-        otherOutcomePrice: overPrice,
-        value: underLine,
-        choice: LineChoice.UNDER
-      });
-      odds.teamTotals.push(overTotal, underTotal);
-    }
-    if (
-      market === Market.MONEYLINE &&
-      // pinnacle only offers 3-way lines which mess with this
-      !(league === League.MLB && period === Period.FIRST_QUARTER)
-    ) {
-      const home = line.prices.find((p: any) => p.designation === "home");
-      const away = line.prices.find((p: any) => p.designation === "away");
-      const homePrice = home.price;
-      const awayPrice = away.price;
+            const mongoLine = await gameLineManager.upsertMoneyline(mongoGame, period);
 
-      const mongoLine = await gameLineManager.upsertMoneyline(mongoGame, period);
+            await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
+              overPrice: homePrice,
+              underPrice: awayPrice
+            });
 
-      await priceManager.upsertGameLinePrice(mongoLine, Book.PINNACLE, {
-        overPrice: homePrice,
-        underPrice: awayPrice
-      });
+            const standard = {
+              game: correspondingMatchup.game,
+              period,
+              book: Book.PINNACLE
+            };
+            const homeMoneyline = new Moneyline({
+              ...standard,
+              choice: LineChoice.HOME,
+              price: homePrice,
+              otherOutcomePrice: awayPrice
+            });
+            const awayMoneyline = new Moneyline({
+              ...standard,
+              choice: LineChoice.AWAY,
+              price: awayPrice,
+              otherOutcomePrice: homePrice
+            });
+            odds.moneylines.push(homeMoneyline, awayMoneyline);
+          }
+          if (market === Market.SPREAD) {
+            const home = line.prices.find((p: any) => p.designation === "home");
+            const away = line.prices.find((p: any) => p.designation === "away");
+            const homePrice = home.price;
+            const homeLine = home.points;
+            const awayPrice = away.price;
+            const awayLine = away.points;
 
-      const standard = {
-        game: correspondingMatchup.game,
-        period,
-        book: Book.PINNACLE
-      };
-      const homeMoneyline = new Moneyline({
-        ...standard,
-        choice: LineChoice.HOME,
-        price: homePrice,
-        otherOutcomePrice: awayPrice
-      });
-      const awayMoneyline = new Moneyline({
-        ...standard,
-        choice: LineChoice.AWAY,
-        price: awayPrice,
-        otherOutcomePrice: homePrice
-      });
-      odds.moneylines.push(homeMoneyline, awayMoneyline);
-    }
-    if (market === Market.SPREAD) {
-      const home = line.prices.find((p: any) => p.designation === "home");
-      const away = line.prices.find((p: any) => p.designation === "away");
-      const homePrice = home.price;
-      const homeLine = home.points;
-      const awayPrice = away.price;
-      const awayLine = away.points;
+            const mongoHomeLine = await gameLineManager.upsertSpread(mongoGame, period, {
+              side: HomeOrAway.HOME,
+              value: homeLine
+            });
+            const mongoAwayLine = await gameLineManager.upsertSpread(mongoGame, period, {
+              side: HomeOrAway.AWAY,
+              value: awayLine
+            });
 
-      const mongoHomeLine = await gameLineManager.upsertSpread(mongoGame, period, {
-        side: HomeOrAway.HOME,
-        value: homeLine
-      });
-      const mongoAwayLine = await gameLineManager.upsertSpread(mongoGame, period, {
-        side: HomeOrAway.AWAY,
-        value: awayLine
-      });
+            await priceManager.upsertGameLinePrice(mongoHomeLine, Book.PINNACLE, {
+              overPrice: homePrice,
+              underPrice: awayPrice
+            });
 
-      await priceManager.upsertGameLinePrice(mongoHomeLine, Book.PINNACLE, {
-        overPrice: homePrice,
-        underPrice: awayPrice
-      });
+            await priceManager.upsertGameLinePrice(mongoAwayLine, Book.PINNACLE, {
+              overPrice: awayPrice,
+              underPrice: homePrice
+            });
 
-      await priceManager.upsertGameLinePrice(mongoAwayLine, Book.PINNACLE, {
-        overPrice: awayPrice,
-        underPrice: homePrice
-      });
-
-      if (homeLine === undefined) {
-        console.log(line, correspondingMatchup.game);
-      }
-      const standard = {
-        period,
-        book: Book.PINNACLE,
-        game: correspondingMatchup.game
-      };
-      const homeSpread = new Spread({
-        ...standard,
-        choice: LineChoice.HOME,
-        value: homeLine,
-        price: homePrice,
-        otherOutcomePrice: awayPrice
-      });
-      const awaySpread = new Spread({
-        ...standard,
-        choice: LineChoice.AWAY,
-        value: awayLine,
-        price: awayPrice,
-        otherOutcomePrice: homePrice
-      });
-      odds.spreads.push(homeSpread, awaySpread);
-    }
+            if (homeLine === undefined) {
+              console.log(line, correspondingMatchup.game);
+            }
+            const standard = {
+              period,
+              book: Book.PINNACLE,
+              game: correspondingMatchup.game
+            };
+            const homeSpread = new Spread({
+              ...standard,
+              choice: LineChoice.HOME,
+              value: homeLine,
+              price: homePrice,
+              otherOutcomePrice: awayPrice
+            });
+            const awaySpread = new Spread({
+              ...standard,
+              choice: LineChoice.AWAY,
+              value: awayLine,
+              price: awayPrice,
+              otherOutcomePrice: homePrice
+            });
+            odds.spreads.push(homeSpread, awaySpread);
+          }
+        })();
+      })
+    );
   }
-  return odds;
 };
 
 export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
@@ -397,7 +426,6 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
   const playerPropManager = new PlayerPropManager();
   const priceManager = new PriceManager();
   const playerManager = new PlayerManager();
-
 
   const props: Prop[] = [];
   matchupLoop: for (const matchup of matchups) {
@@ -416,6 +444,7 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
           continue propLoop;
         }
         const propName = prop.special.description;
+        console.log(prop);
         const playerName = propName.split("(")[0].trim();
         let stat = findStat(prop.units);
         if (league === League.NHL) {
@@ -448,39 +477,34 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
           continue propLoop;
         }
 
-        const overProp = await Prop.createProp(
-          {
-            playerName,
-            choice: LineChoice.OVER,
-            book: Book.PINNACLE,
-            team: "",
+        try {
+          let mongoPlayer: Player;
+          try {
+            mongoPlayer = await playerManager.findByName(playerName, league);
+          } catch {
+            console.log("Could not find player, now attempting to add");
+            try {
+              mongoPlayer = await playerManager.add(playerName, "", league);
+            } catch {
+              console.error("Could not add player", playerName);
+            }
+          }
+          const playerProp = await playerPropManager.upsert(
+            // @ts-ignore
+            mongoPlayer as Player,
+            // @ts-ignore
+            game,
+            league,
             stat,
-            value,
-            price: overPrice,
-            league
-          },
-          playerManager
-        );
-        const underProp = await Prop.createProp(
-          {
-            playerName,
-            choice: LineChoice.UNDER,
-            book: Book.PINNACLE,
-            team: "",
-            stat,
-            value,
-            price: underPrice,
-            league
-          },
-          playerManager
-        );
-        props.push(overProp, underProp);
-        const player = await playerManager.findByName(playerName, league);
-        const dbProp = await playerPropManager.upsert(player, game, league, stat, value);
-        await priceManager.upsertPlayerPropPrice(dbProp, Book.PINNACLE, {
-          overPrice,
-          underPrice
-        });
+            value
+          );
+          await priceManager.upsertPlayerPropPrice(playerProp, Book.PINNACLE as Book, {
+            overPrice,
+            underPrice
+          });
+        } catch (error) {
+          console.error(`Could not add prop for ${playerName}`);
+        }
       }
     } catch (e) {
       console.log("Nothing for that");

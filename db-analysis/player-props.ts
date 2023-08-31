@@ -40,7 +40,7 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
     League.WNBA,
     new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
+      [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
@@ -52,7 +52,7 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
     League.NBA,
     new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
+      [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
@@ -64,7 +64,7 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
     League.NHL,
     new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
+      [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
@@ -76,7 +76,7 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [
     League.MLB,
     new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2],
+      [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 1],
       [Book.TWINSPIRES, 0],
