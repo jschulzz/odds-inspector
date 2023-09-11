@@ -86,6 +86,20 @@ const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
       [PropsPlatform.UNDERDOG, 0],
       [PropsPlatform.NO_HOUSE, 0]
     ])
+  ],
+  [
+    League.NFL,
+    new Map<Book | PropsPlatform, number>([
+      [Book.PINNACLE, 1.5],
+      [Book.DRAFTKINGS, 2],
+      [Book.FANDUEL, 1],
+      [Book.TWINSPIRES, 0],
+      [Book.BETRIVERS, 1],
+      [Book.CAESARS, 1],
+      [PropsPlatform.PRIZEPICKS, 0],
+      [PropsPlatform.UNDERDOG, 0],
+      [PropsPlatform.NO_HOUSE, 0]
+    ])
   ]
 ]);
 
@@ -180,10 +194,12 @@ export const findMisvaluedProps = async (league?: League, book?: Book | PropsPla
   const consensusGroups = await priceManager.groupByProp(league);
   console.log(consensusGroups.length, "Total unique prop/values");
 
-  const groupsWithAlternates = consensusGroups.filter(
-    (group) =>
-      group.alternates.length && group.alternates.some((alternate) => alternate.prices.length)
-  );
+  const groupsWithAlternates = consensusGroups
+    .filter(
+      (group) =>
+        group.alternates.length && group.alternates.some((alternate) => alternate.prices.length)
+    )
+    .filter((group) => group.prices.length > group.alternates.length);
   console.timeEnd("getGroups");
   console.log(groupsWithAlternates.length, "Have alternate values");
 
@@ -238,5 +254,10 @@ export const findMisvaluedProps = async (league?: League, book?: Book | PropsPla
       }
     }
   }
-  return plays;
+  return plays.sort((a, b) =>
+    Math.abs(a.offValue - a.consensusProp.value) / a.consensusProp.value <
+    Math.abs(b.offValue - b.consensusProp.value) / b.consensusProp.value
+      ? 1
+      : -1
+  );
 };

@@ -162,7 +162,6 @@ const getPinnacleEvents = async (matchups: any, league: League) => {
       }
       return !matchup.parentId;
     });
-  console.log(filteredMatchups.length);
   for (let i = 0; i < filteredMatchups.length; i++) {
     const matchup: any = filteredMatchups[i];
     let storedEvent = events.get(matchup.id);
@@ -444,7 +443,6 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
           continue propLoop;
         }
         const propName = prop.special.description;
-        console.log(prop);
         const playerName = propName.split("(")[0].trim();
         let stat = findStat(prop.units);
         if (league === League.NHL) {
@@ -482,28 +480,17 @@ export const getPinnacleProps = async (league: League): Promise<Prop[]> => {
           try {
             mongoPlayer = await playerManager.findByName(playerName, league);
           } catch {
-            console.log("Could not find player, now attempting to add");
-            try {
-              mongoPlayer = await playerManager.add(playerName, "", league);
-            } catch {
-              console.error("Could not add player", playerName);
-            }
+            console.log("Could not find player");
+            throw "Could not find player";
           }
-          const playerProp = await playerPropManager.upsert(
-            // @ts-ignore
-            mongoPlayer as Player,
-            // @ts-ignore
-            game,
-            league,
-            stat,
-            value
-          );
+          const playerProp = await playerPropManager.upsert(mongoPlayer, game, league, stat, value);
           await priceManager.upsertPlayerPropPrice(playerProp, Book.PINNACLE as Book, {
             overPrice,
             underPrice
           });
         } catch (error) {
           console.error(`Could not add prop for ${playerName}`);
+          continue;
         }
       }
     } catch (e) {

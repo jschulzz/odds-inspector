@@ -46,7 +46,7 @@ const periodMap = new Map([
   ["secondperiod", Period.SECOND_PERIOD],
   ["thirdperiod", Period.THIRD_PERIOD]
 ]);
-const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS"]]);
+const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=3"]]);
 
 export const getActionNetworkLines = async (league: League): Promise<SourcedOdds> => {
   const teamManager = new TeamManager();
@@ -57,6 +57,7 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
 
   const leagueKey = leagueMap.get(league);
   let today = new Date();
+  today.setDate(today.getDate() + 1);
   let yyyy = today.getFullYear();
   let mm = (today.getMonth() + 1).toString().padStart(2, "0"); // Months start at 0
   let dd = today.getDate().toString().padStart(2, "0");
@@ -67,7 +68,7 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
 
   const leagueParams = leagueParamsMap.get(league) || "";
 
-  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76&date=${startDate}${leagueParams}`;
+  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76${leagueParams}`;
   console.log(url);
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
@@ -152,7 +153,9 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
           try {
             mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation, league);
           } catch {
-            throw new Error("Unknown book or period");
+            // console.log("HERE");
+            console.log("Could not find game", `${game.awayTeam.abbreviation}@${game.homeTeam.abbreviation}`);
+            throw new Error("Could not find game");
           }
           if (odds.ml_home && odds.ml_away) {
             const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period);
@@ -352,11 +355,32 @@ export const getActionNetworkProps = async (league: League) => {
     [PropsStat.RUNS, "core_bet_type_78_runs_scored"],
     [PropsStat.STOLEN_BASES, "core_bet_type_73_stolen_bases"],
     [PropsStat.SINGLES, "core_bet_type_32_singles"],
-    [PropsStat.TOTAL_BASES, "core_bet_type_77_total_bases"]
+    [PropsStat.TOTAL_BASES, "core_bet_type_77_total_bases"],
+
+    [PropsStat.EXTRA_POINTS_MADE, "core_bet_type_212_extra_points_made"],
+    [PropsStat.FIELD_GOALS_MADE, "core_bet_type_213_field_goals_made"],
+    [PropsStat.INTERCEPTIONS, "core_bet_type_65_interceptions"],
+    [PropsStat.KICKING_POINTS, "core_bet_type_43_kicking_points"],
+    [PropsStat.PASSING_RUSHING_YARDS, "core_bet_type_71_passing_rushing_yards"],
+    [PropsStat.PASSING_TDS, "core_bet_type_11_passing_tds"],
+    [PropsStat.PASSING_YARDS, "core_bet_type_9_passing_yards"],
+    [PropsStat.PASS_ATTEMPTS, "core_bet_type_30_passing_attempts"],
+    [PropsStat.PASS_COMPLETIONS, "core_bet_type_10_pass_completions"],
+    [PropsStat.LONGEST_PASSING_COMPLETION, "core_bet_type_60_longest_completion"],
+    [PropsStat.RUSHING_TDS, "core_bet_type_13_rushing_tds"],
+    [PropsStat.RUSHING_YARDS, "core_bet_type_12_rushing_yards"],
+    [PropsStat.RUSH_ATTEMPTS, "core_bet_type_18_rushing_attempts"],
+    [PropsStat.LONGEST_RUSH, "core_bet_type_58_longest_rush"],
+    [PropsStat.RECEIVING_RUSHING_YARDS, "core_bet_type_66_rushing_receiving_yards"],
+    [PropsStat.RECEIVING_TDS, "core_bet_type_17_receiving_tds"],
+    [PropsStat.RECEIVING_YARDS, "core_bet_type_16_receiving_yards"],
+    [PropsStat.RECEPTIONS, "core_bet_type_15_receptions"],
+    [PropsStat.LONGEST_RECEPTION, "core_bet_type_59_longest_reception"],
+    [PropsStat.TACKLES_ASSISTS, "core_bet_type_70_tackles_assists"]
   ]);
 
   const leaguePropsMap = new Map([
-    [League.WNBA, [PropsStat.POINTS, PropsStat.REBOUNDS, PropsStat.ASSISTS]],
+    [League.WNBA, [PropsStat.POINTS, PropsStat.REBOUNDS, PropsStat.ASSISTS, PropsStat.THREE_POINTERS_MADE]],
     [
       League.NBA,
       [
@@ -377,6 +401,31 @@ export const getActionNetworkProps = async (league: League) => {
     [
       League.NHL,
       [PropsStat.SHOTS_ON_GOAL, PropsStat.SAVES, PropsStat.HOCKEY_ASSISTS, PropsStat.HOCKEY_POINTS]
+    ],
+    [
+      League.NFL,
+      [
+        PropsStat.EXTRA_POINTS_MADE,
+        PropsStat.FIELD_GOALS_MADE,
+        PropsStat.INTERCEPTIONS,
+        PropsStat.KICKING_POINTS,
+        PropsStat.PASSING_RUSHING_YARDS,
+        PropsStat.PASSING_TDS,
+        PropsStat.PASSING_YARDS,
+        PropsStat.PASS_ATTEMPTS,
+        PropsStat.PASS_COMPLETIONS,
+        PropsStat.LONGEST_PASSING_COMPLETION,
+        PropsStat.RUSHING_TDS,
+        PropsStat.RUSHING_YARDS,
+        PropsStat.RUSH_ATTEMPTS,
+        PropsStat.LONGEST_RUSH,
+        PropsStat.RECEIVING_RUSHING_YARDS,
+        PropsStat.RECEIVING_TDS,
+        PropsStat.RECEIVING_YARDS,
+        PropsStat.RECEPTIONS,
+        PropsStat.LONGEST_RECEPTION,
+        PropsStat.TACKLES_ASSISTS
+      ]
     ],
     [
       League.MLB,
@@ -431,6 +480,10 @@ export const getActionNetworkProps = async (league: League) => {
       }
 
       const odds = data.markets[0];
+      if (!odds) {
+        console.log(`No props for ${propType}`);
+        continue;
+      }
       const OVER = Object.entries(odds.rules.options)
         .find(([key, value]: any) => ["o"].includes(value.abbreviation))?.[0]
         .toString();
@@ -491,7 +544,7 @@ export const getActionNetworkProps = async (league: League) => {
                   mongoPlayer = await playerManager.add(player, team.abbr, league);
                 } catch {
                   console.error("Could not add player", player);
-                  return
+                  return;
                 }
               }
               const playerProp = await playerPropManager.upsert(

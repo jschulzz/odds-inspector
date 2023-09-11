@@ -71,32 +71,32 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
       continue;
     }
 
-    const underProp = await Prop.createProp(
-      {
-        playerName: player.first_name + " " + player.last_name,
-        stat,
-        value: Number(line.stat_value),
-        team: player.team,
-        book: PropsPlatform.UNDERDOG,
-        choice: LineChoice.UNDER,
-        price: -122,
-        league
-      },
-      playerManager
-    );
-    const overProp = await Prop.createProp(
-      {
-        playerName: player.first_name + " " + player.last_name,
-        stat,
-        value: Number(line.stat_value),
-        team: player.team,
-        book: PropsPlatform.UNDERDOG,
-        choice: LineChoice.OVER,
-        price: -122,
-        league
-      },
-      playerManager
-    );
+    // const underProp = await Prop.createProp(
+    //   {
+    //     playerName: player.first_name + " " + player.last_name,
+    //     stat,
+    //     value: Number(line.stat_value),
+    //     team: player.team,
+    //     book: PropsPlatform.UNDERDOG,
+    //     choice: LineChoice.UNDER,
+    //     price: -122,
+    //     league
+    //   },
+    //   playerManager
+    // );
+    // const overProp = await Prop.createProp(
+    //   {
+    //     playerName: player.first_name + " " + player.last_name,
+    //     stat,
+    //     value: Number(line.stat_value),
+    //     team: player.team,
+    //     book: PropsPlatform.UNDERDOG,
+    //     choice: LineChoice.OVER,
+    //     price: -122,
+    //     league
+    //   },
+    //   playerManager
+    // );
     let game, dbPlayer;
     try {
       game = await gameManager.findByTeamAbbr(player.team, league);
@@ -124,7 +124,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
       underPrice: -122
     });
 
-    props.push(overProp, underProp);
+    // props.push(overProp, underProp);
   }
   console.log("Unknown Leagues:", unknownLeages);
 
