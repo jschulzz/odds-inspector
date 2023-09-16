@@ -5,8 +5,8 @@ import { Player } from "./mongo.player";
 import { Game } from "./mongo.game";
 
 export const playerPropSchema = new Schema({
-  player: { type: Schema.ObjectId, required: true },
-  game: { type: Schema.ObjectId, required: true },
+  player: { type: Schema.ObjectId, required: true, ref: "Player" },
+  game: { type: Schema.ObjectId, required: true, ref: "Game" },
   league: { type: String, required: true },
   propStat: { type: String, required: true },
   value: { type: Number, required: true }

@@ -1,4 +1,15 @@
-import { Divider, Stat, StatHelpText, StatLabel, StatNumber, Box } from "@chakra-ui/react";
+import {
+  Divider,
+  Stat,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+  Box,
+  Editable,
+  EditablePreview,
+  EditableInput
+} from "@chakra-ui/react";
+import { useState } from "react";
 
 const americanToProbability = (odds: number) => {
   if (odds > 0) {
@@ -6,6 +17,13 @@ const americanToProbability = (odds: number) => {
   }
   return -odds / (-odds + 100);
 };
+
+function americanOddsToDecimal(americanOdds: number) {
+  if (americanOdds < 0) {
+    return 1 - 100 / americanOdds;
+  }
+  return americanOdds / 100 + 1;
+}
 
 const toLikelihood = (over?: number, under?: number) => {
   if (!under) {
@@ -25,7 +43,10 @@ export const BookPrice = ({
   isTarget,
   type,
   book,
-  side
+  side,
+  fairLine,
+  bankroll,
+  kelly
 }: {
   overPrice?: number;
   underPrice?: number;
@@ -35,7 +56,13 @@ export const BookPrice = ({
   type: string;
   book: string;
   side: string;
+  fairLine?: number;
+  bankroll?: number;
+  kelly?: number;
 }) => {
+  const [overOverride, setOverOverride] = useState<number>();
+  const [underOverride, setUnderOverride] = useState<number>();
+
   const getStatDisplay = (
     type: string,
     isTarget: boolean,
@@ -63,20 +90,79 @@ export const BookPrice = ({
 
     return (
       <>
-        <Box color={isTarget && ["over", "Home"].includes(side) ? "green" : undefined} mb="0.5rem" mt="0.5rem">
+        <Box
+          color={isTarget && ["over", "Home", "Over", "home"].includes(side) ? "green" : undefined}
+          mb="0.5rem"
+          mt="0.5rem"
+        >
           {sideLabel[0]}: {overPrice}
         </Box>
         <Divider />
-        <Box color={isTarget && ["under", "Away"].includes(side) ? "green" : undefined} mb="0.5rem" mt="0.5rem">
-          {sideLabel[1]}: {underPrice}
+        <Box
+          color={
+            isTarget && ["under", "Away", "Under", "away"].includes(side) ? "green" : undefined
+          }
+          mb="0.5rem"
+          mt="0.5rem"
+          display={"flex"}
+          alignItems={"center"}
+        >
+          {sideLabel[1]}:{" "}
+          <Editable defaultValue={underPrice.toString()} onChange={(v) => setUnderOverride(+v)}>
+            <EditablePreview />
+            <EditableInput />
+          </Editable>
         </Box>
       </>
     );
   };
 
+  let b,
+    p,
+    q,
+    wager = 0;
+  const likelihoodOfOver = toLikelihood(overPrice, underPrice);
+  if (fairLine && bankroll && kelly && overPrice && underPrice) {
+    const over = overOverride || overPrice;
+    const under = underOverride || underPrice;
+    const fairLikelihood = americanToProbability(fairLine);
+    let priceToUseForKelly = over;
+    if (type === "game-moneyline") {
+      priceToUseForKelly = ["Home", "home"].includes(side) ? over : under;
+    } else if (type === "game-spread") {
+      priceToUseForKelly = over;
+    } else if (type === "game-gameTotal") {
+      priceToUseForKelly = ["over", "Over"].includes(side) ? over : under;
+    } else if (type === "game-teamTotal") {
+      priceToUseForKelly = ["over", "Home", "Over", "home"].includes(side) ? over : under;
+    } else if (type === "playerprop-edge") {
+      priceToUseForKelly = ["over", "Home", "Over", "home"].includes(side) ? over : under;
+    } else if (type === "playerprop-misvalue") {
+      priceToUseForKelly = 0;
+    }
+    b = americanOddsToDecimal(priceToUseForKelly) - 1;
+    p = fairLikelihood;
+    q = 1 - p;
+    wager = kelly * bankroll * ((b * p - q) / b);
+    if (Math.abs(wager - -119.62) < 0.1)
+      console.log({
+        b,
+        p,
+        q,
+        wager,
+        decimal: americanOddsToDecimal(fairLine),
+        overPrice,
+        underPrice,
+        side,
+        fairLine,
+        fairLikelihood,
+        type
+      });
+  }
+
   let label = isTarget
-    ? `${((EV as number) * 100).toFixed(1)}% EV`
-    : `${(toLikelihood(overPrice, underPrice) * 100).toFixed(1)}%`;
+    ? `${((EV as number) * 100).toFixed(1)}% EV ($${wager.toFixed(2)})`
+    : `${(likelihoodOfOver * 100).toFixed(1)}%`;
   if (type === "playerprop-misvalue") {
     label = (value as number).toString();
   }

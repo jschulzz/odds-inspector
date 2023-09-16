@@ -9,7 +9,7 @@ import { TeamManager } from "./mongo.team";
 
 export const playerSchema = new Schema({
   name: { type: String, required: true },
-  team: { type: Schema.ObjectId, required: true },
+  team: { type: Schema.ObjectId, required: true, ref: "Team" },
   league: { type: String, required: true }
 });
 

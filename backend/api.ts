@@ -31,12 +31,16 @@ router.post("/import", async (req, res, next) => {
     await gameManager.deleteByLeague(league);
     await getPinnacle(league);
     await getActionNetworkLines(league);
-    if (![League.NCAAB, League.NCAAF, League.NFL].includes(league)) {
+    if (![League.NCAAB, League.NCAAF].includes(league)) {
+      console.log("Tracking Action Network Props")
       await getActionNetworkProps(league);
+      console.log("Tracking Pinnacle Props")
       await getPinnacleProps(league);
+      console.log("Tracking Underdog Props")
       await getUnderdogLines(league);
+      console.log("Tracking PrizePicks Props")
       await getPrizePicksLines(league);
-      await getNoHouse(league);
+      // await getNoHouse(league);
     }
   }
   console.log("Completed import");

@@ -24,13 +24,24 @@ const getMetadataView = (bet: GameLinePlay) => {
   return metadataViews.get(bet.type);
 };
 
-export const GameLineRow = ({ bet, books }: { bet: GameLinePlay; books: string[] }) => {
+export const GameLineRow = ({
+  bet,
+  books,
+  bankroll,
+  kelly
+}: {
+  bet: GameLinePlay;
+  books: string[];
+  bankroll: number;
+  kelly: number;
+}) => {
   return (
     <Tr key={Math.random()}>
       <Td minW="10rem">{bet.gameLabel}</Td>
       <Td minW="8rem">{getMetadataView(bet)}</Td>
-      <Td>{bet.type}</Td>
-      <Td>{bet.period}</Td>
+      <Td maxW="8rem">{bet.type}</Td>
+      <Td maxW="8rem">{bet.period}</Td>
+      <Td maxW="8rem">{bet.fairLine}</Td>
       {books.map((book) => {
         const thisBooksPrice = bet.prices.find((p: WithId<Price>) => p.book === book);
         return (
@@ -43,6 +54,9 @@ export const GameLineRow = ({ bet, books }: { bet: GameLinePlay; books: string[]
               type={"game-" + bet.type}
               book={book}
               side={bet.metadata.side as string}
+              fairLine={bet.fairLine}
+              bankroll={bankroll}
+              kelly={kelly}
             />
           </Td>
         );
