@@ -2,7 +2,17 @@ import { Td, Tr } from "@chakra-ui/react";
 import { MisvaluedPlay } from "../../../db-analysis/player-props";
 import { BookPrice } from "./book-price";
 
-export const ValueBetRow = ({ bet, books }: { bet: MisvaluedPlay; books: string[] }) => {
+export const ValueBetRow = ({
+  bet,
+  books,
+  bankroll,
+  kelly
+}: {
+  bet: MisvaluedPlay;
+  books: string[];
+  bankroll: number;
+  kelly: number;
+}) => {
   return (
     <Tr key={Math.random()}>
       <Td>{bet.player.name}</Td>
@@ -16,10 +26,10 @@ export const ValueBetRow = ({ bet, books }: { bet: MisvaluedPlay; books: string[
       <Td>{bet.consensusProp.propStat}</Td>
       {books.map((book) => {
         let isOff = true;
-        let thisBooksPrice = bet.prices.find((p) => p.book === book);
+        let thisBooksPrice = bet.prices.find((p) => p.book.toString() === book);
         if (!thisBooksPrice) {
           isOff = false;
-          thisBooksPrice = bet.consensusPrices.find((p) => p.book === book);
+          thisBooksPrice = bet.consensusPrices.find((p) => p.book.toString() === book);
           if (!thisBooksPrice) {
             return <Td key={Math.random()}>N/A</Td>;
           }
@@ -30,7 +40,7 @@ export const ValueBetRow = ({ bet, books }: { bet: MisvaluedPlay; books: string[
               overPrice={thisBooksPrice.overPrice}
               underPrice={thisBooksPrice.underPrice}
               value={isOff ? bet.offValue : bet.consensusProp.value}
-              isTarget={bet.prices.map((p) => p.book).includes(book)}
+              isTarget={bet.prices.map((p) => p.book.toString()).includes(book)}
               type="playerprop-misvalue"
               book={book}
               side={bet.side}

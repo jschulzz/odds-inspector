@@ -1,13 +1,12 @@
-import mongoose, { Schema, model, InferSchemaType, Types, ObjectId } from "mongoose";
+import { Schema, model, InferSchemaType, Types } from "mongoose";
 import { Book, League, PropsPlatform } from "../types";
 import { getConnection } from "./mongo.connection";
 import { PlayerProp, PlayerPropManager } from "./mongo.player-prop";
-import { Game, GameManager } from "./mongo.game";
-import { Player, PlayerManager } from "./mongo.player";
-import { Team, TeamManager } from "./mongo.team";
-import { GameLine, GameLineManager } from "./mongo.game-line";
+import { Game } from "./mongo.game";
+import { Player } from "./mongo.player";
+import { Team } from "./mongo.team";
+import { GameLine } from "./mongo.game-line";
 import { WithId } from "./types";
-import { DBRef } from "bson";
 
 export const priceSchema = new Schema({
   prop: { type: Schema.ObjectId, required: true },
@@ -48,7 +47,7 @@ export type GameLinePriceAggregate = {
   awayTeam: WithId<Team>;
 };
 
-const PriceModel = model("price", priceSchema);
+export const PriceModel = model("price", priceSchema);
 
 export class PriceManager {
   constructor() {}
@@ -74,11 +73,12 @@ export class PriceManager {
       {
         $match: {
           "linked-prop.league": league,
-          book
+          ...(book ? { book } : {})
         }
       }
     ]);
     const pricesToDelete = priceAgg.map((x) => x._id);
+    console.log(`Attempting to delete ${pricesToDelete.length} prices`);
     const propIds = [...new Set(priceAgg.map((x) => x["linked-prop"]._id))];
 
     await playerPropManager.deleteMany(propIds);
@@ -380,7 +380,7 @@ export class PriceManager {
         {
           $match: {
             count: {
-              $gte: 3
+              $gte: 2
             },
             "game.gameTime": {
               $gte: now

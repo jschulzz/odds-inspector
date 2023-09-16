@@ -82,20 +82,20 @@ export const getPrizePicksLines = async (league: League) => {
       price: -119,
       league
     };
-    const overProp = await Prop.createProp(
-      {
-        ...standard,
-        choice: LineChoice.OVER
-      },
-      playerManager
-    );
-    const underProp = await Prop.createProp(
-      {
-        ...standard,
-        choice: LineChoice.UNDER
-      },
-      playerManager
-    );
+    // const overProp = await Prop.createProp(
+    //   {
+    //     ...standard,
+    //     choice: LineChoice.OVER
+    //   },
+    //   playerManager
+    // );
+    // const underProp = await Prop.createProp(
+    //   {
+    //     ...standard,
+    //     choice: LineChoice.UNDER
+    //   },
+    //   playerManager
+    // );
     let game, dbPlayer;
     try {
       game = await gameManager.findByTeamAbbr(player.attributes.team, league);
@@ -115,20 +115,20 @@ export const getPrizePicksLines = async (league: League) => {
       overPrice: -119,
       underPrice: -119
     });
-    const existingProps = props.filter((p) => {
-      return p.player === overProp.player && p.stat === standard.stat && p.value !== standard.value;
-    });
-    let newProps = [overProp, underProp];
-    if (existingProps.length) {
-      if (isFlashSale) {
-        console.log("Found a better one", overProp.value);
-        props = props.filter((p) => !existingProps.includes(p));
-      } else {
-        console.log("Better one already exists");
-        newProps = [underProp];
-      }
-    }
-    props.push(...newProps);
+    // const existingProps = props.filter((p) => {
+    //   return p.player === overProp.player && p.stat === standard.stat && p.value !== standard.value;
+    // });
+    // let newProps = [overProp, underProp];
+    // if (existingProps.length) {
+    //   if (isFlashSale) {
+    //     console.log("Found a better one", overProp.value);
+    //     props = props.filter((p) => !existingProps.includes(p));
+    //   } else {
+    //     console.log("Better one already exists");
+    //     newProps = [underProp];
+    //   }
+    // }
+    // props.push(...newProps);
   }
   return props;
 };

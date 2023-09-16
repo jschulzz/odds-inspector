@@ -4,12 +4,16 @@ import { GameLineRow } from "./gameline-row";
 
 export const GameLineTable = ({
   bets,
-  books
+  books,
+  bankroll,
+  kelly
 }: {
   bets: GameLinePlay[];
   books: string[];
+  bankroll: number;
+  kelly: number;
 }) => {
-  const columns = ["Game", "Metadata", "Type", "Period", ...books];
+  const columns = ["Game", "Metadata", "Type", "Period", "Fair line", ...books];
 
   return (
     <div>
@@ -25,7 +29,7 @@ export const GameLineTable = ({
         </Thead>
         <Tbody>
           {bets.map((bet) => (
-            <GameLineRow key={Math.random()} bet={bet as GameLinePlay} books={books} />
+            <GameLineRow key={Math.random()} bet={bet as GameLinePlay} books={books} bankroll={bankroll} kelly={kelly} />
           ))}
         </Tbody>
       </Table>

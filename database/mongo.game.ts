@@ -5,8 +5,8 @@ import { Team, TeamManager } from "./mongo.team";
 import { WithId } from "./types";
 
 export const gameSchema = new Schema({
-  homeTeam: { type: Schema.ObjectId, required: true },
-  awayTeam: { type: Schema.ObjectId, required: true },
+  homeTeam: { type: Schema.ObjectId, required: true, ref: "Team" },
+  awayTeam: { type: Schema.ObjectId, required: true, ref: "Team" },
   league: { type: String, required: true },
   gameTime: { type: Date, required: true }
 });

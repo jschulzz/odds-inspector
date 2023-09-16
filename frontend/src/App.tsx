@@ -1,10 +1,26 @@
 import { useEffect, useState } from "react";
-import { ChakraProvider, Divider, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  Divider,
+  FormControl,
+  FormLabel,
+  Box,
+  NumberInput,
+  NumberInputField,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs
+} from "@chakra-ui/react";
 import "./App.css";
 import { PropTable } from "./bet-table/prop-table";
 import { MisvaluedPlay, Play } from "../../db-analysis/player-props";
 import { GameLinePlay } from "../../db-analysis/game-lines";
 import { GameLineTable } from "./bet-table/gameline-table";
+
+const DEFAULT_BANKROLL = 2000;
+const DEFAULT_KELLY = 0.2;
 
 function App() {
   const [edgeBets, setEdgeBets] = useState<Play[]>([]);
@@ -13,6 +29,8 @@ function App() {
   const [misvalueBooks, setMisvalueBooks] = useState<string[]>([]);
   const [gameBets, setGameBets] = useState<GameLinePlay[]>([]);
   const [gameBooks, setGameBooks] = useState<string[]>([]);
+  const [bankroll, setBankroll] = useState<number>(DEFAULT_BANKROLL);
+  const [kelly, setKelly] = useState<number>(DEFAULT_KELLY);
 
   useEffect(() => {
     const getEdges = async () => {
@@ -62,19 +80,40 @@ function App() {
 
   return (
     <ChakraProvider>
+      <Box
+        display={"flex"}
+        position={"sticky"}
+        top={0}
+        background={"white"}
+        zIndex={2}
+        height={150}
+      >
+        <FormControl maxW={200} padding={"1rem"}>
+          <FormLabel>Bankroll</FormLabel>
+          <NumberInput defaultValue={DEFAULT_BANKROLL} onChange={(_a, n) => setBankroll(n)}>
+            <NumberInputField />
+          </NumberInput>
+        </FormControl>
+        <FormControl maxW={200} padding={"1rem"}>
+          <FormLabel>Kelly Multiplier</FormLabel>
+          <NumberInput defaultValue={DEFAULT_KELLY} onChange={(_a, n) => setKelly(n)}>
+            <NumberInputField />
+          </NumberInput>
+        </FormControl>
+      </Box>
       <Tabs>
-        <TabList overflowX="hidden">
+        <TabList overflowY="hidden" position={"sticky"} top={150} background={"white"} zIndex={2}>
           <Tab>Player Props</Tab>
           <Tab>Game Lines</Tab>
         </TabList>
         <TabPanels>
           <TabPanel overflowX="scroll">
-            <PropTable bets={edgeBets} books={edgeBooks} type="edge" />
+            <PropTable bets={edgeBets} books={edgeBooks} type="edge" bankroll={bankroll} kelly={kelly} />
             <Divider />
-            <PropTable bets={misvalueBets} books={misvalueBooks} type="misvalue" />
+            <PropTable bets={misvalueBets} books={misvalueBooks} type="misvalue" bankroll={bankroll} kelly={kelly} />
           </TabPanel>
           <TabPanel>
-            <GameLineTable bets={gameBets} books={gameBooks} />
+            <GameLineTable bets={gameBets} books={gameBooks} bankroll={bankroll} kelly={kelly} />
           </TabPanel>
         </TabPanels>
       </Tabs>

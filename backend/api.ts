@@ -31,24 +31,30 @@ router.post("/import", async (req, res, next) => {
     await gameManager.deleteByLeague(league);
     await getPinnacle(league);
     await getActionNetworkLines(league);
-    await getPinnacleProps(league);
-    await getUnderdogLines(league);
-    await getPrizePicksLines(league);
-    await getNoHouse(league);
-    await getActionNetworkProps(league);
+    if (![League.NCAAB, League.NCAAF].includes(league)) {
+      console.log("Tracking Action Network Props")
+      await getActionNetworkProps(league);
+      console.log("Tracking Pinnacle Props")
+      await getPinnacleProps(league);
+      console.log("Tracking Underdog Props")
+      await getUnderdogLines(league);
+      console.log("Tracking PrizePicks Props")
+      await getPrizePicksLines(league);
+      // await getNoHouse(league);
+    }
   }
   console.log("Completed import");
 });
 
 router.get("/player-props/edge", async (req, res) => {
   console.log("Getting player props edge");
-  const playerProps = await findPlayerPropsEdge(League.MLB);
+  const playerProps = await findPlayerPropsEdge();
   res.send({ bets: playerProps, books: sortedBooks });
 });
 
 router.get("/player-props/misvalue", async (req, res) => {
   console.log("Getting player props misvalues");
-  const playerProps = await findMisvaluedProps(League.MLB);
+  const playerProps = await findMisvaluedProps();
   res.send({ bets: playerProps, books: sortedBooks });
 });
 

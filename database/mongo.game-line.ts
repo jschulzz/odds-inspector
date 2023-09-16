@@ -4,7 +4,7 @@ import { getConnection } from "./mongo.connection";
 import { Game } from "./mongo.game";
 
 export const gameLineSchema = new Schema({
-  game: { type: Schema.ObjectId, required: true },
+  game: { type: Schema.ObjectId, required: true, ref: "Game" },
   type: { type: String, required: true },
   period: { type: String, required: true },
   value: { type: Number },
@@ -13,7 +13,7 @@ export const gameLineSchema = new Schema({
 
 export type GameLine = InferSchemaType<typeof gameLineSchema>;
 
-const GameLineModel = model("game-line", gameLineSchema);
+export const GameLineModel = model("game-line", gameLineSchema);
 
 export enum HomeOrAway {
   HOME = "Home",
@@ -64,11 +64,13 @@ export class GameLineManager {
         {
           game,
           type,
+          period,
           ...metadata
         },
         {
           game,
           type,
+          period,
           ...metadata
         },
         { upsert: true, returnDocument: "after" }

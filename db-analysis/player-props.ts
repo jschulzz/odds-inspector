@@ -1,136 +1,135 @@
+import { groupBy, over } from "lodash";
 import { getConnection } from "../database/mongo.connection";
-import { Game } from "../database/mongo.game";
-import { Player } from "../database/mongo.player";
 import { PlayerProp } from "../database/mongo.player-prop";
-import { PropsPriceAggregate, PriceManager, Price } from "../database/mongo.price";
-import { Team } from "../database/mongo.team";
+import { PriceModel } from "../database/mongo.price";
 import { WithId } from "../database/types";
 import { Odds } from "../odds/odds";
-import { Book, League, PropsPlatform } from "../types";
+import { Book, League, Market, Period, PropsPlatform, PropsStat } from "../types";
+import { Types } from "mongoose";
+import { Game, Team } from "./types";
+import { getLikelihood } from "./utils";
 
 export type MisvaluedPlay = {
-  propId: string;
-  player: WithId<Player>;
-  homeTeam: WithId<Team>;
-  awayTeam: WithId<Team>;
-  playerTeam: WithId<Team>;
-  game: WithId<Game>;
-  prices: WithId<Price>[];
+  propId: Types.ObjectId;
+  player: {
+    _id: Types.ObjectId;
+    league: League;
+    name: string;
+    team: Team;
+  };
+  homeTeam: Team;
+  awayTeam: Team;
+  playerTeam: Team;
+  game: Game;
+  prices: {
+    book: Book | PropsPlatform;
+    overPrice: number;
+    underPrice: number;
+  }[];
   offValue: number;
   side: "over" | "under";
   consensusLikelihood: number;
   consensusProp: WithId<PlayerProp>;
-  consensusPrices: WithId<Price>[];
+  consensusPrices: {
+    book: Book | PropsPlatform;
+    overPrice: number;
+    underPrice: number;
+  }[];
 };
 
 export type Play = {
-  player: WithId<Player>;
-  playerTeam: WithId<Team>;
-  homeTeam: WithId<Team>;
-  awayTeam: WithId<Team>;
-  game: WithId<Game>;
+  player: {
+    _id: Types.ObjectId;
+    league: League;
+    name: string;
+    team: Team;
+  };
+  playerTeam: Team;
+  homeTeam: Team;
+  awayTeam: Team;
+  game: Game;
   EV: number;
   side: string;
   book: Book | PropsPlatform;
-  prices: WithId<Price>[];
+  fairLine: number;
+  prices: {
+    book: Book | PropsPlatform;
+    overPrice: number;
+    underPrice: number;
+  }[];
   prop: WithId<PlayerProp>;
 };
 
-const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
-  [
-    League.WNBA,
-    new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
-      [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
-    ])
-  ],
-  [
-    League.NBA,
-    new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
-      [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
-    ])
-  ],
-  [
-    League.NHL,
-    new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2.5],
-      [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 2],
-      [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
-    ])
-  ],
-  [
-    League.MLB,
-    new Map<Book | PropsPlatform, number>([
-      [Book.PINNACLE, 2],
-      [Book.DRAFTKINGS, 2],
-      [Book.FANDUEL, 1],
-      [Book.TWINSPIRES, 0],
-      [Book.BETRIVERS, 1.5],
-      // [Book.CAESARS, 1],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
-    ])
-  ]
-]);
-
-const getLikelihood = (playerProp: PropsPriceAggregate, overOrUnder: "over" | "under") => {
-  let sum = 0;
-  const bookWeights = leagueWeights.get(playerProp.game.league as League);
-  if (!bookWeights) {
-    throw new Error("Unknown league");
-  }
-  const total = playerProp.prices.reduce((prev, curr) => {
-    let weight = 1;
-    if (bookWeights.has(curr.book)) {
-      // @ts-ignore
-      weight = bookWeights.get(curr.book);
-    }
-    const currentLikelihood = Odds.fromVigAmerican(
-      overOrUnder === "over" ? curr.overPrice : curr.underPrice,
-      overOrUnder === "under" ? curr.overPrice : curr.underPrice
-    ).toProbability();
-    sum += weight;
-    return prev + weight * currentLikelihood;
-  }, 0);
-  if (sum === 0) {
-    return 0.5;
-  }
-  return total / sum;
+export type ResolvedProp = {
+  _id: Types.ObjectId;
+  book: Book;
+  prop: {
+    _id: Types.ObjectId;
+    game: Game;
+    period: Period;
+    type: Market;
+    player: {
+      _id: Types.ObjectId;
+      league: League;
+      name: string;
+      team: Team;
+    };
+    propStat: PropsStat;
+    value: number;
+  };
+  overPrice: number;
+  underPrice: number;
 };
 
-export const findPlayerPropsEdge = async (league?: League) => {
+export async function getProps(league?: League, limit = 3) {
   await getConnection();
-  const priceManager = new PriceManager();
-  const playerPropGroups = await priceManager.groupByProp(league);
-  console.log(playerPropGroups.length);
+
+  // @ts-ignore
+  const lines: ResolvedProp[] = await PriceModel.find({
+    overPrice: { $ne: null },
+    underPrice: { $ne: null }
+  })
+    .populate({
+      path: "prop",
+      model: "player-prop",
+      populate: [
+        { path: "game", populate: [{ path: "homeTeam" }, { path: "awayTeam" }] },
+        {
+          path: "player",
+          populate: { path: "team" }
+        }
+      ]
+    })
+    .exec();
+  const gameLines = lines.filter((l) => l.prop);
+  const groupedGameLines = groupBy(gameLines, "prop._id");
+  const now = new Date().toISOString();
+  const filteredGroups = Object.values(groupedGameLines).filter(
+    (lines) =>
+      lines.length >= limit &&
+      (league ? lines[0].prop.game.league === league : true) &&
+      lines[0].prop.game.gameTime.toString() >= now.toString()
+  );
+
+  return filteredGroups;
+}
+
+export const findPlayerPropsEdge = async (league?: League) => {
+  console.time("player-edge");
+  const groups = await getProps(league);
 
   const plays: Play[] = [];
 
-  playerPropGroups.forEach((playerProp) => {
-    const overLikelihood = getLikelihood(playerProp, "over");
+  groups.forEach((group) => {
+    const prop = group[0].prop;
+    const overLikelihood = getLikelihood(group, "over", "prop");
     const underLikelihood = 1 - overLikelihood;
     // check for +EV Overs
     for (const options of [
       { likelihood: overLikelihood, price: "overPrice", label: "over" },
       { likelihood: underLikelihood, price: "underPrice", label: "under" }
     ]) {
-      playerProp.prices.forEach((price) => {
+      group.forEach((price) => {
         // @ts-ignore
         if (!price[options.price]) {
           return;
@@ -141,102 +140,117 @@ export const findPlayerPropsEdge = async (league?: League) => {
             Odds.fromFairLine(price[options.price]).toPayoutMultiplier() -
           (1 - options.likelihood);
         if (EV > 0) {
-          // console.log(
-          //   `${(EV * 100).toFixed(2)}% EV for ${playerProp.player.name} (${
-          //     playerProp.team.abbreviation
-          //   }) ${options.label} ${playerProp["linked-prop"].value} ${
-          //     playerProp["linked-prop"].propStat
-          //   } on ${price.book}\n\tFair Line: ${new Odds(
-          //     options.likelihood
-          //     // @ts-ignore
-          //   ).toAmericanOdds()}. Line on ${price.book}: ${price[options.price]}`
-          // );
-          // console.log(playerProp.prices);
-
           plays.push({
-            player: playerProp.player,
-            prop: playerProp["linked-prop"],
-            prices: playerProp.prices,
+            player: prop.player,
+            // @ts-ignore
+            prop: {
+              value: prop.value,
+              propStat: prop.propStat,
+              league: prop.game.league
+            },
+            prices: group.map((g) => ({
+              overPrice: g.overPrice,
+              underPrice: g.underPrice,
+              book: g.book
+            })),
             EV,
+            fairLine:
+              options.label === "over"
+                ? new Odds(overLikelihood).toAmericanOdds()
+                : new Odds(underLikelihood).toAmericanOdds(),
             side: options.label,
             book: price.book,
-            playerTeam: playerProp.team,
-            homeTeam: playerProp.homeTeam,
-            awayTeam: playerProp.awayTeam,
-            game: playerProp.game
+            playerTeam: prop.player.team,
+            homeTeam: prop.game.homeTeam,
+            awayTeam: prop.game.awayTeam,
+            game: prop.game
           });
         }
       });
     }
   });
+  console.timeEnd("player-edge");
   return plays;
 };
 
 export const findMisvaluedProps = async (league?: League, book?: Book | PropsPlatform) => {
-  await getConnection();
-  const priceManager = new PriceManager();
-  console.log("Acquiring groups");
-  console.time("getGroups");
-  const consensusGroups = await priceManager.groupByProp(league);
-  console.log(consensusGroups.length, "Total unique prop/values");
+  console.time("player-misvalue");
+  console.time("player-misvalue-retrieve");
+  const groups = await getProps(league, 2);
+  console.timeEnd("player-misvalue-retrieve");
+  console.time("player-misvalue-alternates");
+  const groupsWithAlternates = groups
+    .map((group) => {
+      const targetSample = group[0].prop;
+      return {
+        coreGroup: group,
+        alternates: groups.filter((g) => {
+          const matchSample = g[0].prop;
+          return (
+            matchSample.player._id === targetSample.player._id &&
+            matchSample.game._id === targetSample.game._id &&
+            matchSample.propStat === targetSample.propStat &&
+            matchSample.value !== targetSample.value
+          );
+        })
+      };
+    })
+    .filter((group) => group.alternates.some((alternateGroup) => alternateGroup.length));
 
-  const groupsWithAlternates = consensusGroups.filter(
-    (group) =>
-      group.alternates.length && group.alternates.some((alternate) => alternate.prices.length)
-  );
-  console.timeEnd("getGroups");
+  console.timeEnd("player-misvalue-alternates");
   console.log(groupsWithAlternates.length, "Have alternate values");
 
   const plays: MisvaluedPlay[] = [];
 
+  console.time("player-misvalue-plays");
   for (const consensusValueProp of groupsWithAlternates) {
     const { alternates } = consensusValueProp;
     for (const alternate of alternates) {
       const alternateDirection =
-        alternate.value < consensusValueProp["linked-prop"].value ? "over" : "under";
+        alternate[0].prop.value < consensusValueProp.coreGroup[0].prop.value ? "over" : "under";
 
-      const consensusLikelihood = getLikelihood(consensusValueProp, alternateDirection);
+      const consensusLikelihood = getLikelihood(
+        consensusValueProp.coreGroup,
+        alternateDirection,
+        "prop"
+      );
       if (
         consensusLikelihood > 0.495 &&
-        (!!book ? alternate.prices.some((price) => price.book === book) : true) &&
-        // @ts-ignore
-        alternate.prices.some((price) => !!price[alternateDirection + "Price"])
+        (!!book ? alternate.some((price) => price.book === book) : true) &&
+        // @ts-expect-error
+        alternate.some((price) => !!price[alternateDirection + "Price"])
       ) {
-        // console.log(
-        //   `Alternate for ${consensusValueProp.player.name} (${
-        //     consensusValueProp.team.abbreviation
-        //   }) ${consensusValueProp["linked-prop"].value} ${
-        //     consensusValueProp["linked-prop"].propStat
-        //   } (${consensusValueProp.prices.map((p) => p.book).join(", ")}): ${(
-        //     consensusLikelihood * 100
-        //   ).toFixed(2)}%`
-        // );
         plays.push({
-          propId: alternate._id.toString(),
-          player: consensusValueProp.player,
-          playerTeam: consensusValueProp.team,
-          homeTeam: consensusValueProp.homeTeam,
-          awayTeam: consensusValueProp.awayTeam,
-          game: consensusValueProp.game,
-          prices: alternate.prices,
-          offValue: alternate.value,
+          propId: alternate[0].prop._id,
+          player: consensusValueProp.coreGroup[0].prop.player,
+          playerTeam: consensusValueProp.coreGroup[0].prop.player.team,
+          homeTeam: consensusValueProp.coreGroup[0].prop.game.homeTeam,
+          awayTeam: consensusValueProp.coreGroup[0].prop.game.awayTeam,
+          game: consensusValueProp.coreGroup[0].prop.game,
+          prices: alternate.map((a) => ({
+            overPrice: a.overPrice,
+            underPrice: a.underPrice,
+            book: a.book
+          })),
+          offValue: alternate[0].prop.value,
           side: alternateDirection,
-          consensusProp: consensusValueProp["linked-prop"],
-          consensusPrices: consensusValueProp.prices,
+          // @ts-ignore
+          consensusProp: {
+            value: consensusValueProp.coreGroup[0].prop.value,
+            propStat: consensusValueProp.coreGroup[0].prop.propStat
+          },
+          consensusPrices: consensusValueProp.coreGroup,
           consensusLikelihood
-        });
-        // console.log(consensusValueProp.prices);
-        alternate.prices.forEach((price) => {
-          // console.log(price);
-          // console.log(
-          //   // @ts-ignore
-          //   `${price[alternateDirection + "Price"]} ${alternateDirection} ${alternate.value} @ ${
-          //     price.book
-          //   }`
-          // );
         });
       }
     }
   }
-  return plays;
+  console.timeEnd("player-misvalue-plays");
+  console.timeEnd("player-misvalue");
+  return plays.sort((a, b) =>
+    Math.abs(a.offValue - a.consensusProp.value) / a.consensusProp.value <
+    Math.abs(b.offValue - b.consensusProp.value) / b.consensusProp.value
+      ? 1
+      : -1
+  );
 };

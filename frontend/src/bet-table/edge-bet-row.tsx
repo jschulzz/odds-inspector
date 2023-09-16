@@ -2,7 +2,17 @@ import { Td, Tr } from "@chakra-ui/react";
 import { Play } from "../../../db-analysis/player-props";
 import { BookPrice } from "./book-price";
 
-export const EdgeBetRow = ({ bet, books }: { bet: Play; books: string[] }) => {
+export const EdgeBetRow = ({
+  bet,
+  books,
+  bankroll,
+  kelly
+}: {
+  bet: Play;
+  books: string[];
+  bankroll: number;
+  kelly: number;
+}) => {
   return (
     <Tr key={Math.random()}>
       <Td>{bet.player.name}</Td>
@@ -12,6 +22,7 @@ export const EdgeBetRow = ({ bet, books }: { bet: Play; books: string[] }) => {
       <Td>{bet.side}</Td>
       <Td>{bet.prop.value}</Td>
       <Td>{bet.prop.propStat}</Td>
+      <Td>{bet.fairLine}</Td>
       {books.map((book) => {
         const thisBooksPrice = bet.prices.find((p) => p.book === book);
         return (
@@ -24,6 +35,9 @@ export const EdgeBetRow = ({ bet, books }: { bet: Play; books: string[] }) => {
               type="playerprop-edge"
               book={book}
               side={bet.side}
+              fairLine={bet.fairLine}
+              bankroll={bankroll}
+              kelly={kelly}
             />
           </Td>
         );
