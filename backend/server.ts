@@ -8,7 +8,7 @@ import { getNoHouse } from "../import/no-house";
 import { getPinnacle, getPinnacleProps } from "../import/pinnacle";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getUnderdogLines } from "../import/underdog";
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 const app = express();
 const port = process.env.PORT || 5000;
 

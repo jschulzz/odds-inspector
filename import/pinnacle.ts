@@ -14,8 +14,8 @@ import {
   PropsStat,
   SourcedOdds,
   Spread
-} from "../types";
-import { GameTotal, LineChoice, TeamTotal } from "../types/lines";
+} from "../frontend/src/types";
+import { GameTotal, LineChoice, TeamTotal } from "../frontend/src/types/lines";
 import { Game } from "../database/game";
 import { TeamManager } from "../database/mongo.team";
 import { Player, PlayerManager } from "../database/mongo.player";

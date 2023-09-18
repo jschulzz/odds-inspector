@@ -1,5 +1,5 @@
 import { compareTwoStrings } from "string-similarity";
-import { League, Prop, PropsStat } from "../types";
+import { League, Prop, PropsStat } from "../frontend/src/types";
 import { getPinnacleProps } from "../import/pinnacle";
 import { getUnderdogLines } from "../import/underdog";
 import { getPrizePicksLines } from "../import/prizepicks";

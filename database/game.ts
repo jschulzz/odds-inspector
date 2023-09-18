@@ -1,4 +1,4 @@
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 import { Team } from "./mongo.team";
 
 export interface GameArgs {

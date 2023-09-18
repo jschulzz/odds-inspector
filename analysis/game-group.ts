@@ -1,6 +1,6 @@
 import { Odds } from "../odds/odds";
-import { Book, League, Market, Period } from "../types";
-import { LineChoice } from "../types/lines";
+import { Book, League, Market, Period } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 import { Game } from "../database/game";
 import { Price } from "./group";
 

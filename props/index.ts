@@ -1,4 +1,4 @@
-import { PropsStat } from "../types";
+import { PropsStat } from "../frontend/src/types";
 
 const statMaps = [
   {

@@ -1,5 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 import { getConnection } from "./mongo.connection";
 import { Team, TeamManager } from "./mongo.team";
 import { WithId } from "./types";

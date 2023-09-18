@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Book, League, Moneyline, Period, Prop, PropsStat, SourcedOdds } from "../types";
-import { GameTotal, LineChoice, Spread, TeamTotal } from "../types/lines";
+import { Book, League, Moneyline, Period, Prop, PropsStat, SourcedOdds } from "../frontend/src/types";
+import { GameTotal, LineChoice, Spread, TeamTotal } from "../frontend/src/types/lines";
 import { TeamManager, Team } from "../database/mongo.team";
 import { Game } from "../database/game";
 import { Player, PlayerManager } from "../database/mongo.player";
@@ -46,7 +46,7 @@ const periodMap = new Map([
   ["secondperiod", Period.SECOND_PERIOD],
   ["thirdperiod", Period.THIRD_PERIOD]
 ]);
-const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=3"]]);
+const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=4"]]);
 
 export const getActionNetworkLines = async (league: League): Promise<SourcedOdds> => {
   const teamManager = new TeamManager();

@@ -10,175 +10,124 @@ import {
   EditableInput
 } from "@chakra-ui/react";
 import { useState } from "react";
-
-const americanToProbability = (odds: number) => {
-  if (odds > 0) {
-    return 100 / (odds + 100);
-  }
-  return -odds / (-odds + 100);
-};
-
-function americanOddsToDecimal(americanOdds: number) {
-  if (americanOdds < 0) {
-    return 1 - 100 / americanOdds;
-  }
-  return americanOdds / 100 + 1;
-}
-
-const toLikelihood = (over?: number, under?: number) => {
-  if (!under) {
-    return americanToProbability(over as number);
-  }
-  if (!over) {
-    return americanToProbability(under as number);
-  }
-  return americanToProbability(over) / (americanToProbability(over) + americanToProbability(under));
-};
+import {
+  americanOddsToDecimal,
+  americanToProbability,
+  calculateEV,
+} from "../utils/calculations";
 
 export const BookPrice = ({
   overPrice,
   underPrice,
-  EV,
-  value,
-  isTarget,
-  type,
   book,
-  side,
-  fairLine,
+  value,
+  overFairLine,
   bankroll,
   kelly
 }: {
   overPrice?: number;
   underPrice?: number;
-  EV?: number;
   value?: number;
-  isTarget: boolean;
-  type: string;
   book: string;
-  side: string;
-  fairLine?: number;
+  overFairLine: number;
   bankroll?: number;
   kelly?: number;
 }) => {
-  const [overOverride, setOverOverride] = useState<number>();
-  const [underOverride, setUnderOverride] = useState<number>();
+  let initialOver: undefined | number = undefined;
+  let initialUnder: undefined | number = undefined;
+  // if (book === Book.DRAFTKINGS) {
+  //   initialOver = decimalToAmerican(1 + 1.5 * (americanOddsToDecimal(overPrice as number) - 1));
+  //   initialUnder = decimalToAmerican(1 + 1.5 * (americanOddsToDecimal(underPrice as number) - 1));
+  // }
+  const [overOverride, setOverOverride] = useState<number | undefined>(initialOver);
+  const [underOverride, setUnderOverride] = useState<number | undefined>(initialUnder);
 
-  const getStatDisplay = (
-    type: string,
-    isTarget: boolean,
-    side: string,
-    overPrice?: number | string,
-    underPrice?: number | string
-  ) => {
+  const overEV = calculateEV((overOverride || overPrice) as number, overFairLine as number);
+  const underEV = calculateEV((underOverride || underPrice) as number, -(overFairLine as number));
+
+  const getStatDisplay = (overPrice?: number | string, underPrice?: number | string) => {
     overPrice = overPrice || "-";
     underPrice = underPrice || "-";
 
-    const sideLabels = new Map([
-      ["playerprop-edge", ["O", "U"]],
-      ["playerprop-misvalue", ["O", "U"]],
-      ["game-moneyline", ["H", "A"]],
-      ["game-spread", ["H", "A"]],
-      ["game-gameTotal", ["O", "U"]],
-      ["game-teamTotal", ["O", "U"]]
-    ]);
-
-    const sideLabel = sideLabels.get(type);
-    if (!sideLabel) {
-      console.log(type);
-      return;
-    }
+    const sideLabel = ["O", "U"];
 
     return (
-      <>
+      <Box maxW="8rem">
         <Box
-          color={isTarget && ["over", "Home", "Over", "home"].includes(side) ? "green" : undefined}
-          mb="0.5rem"
-          mt="0.5rem"
-        >
-          {sideLabel[0]}: {overPrice}
-        </Box>
-        <Divider />
-        <Box
-          color={
-            isTarget && ["under", "Away", "Under", "away"].includes(side) ? "green" : undefined
-          }
+          backgroundColor={overEV > 0 ? "lightgreen" : undefined}
           mb="0.5rem"
           mt="0.5rem"
           display={"flex"}
           alignItems={"center"}
         >
-          {sideLabel[1]}:{" "}
+          {sideLabel[0]}
+          {initialOver ? `(${Math.round(initialOver)})` : ""}:{"  "}
+          <Editable defaultValue={overPrice.toString()} onChange={(v) => setOverOverride(+v)}>
+            <EditablePreview />
+            <EditableInput />
+          </Editable>
+        </Box>
+        <Divider />
+        <Box
+          backgroundColor={underEV > 0 ? "lightgreen" : undefined}
+          mb="0.5rem"
+          mt="0.5rem"
+          display={"flex"}
+          alignItems={"center"}
+        >
+          {sideLabel[1]}
+          {initialUnder ? `(${Math.round(initialUnder)})` : ""}:{"  "}
           <Editable defaultValue={underPrice.toString()} onChange={(v) => setUnderOverride(+v)}>
             <EditablePreview />
             <EditableInput />
           </Editable>
         </Box>
-      </>
+      </Box>
     );
   };
+
+  let fairLine = overFairLine;
+  let priceToUseForKelly = (overOverride || overPrice) as number;
+  if (underEV > 0) {
+    fairLine = -overFairLine;
+    priceToUseForKelly = (underOverride || underPrice) as number;
+  }
 
   let b,
     p,
     q,
     wager = 0;
-  const likelihoodOfOver = toLikelihood(overPrice, underPrice);
-  if (fairLine && bankroll && kelly && overPrice && underPrice) {
-    const over = overOverride || overPrice;
-    const under = underOverride || underPrice;
+  if (bankroll && kelly && overPrice && underPrice) {
     const fairLikelihood = americanToProbability(fairLine);
-    let priceToUseForKelly = over;
-    if (type === "game-moneyline") {
-      priceToUseForKelly = ["Home", "home"].includes(side) ? over : under;
-    } else if (type === "game-spread") {
-      priceToUseForKelly = over;
-    } else if (type === "game-gameTotal") {
-      priceToUseForKelly = ["over", "Over"].includes(side) ? over : under;
-    } else if (type === "game-teamTotal") {
-      priceToUseForKelly = ["over", "Home", "Over", "home"].includes(side) ? over : under;
-    } else if (type === "playerprop-edge") {
-      priceToUseForKelly = ["over", "Home", "Over", "home"].includes(side) ? over : under;
-    } else if (type === "playerprop-misvalue") {
-      priceToUseForKelly = 0;
-    }
     b = americanOddsToDecimal(priceToUseForKelly) - 1;
     p = fairLikelihood;
     q = 1 - p;
     wager = kelly * bankroll * ((b * p - q) / b);
-    if (Math.abs(wager - -119.62) < 0.1)
-      console.log({
-        b,
-        p,
-        q,
-        wager,
-        decimal: americanOddsToDecimal(fairLine),
-        overPrice,
-        underPrice,
-        side,
-        fairLine,
-        fairLikelihood,
-        type
-      });
   }
 
-  let label = isTarget
-    ? `${((EV as number) * 100).toFixed(1)}% EV ($${wager.toFixed(2)})`
-    : `${(likelihoodOfOver * 100).toFixed(1)}%`;
-  if (type === "playerprop-misvalue") {
-    label = (value as number).toString();
+  let label = "-";
+  if (overEV > 0) {
+    label = `${(overEV * 100).toFixed(1)}% EV ($${wager.toFixed(2)})`;
   }
+  if (underEV > 0) {
+    label = `${(underEV * 100).toFixed(1)}% EV ($${wager.toFixed(2)})`;
+  }
+
   if (!overPrice && !underPrice) {
     return <></>;
   }
   return (
     <Stat minW="8rem">
-      <StatLabel>{book}</StatLabel>
+      <StatLabel>
+        {book} ({value})
+      </StatLabel>
       <StatNumber display="flex" flexDir="column">
-        {getStatDisplay(type, isTarget, side, overPrice, underPrice)}
+        {getStatDisplay(overPrice, underPrice)}
         {/* <Box color={isTarget && side === "over" ? "green" : undefined}>{overPrice || "-"}</Box>
         <Divider />
         <Box color={isTarget && side === "under" ? "green" : undefined}>{underPrice || "-"}</Box> */}
       </StatNumber>
-      <StatHelpText color={isTarget ? "green" : undefined}>{label}</StatHelpText>
+      <StatHelpText>{label}</StatHelpText>
     </Stat>
   );
 };

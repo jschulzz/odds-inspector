@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Book, League, Prop, PropsStat } from "../types";
-import { LineChoice } from "../types/lines";
+import { Book, League, Prop, PropsStat } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 
 const bookMap = new Map([
   [108, Book.FANDUEL],
@@ -133,6 +133,7 @@ export const getActionLabsProps = async (league: League): Promise<Prop[]> => {
             choice,
             book,
             player: player.name,
+            // @ts-ignore
             team: team.team.short_name
           };
           // if (book === Book.DRAFTKINGS && player.name.includes("Segura")) {

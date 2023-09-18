@@ -1,4 +1,4 @@
-import { Book, PropsPlatform } from "../types";
+import { Book, PropsPlatform } from "../frontend/src/types";
 
 const bookMaps = [
   { names: ["Caesars", "William Hill", "CAESARS"], book: Book.CAESARS },
@@ -41,5 +41,4 @@ export const sortedBooks = [
   Book.WYNNBET,
   PropsPlatform.PRIZEPICKS,
   PropsPlatform.UNDERDOG,
-  PropsPlatform.NO_HOUSE
 ];

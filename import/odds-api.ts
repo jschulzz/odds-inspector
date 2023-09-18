@@ -1,9 +1,10 @@
+// @ts-nocheck
 import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { ODDS_API_KEY } from "../secrets";
-import { Book, League, Moneyline, Period, SourcedOdds } from "../types";
-import { GameTotal, LineChoice, Spread } from "../types/lines";
+import { Book, League, Moneyline, Period, SourcedOdds } from "../frontend/src/types";
+import { GameTotal, LineChoice, Spread } from "../frontend/src/types/lines";
 
 const leagueMap = new Map([
   [League.NBA, "basketball_nba"],

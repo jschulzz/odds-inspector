@@ -1,4 +1,4 @@
-import { PlayerManager, Player } from "../database/mongo.player";
+import { PlayerManager, Player } from "../../../database/mongo.player";
 import { Book } from "./books";
 import { LineChoice } from "./lines";
 import { League } from "./sportData";

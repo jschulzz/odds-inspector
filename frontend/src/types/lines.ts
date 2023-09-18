@@ -1,4 +1,4 @@
-import { Game } from "../database/game";
+import { Game } from "../../../database/game";
 import { Book } from "./books";
 import { Market } from "./markets";
 import { Period } from "./sportData";
@@ -93,7 +93,7 @@ export class TeamTotal extends Total {
   side: "home" | "away";
 }
 
-export interface SourcedOdds {
+export type SourcedOdds = {
   moneylines: Moneyline[];
   spreads: Spread[];
   gameTotals: Total[];

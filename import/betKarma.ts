@@ -1,8 +1,8 @@
 import axios from "axios";
 import { findBook } from "../books";
 import { findStat } from "../props";
-import { Book, League, Prop, PropsPlatform } from "../types";
-import { LineChoice } from "../types/lines";
+import { Book, League, Prop, PropsPlatform } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 
 export const getBetKarma = async (league: League): Promise<Prop[]> => {
   let today = new Date();
@@ -73,6 +73,7 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
           const prop: Prop = {
             book,
             player,
+            // @ts-ignore
             team,
             stat,
             value: oddsSource.line,

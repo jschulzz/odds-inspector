@@ -1,11 +1,12 @@
+// @ts-nocheck
 import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { findBook } from "../books";
 import { findMarket } from "../markets";
 import { Odds } from "../odds/odds";
-import { League, Period, Moneyline, Spread, Market } from "../types";
-import { GameTotal, LineChoice, SourcedOdds } from "../types/lines";
+import { League, Period, Moneyline, Spread, Market } from "../frontend/src/types";
+import { GameTotal, LineChoice, SourcedOdds } from "../frontend/src/types/lines";
 
 const marketMap = new Map([
   [League.NFL, { sport: "football", category: "usa", seasonId: "160389", league: "nfl" }],

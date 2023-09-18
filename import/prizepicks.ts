@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
-import { League, Prop, PropsPlatform, PropsStat } from "../types";
-import { LineChoice } from "../types/lines";
+import { League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 import { PlayerManager } from "../database/mongo.player";
 import { GameManager } from "../database/mongo.game";
 import { PlayerPropManager } from "../database/mongo.player-prop";

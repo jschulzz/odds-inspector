@@ -1,4 +1,4 @@
-import { Line, Market, SourcedOdds, Spread, TeamTotal } from "../types";
+import { Line, Market, SourcedOdds, Spread, TeamTotal } from "../frontend/src/types";
 
 export const findMatchingEvents = (
   targetLine: Line,

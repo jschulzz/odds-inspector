@@ -1,3 +1,4 @@
+// @ts-nocheck
 import axios from "axios";
 import {
   Book,
@@ -8,8 +9,8 @@ import {
   SourcedOdds,
   Spread,
   TeamTotal
-} from "../types";
-import { LineChoice } from "../types/lines";
+} from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 
 const leagueMap = new Map([
   [League.NCAAF, "NCAA FOOTBALL > GAMES"],

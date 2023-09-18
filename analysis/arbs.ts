@@ -1,7 +1,7 @@
 import { Odds } from "../odds/odds";
-import { League, Line, Market } from "../types";
+import { League, Line, Market } from "../frontend/src/types";
 import { table } from "table";
-import { Spread, TeamTotal } from "../types/lines";
+import { Spread, TeamTotal } from "../frontend/src/types/lines";
 import { compareTwoStrings } from "string-similarity";
 import colors from "colors";
 import { getActionNetworkLines } from "../import/actionNetwork";
@@ -19,7 +19,9 @@ interface Group {
 const findEquivalentPlays = (line: Line, corpus: Line[]) =>
   corpus.filter((sampleLine) => {
     const standardMatching =
-      compareTwoStrings(sampleLine.homeTeam, line.homeTeam) > 0.85 &&
+    // @ts-ignore
+    compareTwoStrings(sampleLine.homeTeam, line.homeTeam) > 0.85 &&
+    // @ts-ignore
       compareTwoStrings(sampleLine.awayTeam, line.awayTeam) > 0.85 &&
       sampleLine.type === line.type &&
       sampleLine.period === line.period;
@@ -134,6 +136,7 @@ export const findArbs = async (league: League) => {
 
 export const formatResults = async (arbOpportunities: Opportunity[]) => {
   const formatted = arbOpportunities.map((opportunity) => {
+    // @ts-ignore
     const label = `${opportunity.outcome1.awayTeam} @ ${opportunity.outcome1.homeTeam} -${
       opportunity.outcome1 instanceof TeamTotal ? " " + opportunity.outcome1.side : ""
     } ${opportunity.outcome1.period} ${opportunity.outcome1.type}`;

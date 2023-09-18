@@ -1,7 +1,7 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
 import stringSimilarity from "string-similarity";
 
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 import { getConnection } from "./mongo.connection";
 // @ts-ignore
 import mongoose_fuzzy_searching from "mongoose-fuzzy-searching";

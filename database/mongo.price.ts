@@ -1,5 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
-import { Book, League, PropsPlatform } from "../types";
+import { Book, League, PropsPlatform } from "../frontend/src/types";
 import { getConnection } from "./mongo.connection";
 import { PlayerProp, PlayerPropManager } from "./mongo.player-prop";
 import { Game } from "./mongo.game";

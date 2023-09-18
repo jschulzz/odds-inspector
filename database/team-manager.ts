@@ -1,6 +1,6 @@
 import AsyncDatastore from "nedb-async";
 import { Team, TeamArgs } from "./team";
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 
 export class TeamManager {
   private teamsDB;

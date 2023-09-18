@@ -1,5 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
-import { Market, Period } from "../types";
+import { Market, Period } from "../frontend/src/types";
 import { getConnection } from "./mongo.connection";
 import { Game } from "./mongo.game";
 

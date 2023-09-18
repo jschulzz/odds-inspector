@@ -1,4 +1,4 @@
-import { Market } from "../types";
+import { Market } from "../frontend/src/types";
 
 const marketNames = [
   { names: ["Moneyline", "Home/Away", "moneyline"], market: Market.MONEYLINE },

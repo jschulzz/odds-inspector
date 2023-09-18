@@ -1,8 +1,9 @@
+// @ts-nocheck
 import axios from "axios";
-import { League, Prop, PropsPlatform } from "../types";
+import { League, Prop, PropsPlatform } from "../frontend/src/types";
 import { THRIVE_KEY } from "../secrets";
 import { findStat } from "../props";
-import { LineChoice } from "../types/lines";
+import { LineChoice } from "../frontend/src/types/lines";
 
 const leagueMap = new Map([
   [League.NFL, "NFL"],

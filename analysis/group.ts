@@ -1,7 +1,7 @@
 import { Player } from "../database/mongo.player";
 import { Odds } from "../odds/odds";
-import { Book, League, PropsPlatform, PropsStat } from "../types";
-import { LineChoice } from "../types/lines";
+import { Book, League, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 
 const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
   [

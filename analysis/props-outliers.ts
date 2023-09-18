@@ -1,11 +1,11 @@
 import { table, TableUserConfig } from "table";
 import colors from "colors";
 import { Stats } from "fast-stats";
-import { Book, League, Prop, PropsPlatform, PropsStat } from "../types";
+import { Book, League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
 import { Odds } from "../odds/odds";
 import { getPinnacleProps } from "../import/pinnacle";
 import { getUnderdogLines } from "../import/underdog";
-import { LineChoice } from "../types/lines";
+import { LineChoice } from "../frontend/src/types/lines";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getNoHouse } from "../import/no-house";
 import { Group, Price } from "./group";

@@ -1,7 +1,7 @@
 import { GameManager } from "../database/mongo.game";
 import { PlayerPropManager, playerPropSchema } from "../database/mongo.player-prop";
 import { PriceManager } from "../database/mongo.price";
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 
 export const flattenLines = async (league: League) => {
   const gameManager = new GameManager();

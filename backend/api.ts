@@ -1,13 +1,12 @@
 import { Router } from "express";
 import joi from "joi";
-import { League } from "../types";
+import { League } from "../frontend/src/types";
 import { getPinnacle, getPinnacleProps } from "../import/pinnacle";
 import { getActionNetworkLines, getActionNetworkProps } from "../import/actionNetwork";
-import { getNoHouse } from "../import/no-house";
 import { getPrizePicksLines } from "../import/prizepicks";
 import { getUnderdogLines } from "../import/underdog";
-import { findMisvaluedProps, findPlayerPropsEdge } from "../db-analysis/player-props";
-import { findGameLineEdge } from "../db-analysis/game-lines";
+import { findMisvaluedProps, findPlayerPropsEdge, getProps } from "../db-analysis/player-props";
+import { findGameLines } from "../db-analysis/game-lines";
 import { sortedBooks } from "../books";
 import { PriceManager } from "../database/mongo.price";
 import { GameManager } from "../database/mongo.game";
@@ -32,13 +31,13 @@ router.post("/import", async (req, res, next) => {
     await getPinnacle(league);
     await getActionNetworkLines(league);
     if (![League.NCAAB, League.NCAAF].includes(league)) {
-      console.log("Tracking Action Network Props")
+      console.log("Tracking Action Network Props");
       await getActionNetworkProps(league);
-      console.log("Tracking Pinnacle Props")
+      console.log("Tracking Pinnacle Props");
       await getPinnacleProps(league);
-      console.log("Tracking Underdog Props")
+      console.log("Tracking Underdog Props");
       await getUnderdogLines(league);
-      console.log("Tracking PrizePicks Props")
+      console.log("Tracking PrizePicks Props");
       await getPrizePicksLines(league);
       // await getNoHouse(league);
     }
@@ -46,19 +45,13 @@ router.post("/import", async (req, res, next) => {
   console.log("Completed import");
 });
 
-router.get("/player-props/edge", async (req, res) => {
+router.get("/player-props", async (req, res) => {
   console.log("Getting player props edge");
-  const playerProps = await findPlayerPropsEdge();
-  res.send({ bets: playerProps, books: sortedBooks });
+  const playerProps = await getProps();
+  res.send({ propGroups: playerProps, books: sortedBooks });
 });
 
-router.get("/player-props/misvalue", async (req, res) => {
-  console.log("Getting player props misvalues");
-  const playerProps = await findMisvaluedProps();
-  res.send({ bets: playerProps, books: sortedBooks });
-});
-
-router.get("/game-lines/edge", async (req, res) => {
-  const gameProps = await findGameLineEdge();
-  res.send({ bets: gameProps, books: sortedBooks });
+router.get("/game-lines", async (req, res) => {
+  const gameProps = await findGameLines();
+  res.send({ lineGroups: gameProps, books: sortedBooks });
 });

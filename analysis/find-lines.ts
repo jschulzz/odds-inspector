@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { Period } from "../types";
-import { LineChoice } from "../types/lines";
+import { Period } from "../frontend/src/types";
+import { LineChoice } from "../frontend/src/types/lines";
 
 const findLines = () => {
   const data = JSON.parse(
