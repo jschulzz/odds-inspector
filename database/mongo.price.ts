@@ -1,5 +1,5 @@
 import { Schema, model, InferSchemaType, Types } from "mongoose";
-import { Book, League, PropsPlatform } from "../frontend/src/types";
+import { Book, League } from "../frontend/src/types";
 import { getConnection } from "./mongo.connection";
 import { PlayerProp, PlayerPropManager } from "./mongo.player-prop";
 import { Game } from "./mongo.game";
@@ -21,7 +21,7 @@ export type PropsPriceAggregate = {
   count: number;
   prices: WithId<{
     prop: Types.ObjectId;
-    book: Book | PropsPlatform;
+    book: Book;
     overPrice: number;
     underPrice: number;
   }>[];
@@ -52,7 +52,7 @@ export const PriceModel = model("price", priceSchema);
 export class PriceManager {
   constructor() {}
 
-  async deletePropPricesForLeague(league: League, book?: Book | PropsPlatform) {
+  async deletePropPricesForLeague(league: League, book?: Book) {
     await getConnection();
     const playerPropManager = new PlayerPropManager();
 
@@ -89,7 +89,7 @@ export class PriceManager {
     console.log(`Deleted ${results.deletedCount} prop prices`);
   }
 
-  async deleteGamePricesForLeagueOnBook(league: League, book: Book | PropsPlatform) {
+  async deleteGamePricesForLeagueOnBook(league: League, book: Book) {
     await getConnection();
 
     const priceAgg = await PriceModel.aggregate([
@@ -139,7 +139,7 @@ export class PriceManager {
 
   async upsertGameLinePrice(
     line: GameLine,
-    book: Book | PropsPlatform,
+    book: Book,
     prices?: { overPrice?: number; underPrice?: number }
   ) {
     await getConnection();
@@ -181,7 +181,7 @@ export class PriceManager {
   }
   async upsertPlayerPropPrice(
     prop: PlayerProp,
-    book: Book | PropsPlatform,
+    book: Book,
     prices?: { overPrice?: number; underPrice?: number }
   ) {
     await getConnection();

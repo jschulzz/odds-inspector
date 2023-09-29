@@ -8,7 +8,7 @@ import stringSimilarity from "string-similarity";
 export const teamSchema = new Schema({
   name: { type: String, required: true },
   league: { type: String, required: true },
-  abbreviation: { type: String, required: true }
+  abbreviation: { type: [String], required: true }
 });
 
 teamSchema.plugin(mongoose_fuzzy_searching, { fields: ["name"] });

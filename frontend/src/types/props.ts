@@ -3,14 +3,6 @@ import { Book } from "./books";
 import { LineChoice } from "./lines";
 import { League } from "./sportData";
 
-export enum PropsPlatform {
-  UNDERDOG = "Underdog (3p)",
-  PRIZEPICKS = "PrizePicks (5p)",
-  THRIVE = "Thrive",
-  NO_HOUSE = "No House Advantage (5p flx)",
-  MONKEY_KNIFE_FIGHT = "Monkey Knife Fight"
-}
-
 export enum PropsStat {
   FANTASY_POINTS = "fantasyPoints",
 
@@ -80,7 +72,7 @@ export enum PropsStat {
 }
 
 export interface PropArgs {
-  book: PropsPlatform | Book;
+  book: Book;
   value: number;
   stat: PropsStat;
   playerName: string;
@@ -90,7 +82,7 @@ export interface PropArgs {
   league: League;
 }
 export class Prop {
-  public book: PropsPlatform | Book;
+  public book: Book;
   public value: number;
   public stat: PropsStat;
   public player: Player;

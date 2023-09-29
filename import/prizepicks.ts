@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
-import { League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { League, Prop, Book, PropsStat } from "../frontend/src/types";
 import { LineChoice } from "../frontend/src/types/lines";
 import { PlayerManager } from "../database/mongo.player";
 import { GameManager } from "../database/mongo.game";
@@ -78,7 +78,7 @@ export const getPrizePicksLines = async (league: League) => {
       team: player.attributes.team,
       stat,
       value,
-      book: PropsPlatform.PRIZEPICKS,
+      book: Book.PRIZEPICKS,
       price: -119,
       league
     };
@@ -111,7 +111,7 @@ export const getPrizePicksLines = async (league: League) => {
     }
     const dbProp = await playerPropManager.upsert(dbPlayer, game, league, stat, value);
 
-    await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.PRIZEPICKS, {
+    await priceManager.upsertPlayerPropPrice(dbProp, Book.PRIZEPICKS, {
       overPrice: -119,
       underPrice: -119
     });

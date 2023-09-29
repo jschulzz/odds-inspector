@@ -1,6 +1,6 @@
 // @ts-nocheck
 import axios from "axios";
-import { League, Prop, PropsPlatform } from "../frontend/src/types";
+import { League, Prop, Book } from "../frontend/src/types";
 import { THRIVE_KEY } from "../secrets";
 import { findStat } from "../props";
 import { LineChoice } from "../frontend/src/types/lines";
@@ -56,7 +56,7 @@ export const getThrive = async (league: League): Promise<Prop[]> => {
       player: playerName,
       team,
       value,
-      book: PropsPlatform.THRIVE,
+      book: Book.THRIVE,
       stat,
       price: 0
     };

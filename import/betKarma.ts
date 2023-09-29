@@ -1,7 +1,7 @@
 import axios from "axios";
 import { findBook } from "../books";
 import { findStat } from "../props";
-import { Book, League, Prop, PropsPlatform } from "../frontend/src/types";
+import { Book, League, Prop } from "../frontend/src/types";
 import { LineChoice } from "../frontend/src/types/lines";
 
 export const getBetKarma = async (league: League): Promise<Prop[]> => {
@@ -48,12 +48,12 @@ export const getBetKarma = async (league: League): Promise<Prop[]> => {
           if (
             !book ||
             [
-              PropsPlatform.PRIZEPICKS,
-              PropsPlatform.MONKEY_KNIFE_FIGHT,
-              PropsPlatform.UNDERDOG,
+              Book.PRIZEPICKS,
+              Book.MONKEY_KNIFE_FIGHT,
+              Book.UNDERDOG,
               // we grab pointsbet from ActionLabs
               Book.POINTSBET
-            ].includes(book as PropsPlatform)
+            ].includes(book as Book)
           ) {
             return;
           }

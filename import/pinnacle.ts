@@ -63,7 +63,7 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
     homeTeam = await teamManager.add({
       name: homeTeamName,
       league,
-      abbreviation: "-"
+      abbreviation: ["-"]
     });
   }
   let awayTeam;
@@ -73,7 +73,7 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
     awayTeam = await teamManager.add({
       name: awayTeamName,
       league,
-      abbreviation: "-"
+      abbreviation: ["-"]
     });
   }
   const gameTime = new Date(matchup.startTime);

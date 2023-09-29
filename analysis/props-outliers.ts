@@ -1,7 +1,7 @@
 import { table, TableUserConfig } from "table";
 import colors from "colors";
 import { Stats } from "fast-stats";
-import { Book, League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { Book, League, Prop } from "../frontend/src/types";
 import { Odds } from "../odds/odds";
 import { getPinnacleProps } from "../import/pinnacle";
 import { getUnderdogLines } from "../import/underdog";
@@ -114,8 +114,8 @@ export const findOutliers = async (league: League) => {
       group.getLikelihood() > 0.35 &&
       (group.getFullSize() >= 4 ||
         group.prices.some((price) =>
-          [PropsPlatform.PRIZEPICKS, PropsPlatform.UNDERDOG, PropsPlatform.NO_HOUSE].includes(
-            price.book as PropsPlatform
+          [Book.PRIZEPICKS, Book.UNDERDOG, Book.NO_HOUSE].includes(
+            price.book as Book
           )
         ))
     );
@@ -124,13 +124,13 @@ export const findOutliers = async (league: League) => {
 };
 
 export const formatOutliers = (groups: Group[]) => {
-  const DFSPlatforms: (Book | PropsPlatform)[] = [
-    PropsPlatform.PRIZEPICKS,
-    PropsPlatform.UNDERDOG,
-    PropsPlatform.THRIVE,
-    PropsPlatform.NO_HOUSE
+  const DFSPlatforms: (Book)[] = [
+    Book.PRIZEPICKS,
+    Book.UNDERDOG,
+    Book.THRIVE,
+    Book.NO_HOUSE
   ];
-  const orderedBooks: (Book | PropsPlatform)[] = [
+  const orderedBooks: (Book)[] = [
     Book.PINNACLE,
     Book.FANDUEL,
     Book.DRAFTKINGS,
@@ -139,9 +139,9 @@ export const formatOutliers = (groups: Group[]) => {
     Book.POINTSBET,
     Book.BETRIVERS,
     Book.WYNNBET,
-    PropsPlatform.UNDERDOG,
-    PropsPlatform.PRIZEPICKS,
-    PropsPlatform.NO_HOUSE
+    Book.UNDERDOG,
+    Book.PRIZEPICKS,
+    Book.NO_HOUSE
   ];
   const allBooks = new Set(groups.flatMap((g) => g.prices.map((p) => p.book)));
   allBooks.delete(Book.UNIBET);

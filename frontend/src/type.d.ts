@@ -1,3 +1,3 @@
 declare namespace OddsInspector{
-    export type PropsPlatform = import('../../types').PropsPlatform
+    export type Book = import('../../types').Book
 }

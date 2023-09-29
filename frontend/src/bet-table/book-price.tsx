@@ -13,34 +13,42 @@ import { useState } from "react";
 import {
   americanOddsToDecimal,
   americanToProbability,
-  calculateEV,
+  boostLine,
+  calculateEV
 } from "../utils/calculations";
+import { Boost } from "../App";
 
 export const BookPrice = ({
   overPrice,
   underPrice,
   book,
   value,
-  overFairLine,
+  overFairLine = 0,
+  highlight,
   bankroll,
-  kelly
+  kelly,
+  boost
 }: {
   overPrice?: number;
   underPrice?: number;
   value?: number;
   book: string;
-  overFairLine: number;
+  overFairLine?: number;
+  highlight?: "over" | "under";
   bankroll?: number;
   kelly?: number;
+  boost?: Boost;
 }) => {
   let initialOver: undefined | number = undefined;
   let initialUnder: undefined | number = undefined;
-  // if (book === Book.DRAFTKINGS) {
-  //   initialOver = decimalToAmerican(1 + 1.5 * (americanOddsToDecimal(overPrice as number) - 1));
-  //   initialUnder = decimalToAmerican(1 + 1.5 * (americanOddsToDecimal(underPrice as number) - 1));
-  // }
+  if (boost) {
+    initialOver = boostLine(overPrice as number, boost);
+    initialUnder = boostLine(underPrice as number, boost);
+  }
+  
   const [overOverride, setOverOverride] = useState<number | undefined>(initialOver);
   const [underOverride, setUnderOverride] = useState<number | undefined>(initialUnder);
+  
 
   const overEV = calculateEV((overOverride || overPrice) as number, overFairLine as number);
   const underEV = calculateEV((underOverride || underPrice) as number, -(overFairLine as number));
@@ -54,22 +62,28 @@ export const BookPrice = ({
     return (
       <Box maxW="8rem">
         <Box
-          backgroundColor={overEV > 0 ? "lightgreen" : undefined}
+          backgroundColor={highlight === "over" ? "yellow" : overEV > 0 ? "lightgreen" : undefined}
           mb="0.5rem"
           mt="0.5rem"
           display={"flex"}
           alignItems={"center"}
         >
           {sideLabel[0]}
-          {initialOver ? `(${Math.round(initialOver)})` : ""}:{"  "}
-          <Editable defaultValue={overPrice.toString()} onChange={(v) => setOverOverride(+v)}>
-            <EditablePreview />
-            <EditableInput />
-          </Editable>
+          {initialOver ? `(${Math.round(initialOver)})` : ""}:{"  "}{" "}
+          {overEV ? (
+            <Editable defaultValue={overPrice.toString()} onChange={(v) => setOverOverride(+v)}>
+              <EditablePreview />
+              <EditableInput />
+            </Editable>
+          ) : (
+            <Box>{overPrice}</Box>
+          )}
         </Box>
         <Divider />
         <Box
-          backgroundColor={underEV > 0 ? "lightgreen" : undefined}
+          backgroundColor={
+            highlight === "under" ? "yellow" : underEV > 0 ? "lightgreen" : undefined
+          }
           mb="0.5rem"
           mt="0.5rem"
           display={"flex"}
@@ -77,10 +91,14 @@ export const BookPrice = ({
         >
           {sideLabel[1]}
           {initialUnder ? `(${Math.round(initialUnder)})` : ""}:{"  "}
-          <Editable defaultValue={underPrice.toString()} onChange={(v) => setUnderOverride(+v)}>
-            <EditablePreview />
-            <EditableInput />
-          </Editable>
+          {underEV ? (
+            <Editable defaultValue={underPrice.toString()} onChange={(v) => setUnderOverride(+v)}>
+              <EditablePreview />
+              <EditableInput />
+            </Editable>
+          ) : (
+            <Box>{underPrice}</Box>
+          )}
         </Box>
       </Box>
     );

@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
 import { NO_HOUSE_KEY } from "../secrets";
-import { League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { League, Prop, Book, PropsStat } from "../frontend/src/types";
 import { LineChoice } from "../frontend/src/types/lines";
 import { PlayerManager } from "../database/mongo.player";
 import { GameManager } from "../database/mongo.game";
@@ -79,11 +79,11 @@ export const getNoHouse = async (league: League) => {
       team: prop.player1.team,
       stat,
       value,
-      book: PropsPlatform.NO_HOUSE,
+      book: Book.NO_HOUSE,
       price: -114,
       league
     };
-    await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.NO_HOUSE, {
+    await priceManager.upsertPlayerPropPrice(dbProp, Book.NO_HOUSE, {
       overPrice: -114,
       underPrice: -114
     });

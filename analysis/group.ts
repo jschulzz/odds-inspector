@@ -1,63 +1,63 @@
 import { Player } from "../database/mongo.player";
 import { Odds } from "../odds/odds";
-import { Book, League, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { Book, League, PropsStat } from "../frontend/src/types";
 import { LineChoice } from "../frontend/src/types/lines";
 
-const leagueWeights = new Map<League, Map<Book | PropsPlatform, number>>([
+const leagueWeights = new Map<League, Map<Book, number>>([
   [
     League.WNBA,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.NBA,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.NHL,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 2.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.MLB,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 2],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 1],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1.5],
       // [Book.CAESARS, 1],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ]
 ]);
 
 export interface Price {
-  book: Book | PropsPlatform;
+  book: Book;
   price: number;
   likelihood: number;
 }

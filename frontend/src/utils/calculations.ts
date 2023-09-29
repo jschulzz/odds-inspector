@@ -1,5 +1,6 @@
+import { Boost } from "../App";
 import { Price, PropGroup, GameLineGroup, PricedValue } from "../types";
-import { League, Book, PropsPlatform } from "../types";
+import { League, Book } from "../types";
 
 const leagueGameLineWeights = new Map<League, Map<Book, number>>([
   [
@@ -64,69 +65,69 @@ const leagueGameLineWeights = new Map<League, Map<Book, number>>([
   ]
 ]);
 
-const leaguePlayerPropWeights = new Map<League, Map<Book | PropsPlatform, number>>([
+const leaguePlayerPropWeights = new Map<League, Map<Book, number>>([
   [
     League.WNBA,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0.5],
+      [Book.UNDERDOG, 0.75],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.NBA,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.NHL,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 2],
       [Book.TWINSPIRES, 0],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.MLB,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 1],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1.5],
       // [Book.CAESARS, 1],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ],
   [
     League.NFL,
-    new Map<Book | PropsPlatform, number>([
+    new Map<Book, number>([
       [Book.PINNACLE, 1.5],
       [Book.DRAFTKINGS, 2],
       [Book.FANDUEL, 1],
       [Book.TWINSPIRES, 0],
       [Book.BETRIVERS, 1],
       [Book.CAESARS, 1],
-      [PropsPlatform.PRIZEPICKS, 0],
-      [PropsPlatform.UNDERDOG, 0],
-      [PropsPlatform.NO_HOUSE, 0]
+      [Book.PRIZEPICKS, 0],
+      [Book.UNDERDOG, 0],
+      [Book.NO_HOUSE, 0]
     ])
   ]
 ]);
@@ -141,7 +142,7 @@ export function getLikelihood(
   const bookWeights =
     propOrGame === "game" ? leagueGameLineWeights.get(league) : leaguePlayerPropWeights.get(league);
   if (!bookWeights) {
-    throw new Error("Unknown league");
+    return 0.5;
   }
   let total = 0;
 
@@ -165,9 +166,38 @@ export function getLikelihood(
   return total / sum;
 }
 
+export function boostLine(americanPrice: number, boost: Boost) {
+  const decimalOdds = americanOddsToDecimal(americanPrice);
+  const boostedDecimalOdds = boost.amount * (decimalOdds - 1) + 1;
+  const boostedAmericanOdds = decimalToAmerican(boostedDecimalOdds);
+  return boostedAmericanOdds;
+}
+
+export function findApplicableBoost(
+  group: PropGroup | GameLineGroup,
+  price: Price,
+  boosts: Boost[]
+) {
+  if (!price) {
+    return;
+  }
+  return boosts.find(
+    (boost) =>
+      boost.book === price.book &&
+      ((boost.league && boost.league === group.metadata.league) ||
+        (boost.teamAbbreviation &&
+          [
+            ...group.metadata.game.awayTeam.abbreviation,
+            ...group.metadata.game.homeTeam.abbreviation
+          ].includes(boost.teamAbbreviation)))
+  );
+}
+
 export function hasEV(
   group: PropGroup | GameLineGroup,
-  propOrGame: "prop" | "game"
+  propOrGame: "prop" | "game",
+  booksToCheck: Book[] = [],
+  boosts: Boost[] = []
 ): { hasPositiveEv: boolean; positiveEvBooks: Book[] } {
   let positiveEvBooks: Book[] = [];
   group.values.forEach((pricedValue: PricedValue) => {
@@ -181,12 +211,26 @@ export function hasEV(
     const underFairLine = -overFairLine;
     positiveEvBooks.push(
       ...pricedValue.prices
-        .filter((price: Price) => price.overPrice > overFairLine)
+        .filter((price: Price) => {
+          let overPrice = price.overPrice;
+          const applicableBoost = findApplicableBoost(group, price, boosts);
+          if (applicableBoost) {
+            overPrice = boostLine(overPrice, applicableBoost);
+          }
+          return overPrice > overFairLine && booksToCheck.includes(price.book);
+        })
         .map((x) => x.book)
     );
     positiveEvBooks.push(
       ...pricedValue.prices
-        .filter((price: Price) => price.underPrice > underFairLine)
+        .filter((price: Price) => {
+          let underPrice = price.underPrice;
+          const applicableBoost = findApplicableBoost(group, price, boosts);
+          if (applicableBoost) {
+            underPrice = boostLine(underPrice, applicableBoost);
+          }
+          return underPrice > underFairLine && booksToCheck.includes(price.book);
+        })
         .map((x) => x.book)
     );
   });
@@ -223,7 +267,7 @@ export function americanOddsToDecimal(americanOdds: number) {
   return americanOdds / 100 + 1;
 }
 
-export const pricesToLikelihood = (over?: number, under?: number) => {
+export const priceToLikelihood = (over?: number, under?: number) => {
   const overProb = americanToProbability(over as number);
   const underProb = americanToProbability(under as number);
   if (!under) {

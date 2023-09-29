@@ -1,6 +1,6 @@
 import axios from "axios";
 import { findStat } from "../props";
-import { League, Prop, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { League, Prop, Book, PropsStat } from "../frontend/src/types";
 import { LineChoice } from "../frontend/src/types/lines";
 import { PlayerManager } from "../database/mongo.player";
 import { GameManager } from "../database/mongo.game";
@@ -77,7 +77,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
     //     stat,
     //     value: Number(line.stat_value),
     //     team: player.team,
-    //     book: PropsPlatform.UNDERDOG,
+    //     book: Book.UNDERDOG,
     //     choice: LineChoice.UNDER,
     //     price: -122,
     //     league
@@ -90,7 +90,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
     //     stat,
     //     value: Number(line.stat_value),
     //     team: player.team,
-    //     book: PropsPlatform.UNDERDOG,
+    //     book: Book.UNDERDOG,
     //     choice: LineChoice.OVER,
     //     price: -122,
     //     league
@@ -119,7 +119,7 @@ export const getUnderdogLines = async (league: League): Promise<Prop[]> => {
       Number(line.stat_value)
     );
 
-    await priceManager.upsertPlayerPropPrice(dbProp, PropsPlatform.UNDERDOG, {
+    await priceManager.upsertPlayerPropPrice(dbProp, Book.UNDERDOG, {
       overPrice: -122,
       underPrice: -122
     });

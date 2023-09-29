@@ -1,4 +1,4 @@
-import { Book, PropsPlatform } from "../frontend/src/types";
+import { Book } from "../frontend/src/types";
 
 const bookMaps = [
   { names: ["Caesars", "William Hill", "CAESARS"], book: Book.CAESARS },
@@ -16,9 +16,9 @@ const bookMaps = [
   { names: ["Pinnacle"], book: Book.PINNACLE },
   { names: ["Borgata"], book: Book.BORGATA },
   { names: ["TWINSPIRES"], book: Book.TWINSPIRES },
-  { names: ["PrizePicks"], book: PropsPlatform.PRIZEPICKS },
-  { names: ["Underdog"], book: PropsPlatform.UNDERDOG },
-  { names: ["MKF"], book: PropsPlatform.MONKEY_KNIFE_FIGHT }
+  { names: ["PrizePicks"], book: Book.PRIZEPICKS },
+  { names: ["Underdog"], book: Book.UNDERDOG },
+  { names: ["MKF"], book: Book.MONKEY_KNIFE_FIGHT }
 ];
 
 export const findBook = (book: string) => {
@@ -30,7 +30,7 @@ export const findBook = (book: string) => {
   console.log(`No known book ${book}`);
 };
 
-export const sortedBooks = [
+export const sortedSportsbooks = [
   Book.PINNACLE,
   Book.FANDUEL,
   Book.DRAFTKINGS,
@@ -38,7 +38,7 @@ export const sortedBooks = [
   Book.BETMGM,
   Book.CAESARS,
   Book.BETRIVERS,
-  Book.WYNNBET,
-  PropsPlatform.PRIZEPICKS,
-  PropsPlatform.UNDERDOG,
+  Book.WYNNBET
 ];
+
+export const sortedDFSbooks = [Book.PRIZEPICKS, Book.UNDERDOG];

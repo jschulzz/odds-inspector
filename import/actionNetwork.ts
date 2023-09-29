@@ -46,7 +46,7 @@ const periodMap = new Map([
   ["secondperiod", Period.SECOND_PERIOD],
   ["thirdperiod", Period.THIRD_PERIOD]
 ]);
-const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=4"]]);
+const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=5"]]);
 
 export const getActionNetworkLines = async (league: League): Promise<SourcedOdds> => {
   const teamManager = new TeamManager();
@@ -151,7 +151,7 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
           let mongoGame: MongoGame;
 
           try {
-            mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation, league);
+            mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation[0], league);
           } catch {
             // console.log("HERE");
             console.log("Could not find game", `${game.awayTeam.abbreviation}@${game.homeTeam.abbreviation}`);
@@ -172,9 +172,6 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
           }
 
           if (odds.spread_home_line && odds.spread_away_line) {
-            if (game.awayTeam.abbreviation === "LT" && period === Period.FIRST_HALF) {
-              console.log(odds);
-            }
             const mongoHomeSpread = await gameLineManager.upsertSpread(mongoGame, period, {
               side: HomeOrAway.HOME,
               value: odds.spread_home

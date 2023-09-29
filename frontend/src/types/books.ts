@@ -19,5 +19,10 @@ export enum Book {
   FOXBET = "FoxBet",
   BOVADA = "Bovada",
   LOWVIG = "LowVig",
-  BETONLINE = "BetOnline"
+  BETONLINE = "BetOnline",
+  UNDERDOG = "Underdog (3p)",
+  PRIZEPICKS = "PrizePicks (5p)",
+  THRIVE = "Thrive",
+  NO_HOUSE = "No House Advantage (5p flx)",
+  MONKEY_KNIFE_FIGHT = "Monkey Knife Fight"
 }

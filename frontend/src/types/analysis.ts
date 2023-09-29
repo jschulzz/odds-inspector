@@ -5,7 +5,7 @@ export type Team = {
   _id: Schema.Types.ObjectId;
   name: string;
   league: League;
-  abbreviation: string;
+  abbreviation: string[];
 };
 
 export type Game = {

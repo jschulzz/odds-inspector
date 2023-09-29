@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
-import { groupBy, over } from "lodash";
+import { groupBy, isElement, isEqual, over, uniqWith } from "lodash";
 import { getConnection } from "../database/mongo.connection";
 import { PlayerProp } from "../database/mongo.player-prop";
 import { PriceModel } from "../database/mongo.price";
 import { WithId } from "../database/types";
-import { Book, League, Market, Period, PropsPlatform, PropsStat } from "../frontend/src/types";
+import { Book, League, Market, Period, PropsStat } from "../frontend/src/types";
 import { Game, PropGroup, Team } from "../frontend/src/types";
 
 export type MisvaluedPlay = {
@@ -20,7 +20,7 @@ export type MisvaluedPlay = {
   playerTeam: Team;
   game: Game;
   prices: {
-    book: Book | PropsPlatform;
+    book: Book;
     overPrice: number;
     underPrice: number;
   }[];
@@ -29,7 +29,7 @@ export type MisvaluedPlay = {
   consensusLikelihood: number;
   consensusProp: WithId<PlayerProp>;
   consensusPrices: {
-    book: Book | PropsPlatform;
+    book: Book;
     overPrice: number;
     underPrice: number;
   }[];
@@ -48,10 +48,10 @@ export type Play = {
   game: Game;
   EV: number;
   side: string;
-  book: Book | PropsPlatform;
+  book: Book;
   fairLine: number;
   prices: {
-    book: Book | PropsPlatform;
+    book: Book;
     overPrice: number;
     underPrice: number;
   }[];
@@ -109,7 +109,7 @@ export async function getProps(league?: League, limit = 3): Promise<PropGroup[]>
       lines[0].prop.game.gameTime >= now
   );
 
-  return filteredGroups.map((group) => {
+  const groups = filteredGroups.map((group) => {
     const allValues = filteredGroups.filter((g) => {
       const matchSample = g[0].prop;
       return (
@@ -140,6 +140,8 @@ export async function getProps(league?: League, limit = 3): Promise<PropGroup[]>
     };
     return propLine;
   });
+  const uniqueGroups = uniqWith(groups, (a, b) => isEqual(a.metadata, b.metadata));
+  return uniqueGroups;
 }
 
 export const findPlayerPropsEdge = async (league?: League) => {
@@ -202,7 +204,7 @@ export const findPlayerPropsEdge = async (league?: League) => {
   // return plays;
 };
 
-export const findMisvaluedProps = async (league?: League, book?: Book | PropsPlatform) => {
+export const findMisvaluedProps = async (league?: League, book?: Book) => {
   console.time("player-misvalue");
   console.time("player-misvalue-retrieve");
   const groups = await getProps(league, 2);

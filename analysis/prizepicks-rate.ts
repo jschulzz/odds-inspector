@@ -33,7 +33,7 @@ export const evaluatePrizePicks = () => {
   cards.forEach((entry: any) => {
     const legs = entry.relationships.predictions.data;
     const createdAt = entry.attributes.created_at;
-    if (new Date(createdAt) <= new Date("2023-01-20T12:28:07-05:00")) {
+    if (new Date(createdAt) <= new Date("2023-07-20T12:28:07-05:00")) {
       return;
     }
     let correct = 0,
@@ -58,6 +58,7 @@ export const evaluatePrizePicks = () => {
     results.push({ correct, wrong });
   });
   const fivePicks = results.filter((x) => x.correct + x.wrong === 5);
+  const sixPicks = results.filter((x) => x.correct + x.wrong === 6);
   // console.log(fivePicks)
   const totalCorrect = results.reduce((prev, curr) => prev + curr.correct, 0);
   const totalWrong = results.reduce((prev, curr) => prev + curr.wrong, 0);
@@ -66,7 +67,7 @@ export const evaluatePrizePicks = () => {
     `Success Rate: ${(successRate * 100).toFixed(2)}% over ${totalCorrect + totalWrong} picks`
   );
 
-  const possibleResults = [
+  const possibleResultsForFive = [
     { correctCount: 0, possibleWays: 1, payout: -5 },
     { correctCount: 1, possibleWays: 5, payout: -5 },
     { correctCount: 2, possibleWays: 10, payout: -5 },
@@ -74,7 +75,16 @@ export const evaluatePrizePicks = () => {
     { correctCount: 4, possibleWays: 5, payout: 5 },
     { correctCount: 5, possibleWays: 1, payout: 45 }
   ];
-  const frequency = possibleResults.map(
+  const possibleResultsForSix = [
+    { correctCount: 0, possibleWays: 1, payout: -5 },
+    { correctCount: 1, possibleWays: 5, payout: -5 },
+    { correctCount: 2, possibleWays: 10, payout: -5 },
+    { correctCount: 3, possibleWays: 10, payout: -3 },
+    { correctCount: 4, possibleWays: 5, payout: 5 },
+    { correctCount: 5, possibleWays: 1, payout: 45 },
+    { correctCount: 6, possibleWays: 1, payout: 45 },
+  ];
+  const frequency = possibleResultsForFive.map(
     ({
       correctCount,
       possibleWays,
@@ -97,6 +107,14 @@ export const evaluatePrizePicks = () => {
     }
   );
   console.log(frequency);
-  console.log(frequency.reduce((prev, curr) => prev + curr.expectedPayout, 0));
-  console.log(frequency.reduce((prev, curr) => prev + curr.actualPayout, 0));
+  console.log(
+    "Expected:",
+    frequency.reduce((prev, curr) => prev + curr.expectedPayout, 0)
+  );
+  console.log(
+    "Actual:",
+    frequency.reduce((prev, curr) => prev + curr.actualPayout, 0)
+  );
 };
+
+evaluatePrizePicks();
