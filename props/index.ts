@@ -17,6 +17,7 @@ const statMaps = [
       "Passing + Rushing Yards",
       "Total Yards",
       "Pass+Rush Yds",
+      "Pass + Rush Yards",
       "Pass YDS, Rush YDS",
       "pass_yards+rush_yards"
     ],
@@ -65,14 +66,19 @@ const statMaps = [
     names: [
       "Rushing + Receiving Yards",
       "Rush+Rec Yds",
+      "Rush + Rec Yards",
       "Rush YDS, Rec YDS",
       "rec_yards+rush_yards"
     ],
     stat: PropsStat.RECEIVING_RUSHING_YARDS
   },
   {
-    names: ["Rushing + Receiving TDs", "Total TDs", "Pass+Rush+Rec TDs", "Rush+Rec TDs"],
-    stat: PropsStat.TOTAL_TDS
+    names: ["Pass+Rush+Rec TDs"],
+    stat: PropsStat.ANYTIME_TDs_QB
+  },
+  {
+    names: ["Rushing + Receiving TDs", "Rush+Rec TDs", "Rush + Rec TDs"],
+    stat: PropsStat.ANYTIME_TDs_NONQB
   },
   { names: ["Longest Rush"], stat: PropsStat.LONGEST_RUSH },
   {

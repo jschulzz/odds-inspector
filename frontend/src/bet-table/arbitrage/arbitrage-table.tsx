@@ -25,14 +25,14 @@ export const ArbitrageTable = ({
             return { over: price1, under: price2, arbPct: 1 };
           }
           const overBoost = findApplicableBoost(group, price1, boosts);
-          const underBoost = findApplicableBoost(group, price1, boosts);
+          const underBoost = findApplicableBoost(group, price2, boosts);
           let decimalOver = americanOddsToDecimal(price1.overPrice);
-          let decimalUnder = americanOddsToDecimal(price1.underPrice);
+          let decimalUnder = americanOddsToDecimal(price2.underPrice);
           if (overBoost) {
             decimalOver = americanOddsToDecimal(boostLine(price1.overPrice, overBoost));
           }
           if (underBoost) {
-            decimalOver = americanOddsToDecimal(boostLine(price2.underPrice, underBoost));
+            decimalUnder = americanOddsToDecimal(boostLine(price2.underPrice, underBoost));
           }
           const arbPct = 1 / decimalOver + 1 / decimalUnder;
 

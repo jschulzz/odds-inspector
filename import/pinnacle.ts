@@ -45,9 +45,9 @@ const saveEventToDatabase = async (matchup: any, league: League) => {
 
   const participants = matchup.participants.map((p: any) => {
     let name: string = p.name.split("(Games)")[0].trim();
-    if (league === League.NBA) {
-      name = name.split(" ").slice(1).join(" ").trim();
-    }
+    // if (league === League.NBA) {
+    //   name = name.split(" ").slice(1).join(" ").trim();
+    // }
     return {
       ...p,
       name

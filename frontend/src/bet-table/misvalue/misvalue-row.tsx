@@ -1,18 +1,18 @@
 import { Td, Tr, Box } from "@chakra-ui/react";
 import { BookPrice } from "../book-price";
-import { GameLineGroup, PropGroup } from "../../types";
+import { Book, GameLineGroup, PropGroup } from "../../types";
 import { Metadata } from "../metadata";
 
 export const MisvalueRow = ({
   group,
   books,
-  over,
-  under
+  overs,
+  unders
 }: {
   group: GameLineGroup | PropGroup;
-  books: string[];
-  over?: { book: string; value: number };
-  under?: { book: string; value: number };
+  books: Book[];
+  overs: { books: Book[]; value: number };
+  unders: { books: Book[]; value: number };
 }) => {
   const allPrices = group.values.flatMap((pricedValue) => {
     return pricedValue.prices.map((price) => {
@@ -29,21 +29,25 @@ export const MisvalueRow = ({
         <Metadata group={group} />
       </Td>
       <Td w="15rem">
-        <Box>Under: {under?.book}</Box>
-        <Box>Over: {over?.book}</Box>
+        <Box>
+          <strong>Under:</strong> {unders.books.join(", ")}
+        </Box>
+        <Box>
+          <strong>Over:</strong> {overs.books.join(", ")}
+        </Box>
       </Td>
       {books.map((book) => {
         const thisBooksPrice = allPrices.find(
           (p) =>
             p.book === book &&
-            (over && over.book === book
-              ? p.value === over.value
-              : under && under.book === book
-              ? p.value === under.value
+            (overs.books.includes(book)
+              ? p.value === overs.value
+              : unders.books.includes(book)
+              ? p.value === unders.value
               : true)
         );
-        const highlightUnder = under?.book === book;
-        const highlightOver = over?.book === book;
+        const highlightUnder = unders.books.includes(book);
+        const highlightOver = overs.books.includes(book);
         const highlight = highlightOver ? "over" : highlightUnder ? "under" : undefined;
         return (
           <Td key={book}>

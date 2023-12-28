@@ -28,7 +28,7 @@ export const EdgeRow = ({
   group.values.forEach(({ value, prices }) => {
     if (!valueToOverFairLine.has(value)) {
       const fairLine = probabilityToAmerican(
-        getLikelihood(prices, group.metadata.league, "over", propOrGroup)
+        getLikelihood(prices, group, "over", propOrGroup)
       );
       valueToOverFairLine.set(value, fairLine);
     }
@@ -49,11 +49,13 @@ export const EdgeRow = ({
         <Metadata group={group} />
       </Td>
       <Td w="15rem">
-        {[...valueToOverFairLine.entries()].map((entry) => (
-          <Box key={entry[0]}>
-            o{entry[0]}: {Math.ceil(entry[1])}
-          </Box>
-        ))}
+        {[...valueToOverFairLine.entries()]
+          .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+          .map((entry) => (
+            <Box key={entry[0]}>
+              o{entry[0]}: {Math.ceil(entry[1])}
+            </Box>
+          ))}
       </Td>
       {books.map((book) => {
         const thisBooksPrice = allPrices.find((p) => p.book === book);

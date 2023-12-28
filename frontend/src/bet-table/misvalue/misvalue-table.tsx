@@ -1,5 +1,5 @@
 import { Box, Table, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
-import { GameLineGroup, Market, Price, PropGroup } from "../../types";
+import { Book, GameLineGroup, Market, Price, PropGroup, PropsStat } from "../../types";
 import { getLikelihood } from "../../utils/calculations";
 import { AppliedFilters } from "../../App";
 import { MisvalueRow } from "./misvalue-row";
@@ -13,8 +13,8 @@ type TransformedGroup = {
 };
 
 type Misvalue = {
-  bestLowest?: Price;
-  bestHighest?: Price;
+  bestLowest?: Price[];
+  bestHighest?: Price[];
   lowestValue: number;
   highestValue: number;
 };
@@ -25,7 +25,7 @@ export const MisvalueTable = ({
   filters
 }: {
   groups: (GameLineGroup | PropGroup)[];
-  books: string[];
+  books: Book[];
   filters: AppliedFilters;
 }) => {
   const columns = ["Metadata", "Fair line", ...books];
@@ -38,13 +38,13 @@ export const MisvalueTable = ({
         prices: value.prices,
         overLikelihood: getLikelihood(
           value.prices,
-          group.metadata.league,
+          group,
           "over",
           (group as PropGroup).metadata.player ? "prop" : "game"
         ),
         underLikelihood: getLikelihood(
           value.prices,
-          group.metadata.league,
+          group,
           "under",
           (group as PropGroup).metadata.player ? "prop" : "game"
         )
@@ -56,10 +56,8 @@ export const MisvalueTable = ({
       return { lowestValue: lowestValue.value, highestValue: highestValue.value };
     }
     // console.log({ highestValue, lowestValue });
-    const [bestLowest] = lowestValue?.prices.sort((a, b) => (a.overPrice < b.overPrice ? 1 : -1));
-    const [bestHighest] = highestValue?.prices.sort((a, b) =>
-      a.underPrice < b.underPrice ? 1 : -1
-    );
+    const bestLowest = lowestValue?.prices.sort((a, b) => (a.overPrice < b.overPrice ? 1 : -1));
+    const bestHighest = highestValue?.prices.sort((a, b) => (a.underPrice < b.underPrice ? 1 : -1));
     const allFavoredAboveLowest = priceFrequencies.every((freq) => {
       if (freq.value === lowestValue?.value) {
         return true;
@@ -82,26 +80,29 @@ export const MisvalueTable = ({
     return results;
   };
   const misvaluedLines = groups
-    .filter(
-      (group) => ![Market.SPREAD, Market.MONEYLINE].includes((group as GameLineGroup).metadata.type)
-    )
+    .filter((group) => {
+      return (
+        ![Market.SPREAD, Market.MONEYLINE].includes((group as GameLineGroup).metadata.type) &&
+        (group as PropGroup).metadata.propStat !== PropsStat.FANTASY_POINTS
+      );
+    })
     .filter((group) => {
       const { bestHighest, bestLowest } = isMisvalued(group);
 
       return (
         (bestHighest || bestLowest) &&
         bestHighest &&
-        !filters.book.excluded.includes(bestHighest.book) &&
+        bestHighest.some((high) => !filters.book.excluded.includes(high.book)) &&
         bestLowest &&
-        !filters.book.excluded.includes(bestLowest.book) &&
+        bestLowest.some((low) => !filters.book.excluded.includes(low.book)) &&
         !filters.game.excluded.includes(String(group.metadata.game._id))
       );
     })
     .sort((a, b) => {
       const misValueA = isMisvalued(a);
       const misValueB = isMisvalued(b);
-      return misValueA.highestValue - misValueA.lowestValue <
-        misValueB.highestValue - misValueB.lowestValue
+      return (misValueA.highestValue - misValueA.lowestValue) / misValueA.highestValue <
+        (misValueB.highestValue - misValueB.lowestValue) / misValueB.highestValue
         ? 1
         : -1;
     });
@@ -121,12 +122,12 @@ export const MisvalueTable = ({
         <Tbody>
           {misvaluedLines.map((group) => {
             const { bestHighest, bestLowest, highestValue, lowestValue } = isMisvalued(group);
-            const over = {
-              book: bestLowest?.book as string,
+            const overs = {
+              books: bestLowest?.map((x) => x.book) || [],
               value: lowestValue
             };
-            const under = {
-              book: bestHighest?.book as string,
+            const unders = {
+              books: bestHighest?.map((x) => x.book) || [],
               value: highestValue
             };
             return (
@@ -134,8 +135,8 @@ export const MisvalueTable = ({
                 key={Math.random()}
                 group={group}
                 books={books}
-                over={over}
-                under={under}
+                overs={overs}
+                unders={unders}
               />
             );
           })}

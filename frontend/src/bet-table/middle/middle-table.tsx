@@ -1,5 +1,5 @@
 import { Box, Table, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
-import { GameLineGroup, Market, Price, PricedValue, PropGroup } from "../../types";
+import { GameLineGroup, Market, PricedValue, PropGroup } from "../../types";
 import { AppliedFilters } from "../../App";
 import { MiddleRow } from "./middle-row";
 
@@ -15,7 +15,7 @@ export const MiddleTable = ({
   const columns = ["Metadata", "Fair line", ...books];
   const columnWidths = new Map([
     ["Metadata", "18rem"],
-    ["Fair line", "10rem"]
+    ["Fair line", "15rem"]
   ]);
 
   const calculateMiddle = (group: GameLineGroup | PropGroup) => {
@@ -65,8 +65,8 @@ export const MiddleTable = ({
         };
       }
     })
-    .filter(({ score }) => {
-      return score > 0.1;
+    .filter(({ score, bestMax, bestMin }) => {
+      return bestMax && bestMin && score > 0.1 && (bestMax.underPrice + bestMin.overPrice) / 2 > -115;
     })
     .sort((a, b) => {
       return a.score < b.score ? 1 : -1;
@@ -91,8 +91,8 @@ export const MiddleTable = ({
                 key={Math.random()}
                 group={group}
                 books={books}
-                overBook={(bestMin as Price).book}
-                underBook={(bestMax as Price).book}
+                overBook={bestMin?.book}
+                underBook={bestMax?.book}
               />
             );
           })}

@@ -18,10 +18,11 @@ import { EVTable } from "./bet-table/ev/ev-table";
 import { PropGroup, GameLineGroup, Market, Book, League } from "./types";
 import { ArbitrageTable } from "./bet-table/arbitrage/arbitrage-table";
 import { Filters } from "./filters/filters";
-import { isEqual, uniqBy, uniqWith } from "lodash";
+import { uniqBy } from "lodash";
 import { DFSTable } from "./bet-table/dfs/dfs-table";
 import { MiddleTable } from "./bet-table/middle/middle-table";
 import { MisvalueTable } from "./bet-table/misvalue/misvalue-table";
+import { StatComboTable } from "./bet-table/stat-combos/stat-combo-table";
 
 const DEFAULT_BANKROLL = 2000;
 const DEFAULT_KELLY = 0.2;
@@ -106,14 +107,34 @@ function App() {
   const boosts: Boost[] = [
     // {
     //   amount: 1.5,
-    //   teamAbbreviation: "ND",
+    //   league: League.NFL,
     //   book: Book.BETMGM
     // },
     // {
-    //   amount: 1.3,
-    //   teamAbbreviation: "COLO",
+    //   amount: 1.1,
+    //   league: League.NCAAB,
     //   book: Book.FANDUEL
-    // }
+    // },
+    // {
+    //   amount: 1.1,
+    //   league: League.NBA,
+    //   book: Book.FANDUEL
+    // },
+    // {
+    //   amount: 1.13,
+    //   league: League.NBA,
+    //   book: Book.DRAFTKINGS
+    // },
+    // {
+    //   amount: 1.07,
+    //   league: League.NBA,
+    //   book: Book.DRAFTKINGS
+    // },
+    // {
+    //   amount: 1.13,
+    //   league: League.NFL,
+    //   book: Book.FANDUEL
+    // },
   ];
 
   const getDFS = async () => {
@@ -261,6 +282,7 @@ function App() {
           <Tab>DFS</Tab>
           <Tab>Middle</Tab>
           <Tab>MisValue</Tab>
+          <Tab>Stat Combos</Tab>
         </TabList>
         <TabPanels>
           <TabPanel overflowX="scroll">
@@ -303,6 +325,9 @@ function App() {
               groups={allLines}
               books={[...sportsbooks, ...dfsBooks]}
             />
+          </TabPanel>
+          <TabPanel>
+            <StatComboTable props={propGroups} />
           </TabPanel>
         </TabPanels>
       </Tabs>

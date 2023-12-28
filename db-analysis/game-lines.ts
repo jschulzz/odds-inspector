@@ -2,18 +2,8 @@ import { groupBy, isEqual, uniqWith } from "lodash";
 import { getConnection } from "../database/mongo.connection";
 import { Price, PriceModel } from "../database/mongo.price";
 import { WithId } from "../database/types";
-import { Odds } from "../odds/odds";
-import {
-  Book,
-  League,
-  Market,
-  Period,
-  Game,
-  GameLineGroup,
-  PricedValue
-} from "../frontend/src/types";
+import { Book, League, Market, Period, Game, GameLineGroup } from "../frontend/src/types";
 import { Types } from "mongoose";
-import { getLikelihood } from "./utils";
 
 export type ResolvedGameLine = {
   _id: Types.ObjectId;
@@ -46,8 +36,9 @@ export interface GameLinePlay {
 
 const excludedBooks = new Set([Book.PINNACLE]);
 
-export const findGameLines = async (league?: League): Promise<GameLineGroup[]> => {
+export const findGameLines = async (league?: League, since?: Date): Promise<GameLineGroup[]> => {
   await getConnection();
+  console.time("get-prices");
   // @ts-ignore
   const lines: ResolvedGameLine[] = await PriceModel.find({
     overPrice: { $ne: null },
@@ -66,15 +57,19 @@ export const findGameLines = async (league?: League): Promise<GameLineGroup[]> =
       }
     })
     .exec();
+  console.timeEnd("get-prices");
+  console.time("filter-groups");
   const gameLines = lines.filter((l) => l.prop && l.prop.game);
   const groupedGameLines = groupBy(gameLines, "prop._id");
   const now = new Date();
   const filteredGroups = Object.values(groupedGameLines).filter(
     (lines) =>
-      lines.length >= 3 &&
+      // lines.length >= 3 &&
       (league ? lines[0].prop.game.league === league : true) &&
-      lines[0].prop.game.gameTime >= now
+      lines[0].prop.game.gameTime >= (since || now)
   );
+  console.timeEnd("filter-groups");
+  console.time("dedup-groups");
 
   const groups = filteredGroups.map((group) => {
     const allValues = filteredGroups.filter((g) => {
@@ -113,6 +108,10 @@ export const findGameLines = async (league?: League): Promise<GameLineGroup[]> =
       )
     };
   });
+  console.timeEnd("dedup-groups");
+  console.time("uniq-groups");
+
   const uniqueGroups = uniqWith(groups, (a, b) => isEqual(a.metadata, b.metadata));
+  console.timeEnd("uniq-groups");
   return uniqueGroups;
 };

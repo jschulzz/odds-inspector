@@ -39,16 +39,18 @@ export type GameLineGroup = {
   values: PricedValue[];
 };
 
-export type PropGroup = {
-  metadata: {
+export type PropGroupMetadata = {
+  league: League;
+  game: Game;
+  propStat?: PropsStat;
+  player: {
     league: League;
-    game: Game;
-    propStat: PropsStat;
-    player: {
-      league: League;
-      name: string;
-      team: Team;
-    };
+    name: string;
+    team: Team;
   };
+};
+
+export type PropGroup = {
+  metadata: PropGroupMetadata;
   values: PricedValue[];
 };

@@ -1,5 +1,13 @@
 import axios from "axios";
-import { Book, League, Moneyline, Period, Prop, PropsStat, SourcedOdds } from "../frontend/src/types";
+import {
+  Book,
+  League,
+  Moneyline,
+  Period,
+  Prop,
+  PropsStat,
+  SourcedOdds
+} from "../frontend/src/types";
 import { GameTotal, LineChoice, Spread, TeamTotal } from "../frontend/src/types/lines";
 import { TeamManager, Team } from "../database/mongo.team";
 import { Game } from "../database/game";
@@ -11,42 +19,215 @@ import { GameLineManager, HomeOrAway } from "../database/mongo.game-line";
 
 const newYorkActionNetworkSportsBookMap = new Map([
   [972, Book.BETRIVERS],
-  [973, Book.POINTSBET],
-  [15, Book.POINTSBET],
-  [30, Book.POINTSBET],
   [76, Book.POINTSBET],
-  [1006, Book.FANDUEL],
+  [358, Book.FANDUEL],
   [974, Book.WYNNBET],
   [1005, Book.CAESARS],
-  // [15, Book.CAESARS],
   [68, Book.DRAFTKINGS],
-  [939, Book.BETMGM],
   [347, Book.BETMGM],
   [266, Book.TWINSPIRES]
 ]);
 
 const leagueMap = new Map([
-  [League.NBA, "nba?"],
-  [League.WNBA, "wnba?"],
-  [League.NCAAB, "ncaab?division=D1&"],
-  [League.NCAAF, "ncaaf?"],
-  [League.NHL, "nhl?"],
-  [League.MLB, "mlb?"],
-  [League.NFL, "nfl?"],
-  [League.TENNIS, "atp?period=competition&"],
-  [League.UFC, "ufc?period=competition&"]
+  [
+    League.NBA,
+    "nba?periods=event,firsthalf,secondhalf,firstquarter,secondquarter,thirdquarter,fourthquarter&"
+  ],
+  [
+    League.WNBA,
+    "wnba?periods=event,firsthalf,secondhalf,firstquarter,secondquarter,thirdquarter,fourthquarter&"
+  ],
+  [League.NCAAB, "ncaab?division=D1&tournament=0&periods=event,firsthalf,secondhalf&"],
+  [League.NCAAF, "ncaaf?division=FBS&week=13&periods=event,firsthalf,firstquarter&"],
+  [League.NHL, "nhl?periods=event,firstperiod,secondperiod,thirdperiod&"],
+  [League.MLB, "mlb?periods=event,firstinning,firstfiveinnings&"],
+  [
+    League.NFL,
+    "nfl?periods=event,firsthalf,secondhalf,firstquarter,secondquarter,thirdquarter,fourthquarter&"
+  ],
+  [League.TENNIS, "atp?periods=competition&"],
+  [League.UFC, "ufc?periods=competition&"]
 ]);
 
 const periodMap = new Map([
   ["game", Period.FULL_GAME],
   ["competition", Period.FULL_GAME],
-  ["firsthalf", Period.FIRST_HALF],
-  ["firstquarter", Period.FIRST_QUARTER],
+  ["event", Period.FULL_GAME],
   ["firstperiod", Period.FIRST_PERIOD],
   ["secondperiod", Period.SECOND_PERIOD],
-  ["thirdperiod", Period.THIRD_PERIOD]
+  ["thirdperiod", Period.THIRD_PERIOD],
+  ["firsthalf", Period.FIRST_HALF],
+  ["secondhalf", Period.SECOND_HALF],
+  ["firstquarter", Period.FIRST_QUARTER],
+  ["secondquarter", Period.SECOND_QUARTER],
+  ["thirdquarter", Period.THIRD_QUARTER],
+  ["fourthquarter", Period.FOURTH_QUARTER]
 ]);
-const leagueParamsMap = new Map([[League.NCAAF, "&division=FBS&week=5"]]);
+const leagueParamsMap = new Map([]);
+
+export const getActionNetworkV2Lines = async (league: League): Promise<SourcedOdds> => {
+  const teamManager = new TeamManager();
+  const gameLineManager = new GameLineManager();
+  const gameManager = new GameManager();
+  const priceManager = new PriceManager();
+  const cleanedBooks = new Set<Book>();
+
+  const leagueKey = leagueMap.get(league);
+  let today = new Date();
+  today.setDate(today.getDate() + 1);
+  let yyyy = today.getFullYear();
+  let mm = (today.getMonth() + 1).toString().padStart(2, "0"); // Months start at 0
+  let dd = today.getDate().toString().padStart(2, "0");
+  const startDate = `${yyyy}${mm}${dd}`;
+  if (!leagueKey) {
+    throw new Error("Unknown league");
+  }
+
+  const leagueParams = leagueParamsMap.get(league) || "";
+
+  const url = `https://api.actionnetwork.com/web/v2/scoreboard/${leagueKey}bookIds=15,30,358,347,68,973,972,1005,974,1902,1903,76${leagueParams}`;
+  console.log(url);
+  const { data } = await axios.get(url, {
+    headers: {
+      "User-Agent": "insomnia/8.5.1"
+    }
+  });
+  const lines: SourcedOdds = {
+    moneylines: [],
+    spreads: [],
+    teamTotals: [],
+    gameTotals: []
+  };
+
+  const useFullName = ["nfl", "mlb", "wnba", "nhl"].includes(league);
+
+  const dataSet: any[] = data.games || data.competitions;
+  for (const gameRecord of dataSet) {
+    if (gameRecord.status !== "scheduled") {
+      continue;
+    }
+    const opponents = gameRecord.competitors || gameRecord.teams;
+    const homeTeamObj = opponents.find(
+      (team: any) => team.id === gameRecord.home_team_id || team.side === "home"
+    );
+    const awayTeamObj = opponents.find(
+      (team: any) => team.id === gameRecord.away_team_id || team.side === "away"
+    );
+
+    if (league === League.TENNIS || league === League.UFC) {
+      homeTeamObj.display_name = homeTeamObj.player.full_name;
+      awayTeamObj.display_name = awayTeamObj.player.full_name;
+    }
+
+    const homeTeamName = useFullName ? homeTeamObj.full_name : homeTeamObj.display_name;
+    const awayTeamName = useFullName ? awayTeamObj.full_name : awayTeamObj.display_name;
+
+    let homeTeam;
+
+    try {
+      homeTeam = await teamManager.findByAbbreviation(homeTeamObj.abbr, league);
+    } catch {
+      homeTeam = await teamManager.add({
+        name: homeTeamName,
+        league,
+        abbreviation: homeTeamObj.abbr
+      });
+    }
+    let awayTeam;
+    try {
+      awayTeam = await teamManager.findByAbbreviation(awayTeamObj.abbr, league);
+    } catch {
+      awayTeam = await teamManager.add({
+        name: awayTeamName,
+        league,
+        abbreviation: awayTeamObj.abbr
+      });
+    }
+
+    if (!gameRecord.markets) {
+      continue;
+    }
+
+    const game = new Game({
+      homeTeam,
+      awayTeam,
+      league,
+      gameTime: new Date(gameRecord.start_time)
+    });
+
+    console.log(`Recording ${awayTeam.abbreviation}@${homeTeam.abbreviation}`);
+    const oddsByBook: object[] = Object.values(gameRecord.markets);
+    const oddsByPeriod: object[] = oddsByBook.flatMap((odds) => Object.values(odds));
+    await Promise.allSettled(
+      oddsByPeriod.map((odds: any) => {
+        return (async () => {
+          const period = periodMap.get(odds.total[0].period);
+          const book = newYorkActionNetworkSportsBookMap.get(odds.total[0].book_id);
+          if (!book || !period) {
+            throw new Error("Unknown book or period");
+          }
+          if (!cleanedBooks.has(book)) {
+            await priceManager.deleteGamePricesForLeagueOnBook(league, book);
+            cleanedBooks.add(book);
+          }
+          let mongoGame: MongoGame;
+
+          try {
+            mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation[0], league);
+          } catch {
+            // console.log("HERE");
+            console.log(
+              "Could not find game",
+              `${game.awayTeam.abbreviation}@${game.homeTeam.abbreviation}`
+            );
+            throw new Error("Could not find game");
+          }
+          const moneylines = odds.moneyline;
+          const homeMoneyline = moneylines.find((x: any) => x.side === "home");
+          const awayMoneyline = moneylines.find((x: any) => x.side === "away");
+          const spreads = odds.spread;
+          const homeSpread = spreads.find((x: any) => x.side === "home");
+          const awaySpread = spreads.find((x: any) => x.side === "away");
+          const totals = odds.total;
+          const overTotal = totals.find((x: any) => x.side === "over");
+          const underTotal = totals.find((x: any) => x.side === "under");
+
+          const mongoHomeMoneyline = await gameLineManager.upsertMoneyline(mongoGame, period);
+          await priceManager.upsertGameLinePrice(mongoHomeMoneyline, book, {
+            overPrice: homeMoneyline.odds,
+            underPrice: awayMoneyline.odds
+          });
+
+          const mongoHomeSpread = await gameLineManager.upsertSpread(mongoGame, period, {
+            side: HomeOrAway.HOME,
+            value: homeSpread.value
+          });
+          await priceManager.upsertGameLinePrice(mongoHomeSpread, book, {
+            overPrice: homeSpread.odds,
+            underPrice: awaySpread.odds
+          });
+          const mongoAwaySpread = await gameLineManager.upsertSpread(mongoGame, period, {
+            side: HomeOrAway.AWAY,
+            value: awaySpread.value
+          });
+          await priceManager.upsertGameLinePrice(mongoAwaySpread, book, {
+            overPrice: awaySpread.odds,
+            underPrice: homeSpread.odds
+          });
+
+          const mongoGameTotal = await gameLineManager.upsertGameTotal(mongoGame, period, {
+            value: overTotal.value
+          });
+          await priceManager.upsertGameLinePrice(mongoGameTotal, book, {
+            overPrice: overTotal.odds,
+            underPrice: underTotal.odds
+          });
+        })();
+      })
+    );
+  }
+  return lines;
+};
 
 export const getActionNetworkLines = async (league: League): Promise<SourcedOdds> => {
   const teamManager = new TeamManager();
@@ -68,7 +249,7 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
 
   const leagueParams = leagueParamsMap.get(league) || "";
 
-  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76${leagueParams}`;
+  const url = `https://api.actionnetwork.com/web/v1/scoreboard/${leagueKey}bookIds=15,30,358,347,68,973,972,1005,974,1902,1903,76${leagueParams}`;
   console.log(url);
   const { data } = await axios.get(url);
   const lines: SourcedOdds = {
@@ -154,7 +335,10 @@ export const getActionNetworkLines = async (league: League): Promise<SourcedOdds
             mongoGame = await gameManager.findByTeamAbbr(game.homeTeam.abbreviation[0], league);
           } catch {
             // console.log("HERE");
-            console.log("Could not find game", `${game.awayTeam.abbreviation}@${game.homeTeam.abbreviation}`);
+            console.log(
+              "Could not find game",
+              `${game.awayTeam.abbreviation}@${game.homeTeam.abbreviation}`
+            );
             throw new Error("Could not find game");
           }
           if (odds.ml_home && odds.ml_away) {
@@ -377,7 +561,10 @@ export const getActionNetworkProps = async (league: League) => {
   ]);
 
   const leaguePropsMap = new Map([
-    [League.WNBA, [PropsStat.POINTS, PropsStat.REBOUNDS, PropsStat.ASSISTS, PropsStat.THREE_POINTERS_MADE]],
+    [
+      League.WNBA,
+      [PropsStat.POINTS, PropsStat.REBOUNDS, PropsStat.ASSISTS, PropsStat.THREE_POINTERS_MADE]
+    ],
     [
       League.NBA,
       [
@@ -428,17 +615,17 @@ export const getActionNetworkProps = async (league: League) => {
       League.MLB,
       [
         PropsStat.WALKS,
-        // PropsStat.DOUBLES,
-        PropsStat.EARNED_RUNS,
-        PropsStat.HITS,
-        // PropsStat.HOME_RUNS,
         PropsStat.STRIKEOUTS,
-        PropsStat.PITCHING_OUTS
-        // PropsStat.RBIS,
-        // PropsStat.RUNS,
-        // PropsStat.STOLEN_BASES,
+        PropsStat.EARNED_RUNS,
+        PropsStat.PITCHING_OUTS,
+        PropsStat.HITS,
+        PropsStat.RBIS,
+        PropsStat.RUNS,
+        PropsStat.STOLEN_BASES,
         // PropsStat.SINGLES,
-        // PropsStat.TOTAL_BASES
+        // PropsStat.DOUBLES,
+        // PropsStat.HOME_RUNS,
+        PropsStat.TOTAL_BASES
       ]
     ]
   ]);
@@ -452,9 +639,9 @@ export const getActionNetworkProps = async (league: League) => {
   const props: Prop[] = [];
   let now = new Date();
   let endDate = new Date(now);
-  // if (league === League.) {
-  //   endDate.setDate(endDate.getDate() + 1);
-  // }
+  if (league === League.NBA) {
+    endDate.setDate(endDate.getDate() + 1);
+  }
 
   for (let date = now; date <= endDate; date.setDate(date.getDate() + 1)) {
     let yyyy = date.getFullYear();
@@ -466,11 +653,15 @@ export const getActionNetworkProps = async (league: League) => {
       if (!endpoint) {
         throw new Error(`Unknown prop ${propType}`);
       }
-      const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,1006,939,68,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
+      const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,358,347,68,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
       console.log(`Recording ${propType}`);
       let data;
       try {
-        ({ data } = await axios.get(url));
+        ({ data } = await axios.get(url, {
+          headers: {
+            "User-Agent": "insomnia/8.5.1"
+          }
+        }));
       } catch (error) {
         console.log(`No ActionNetwork props for ${propType}`);
         continue;

@@ -25,20 +25,18 @@ export const DFSTable = ({
 
   const filteredGroups = groups
     .filter((group) => {
-      const { hasPositiveEv, positiveEvBooks } = hasEV(
-        group,
-        (group as PropGroup).metadata.player ? "prop" : "game",
-        [Book.PRIZEPICKS, Book.UNDERDOG]
-      );
+      const { hasPositiveEv, positiveEvBooks } = hasEV(group, "prop", [
+        Book.PRIZEPICKS,
+        Book.UNDERDOG
+      ]);
+
+      if(hasPositiveEv){
+        console.log(positiveEvBooks)
+      }
       const isDFS = positiveEvBooks.some((book) => [Book.PRIZEPICKS, Book.UNDERDOG].includes(book));
       const gameNotExcluded = !filters.game.excluded.includes(String(group.metadata.game._id));
       const withinValueRange = group.values.every((value) => {
-        const likelihoodOfOver = getLikelihood(
-          value.prices,
-          group.metadata.league,
-          "over",
-          (group as PropGroup).metadata.player ? "prop" : "game"
-        );
+        const likelihoodOfOver = getLikelihood(value.prices, group, "over", "prop");
         const positiveFairLine = probabilityToAmerican(
           Math.min(likelihoodOfOver, 1 - likelihoodOfOver)
         );
@@ -50,15 +48,11 @@ export const DFSTable = ({
       return Math.max(
         ...[
           ...a.values.flatMap((v) => {
-            const fairline = probabilityToAmerican(
-              getLikelihood(v.prices, a.metadata.league, "over", "prop")
-            );
+            const fairline = probabilityToAmerican(getLikelihood(v.prices, a, "over", "prop"));
             return v.prices.map((price) => calculateEV(price.overPrice, fairline));
           }),
           ...a.values.flatMap((v) => {
-            const fairline = probabilityToAmerican(
-              getLikelihood(v.prices, a.metadata.league, "under", "prop")
-            );
+            const fairline = probabilityToAmerican(getLikelihood(v.prices, a, "under", "prop"));
             return v.prices.map((price) => calculateEV(price.underPrice, fairline));
           })
         ]
@@ -66,15 +60,11 @@ export const DFSTable = ({
         Math.max(
           ...[
             ...b.values.flatMap((v) => {
-              const fairline = probabilityToAmerican(
-                getLikelihood(v.prices, b.metadata.league, "over", "prop")
-              );
+              const fairline = probabilityToAmerican(getLikelihood(v.prices, b, "over", "prop"));
               return v.prices.map((price) => calculateEV(price.overPrice, fairline));
             }),
             ...b.values.flatMap((v) => {
-              const fairline = probabilityToAmerican(
-                getLikelihood(v.prices, b.metadata.league, "under", "prop")
-              );
+              const fairline = probabilityToAmerican(getLikelihood(v.prices, b, "under", "prop"));
               return v.prices.map((price) => calculateEV(price.underPrice, fairline));
             })
           ]

@@ -45,7 +45,7 @@ export const EVTable = ({
       const withinFairLineRange = group.values.every((value) => {
         const likelihoodOfOver = getLikelihood(
           value.prices,
-          group.metadata.league,
+          group,
           "over",
           (group as PropGroup).metadata.player ? "prop" : "game"
         );
@@ -65,7 +65,7 @@ export const EVTable = ({
             const fairline = probabilityToAmerican(
               getLikelihood(
                 v.prices,
-                a.metadata.league,
+                a,
                 "over",
                 (a as PropGroup).metadata.player ? "prop" : "game"
               )
@@ -76,7 +76,7 @@ export const EVTable = ({
             const fairline = probabilityToAmerican(
               getLikelihood(
                 v.prices,
-                a.metadata.league,
+                a,
                 "under",
                 (a as PropGroup).metadata.player ? "prop" : "game"
               )
@@ -91,7 +91,7 @@ export const EVTable = ({
               const fairline = probabilityToAmerican(
                 getLikelihood(
                   v.prices,
-                  b.metadata.league,
+                  b,
                   "over",
                   (b as PropGroup).metadata.player ? "prop" : "game"
                 )
@@ -102,7 +102,7 @@ export const EVTable = ({
               const fairline = probabilityToAmerican(
                 getLikelihood(
                   v.prices,
-                  b.metadata.league,
+                  b,
                   "under",
                   (b as PropGroup).metadata.player ? "prop" : "game"
                 )

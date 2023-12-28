@@ -29,6 +29,8 @@ export enum PropsStat {
   KICKING_POINTS = "kickingPoints",
   FIELD_GOALS_MADE = "fieldGoalsMade",
   EXTRA_POINTS_MADE = "extraPointsMade",
+  ANYTIME_TDs_QB = "anytimeTouchdownsQuarterback",
+  ANYTIME_TDs_NONQB = "anytimeTouchdownsNonQuarterback",
 
   STRIKEOUTS = "strikeouts",
   WALKS = "walks",

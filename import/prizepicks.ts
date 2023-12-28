@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import { findStat } from "../props";
 import { League, Prop, Book, PropsStat } from "../frontend/src/types";
-import { LineChoice } from "../frontend/src/types/lines";
 import { PlayerManager } from "../database/mongo.player";
 import { GameManager } from "../database/mongo.game";
 import { PlayerPropManager } from "../database/mongo.player-prop";
@@ -17,7 +16,7 @@ export const getPrizePicksLines = async (league: League) => {
   const playerPropManager = new PlayerPropManager();
   const playerManager = new PlayerManager();
 
-  await priceManager.deletePropPricesForLeague
+  // await priceManager.deletePropPricesForLeague;
 
   const { data, included } = JSON.parse(fs.readFileSync(linesFilename).toString());
 
@@ -53,6 +52,9 @@ export const getPrizePicksLines = async (league: League) => {
     (a, b) => a.attributes.flash_sale_line_score - b.attributes.flash_sale_line_score
   );
   for (const projection of projections) {
+    if (projection.attributes.odds_type !== "standard") {
+      continue;
+    }
     const player = fixtures.players.find(
       (p) => p.id === projection.relationships.new_player.data.id
     );
