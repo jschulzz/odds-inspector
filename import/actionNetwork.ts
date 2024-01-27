@@ -25,7 +25,8 @@ const newYorkActionNetworkSportsBookMap = new Map([
   [1005, Book.CAESARS],
   [68, Book.DRAFTKINGS],
   [347, Book.BETMGM],
-  [266, Book.TWINSPIRES]
+  [266, Book.TWINSPIRES],
+  [69, Book.FANDUEL],
 ]);
 
 const leagueMap = new Map([
@@ -653,7 +654,7 @@ export const getActionNetworkProps = async (league: League) => {
       if (!endpoint) {
         throw new Error(`Unknown prop ${propType}`);
       }
-      const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,358,347,68,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
+      const url = `https://api.actionnetwork.com/web/v1/leagues/${leagueId}/props/${endpoint}?bookIds=15,30,358,347,68,69,973,972,1005,974,1902,1903,76,347&date=${endpointDate}`;
       console.log(`Recording ${propType}`);
       let data;
       try {

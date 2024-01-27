@@ -24,7 +24,7 @@ import { MiddleTable } from "./bet-table/middle/middle-table";
 import { MisvalueTable } from "./bet-table/misvalue/misvalue-table";
 import { StatComboTable } from "./bet-table/stat-combos/stat-combo-table";
 
-const DEFAULT_BANKROLL = 2000;
+const DEFAULT_BANKROLL = 2500;
 const DEFAULT_KELLY = 0.2;
 export const DEFAULT_FAIRLINE = 500;
 
